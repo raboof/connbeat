@@ -1,0 +1,15 @@
+connbeat:
+
+output:
+  kafka:
+    hosts: ["localhost:9092"]
+    topic: connbeat
+
+  elasticsearch:
+    hosts: ["localhost:9200"]
+    #template:
+    #  name: "connbeat"
+    #  path: "connbeat.template.json"
+
+  console:
+    pretty: true
