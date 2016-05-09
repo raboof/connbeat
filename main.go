@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/elastic/beats/libbeat/beat"
-	"github.com/StackVista/connbeat/beater"
+	"github.com/raboof/connbeat/beater"
 )
 
 var Name = "connbeat"
