@@ -1,4 +1,4 @@
-BEATNAME=topbeat
+BEATNAME=connbeat
 SYSTEM_TESTS=false
 
 # Only crosscompile for linux because other OS'es use cgo.
