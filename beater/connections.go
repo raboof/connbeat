@@ -7,6 +7,7 @@ import (
 
 	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/elastic/beats/libbeat/logp"
+	"github.com/raboof/connbeat/processes"
 )
 
 type ServerConnection struct {
@@ -60,6 +61,7 @@ func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
 
 func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]bool)
+	ps := processes.New()
 
 	for {
 		select {
@@ -69,7 +71,7 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 						listeningOn[s.Src_port] = true
 						servers <- ServerConnection{
 							localPort: s.Src_port,
-							process: "nginx",
+							process: ps.FindProcessByInode(s.Inode),
 						}
 					} else {
 						connections <- Connection{
@@ -77,7 +79,7 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 							localPort: s.Src_port,
 							remoteIp: formatIp(s.Dst_ip),
 							remotePort: s.Dst_port,
-							process: "curl",
+							process: ps.FindProcessByInode(s.Inode),
 					}
 				}
 			}
