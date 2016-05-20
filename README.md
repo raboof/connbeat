@@ -12,6 +12,13 @@ package/connection contents, only metadata.
 
 This is currently a PoC sketch, not in fact functional (and certainly not performant or beautiful).
 
+## Building
+
+    // Make sure $GOPATH is set
+    go get github.com/raboof/connbeat
+    cd $GOPATH/src/github.com/raboof/connbeat
+    make
+
 ## Running
 
 The default configuration (connbeat.yml) logs to kafka on localhost:9092 and to the console.
@@ -27,7 +34,6 @@ You can view the events on kafka with something like kafkacat:
 ## Events
 
 For connections where the agent is the server:
-
 
     {
       "@timestamp": "2016-05-20T14:54:29.442Z",
