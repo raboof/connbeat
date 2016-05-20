@@ -22,10 +22,19 @@ type Connection struct {
 	process    string
 }
 
-func pollCurrentConnections(c chan Connection) {
+func getEnv(key, defaultValue string) string {
+	env := os.Getenv(key)
+	if env != "" {
+		return env
+	 }
+	return defaultValue
+}
+
+func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) {
 	// TODO add support for IPv6
 	// TODO add support for darwin
-	file, err := os.Open("/proc/net/tcp")
+	// TODO prefer tcp_diag where available
+	file, err := os.Open(getEnv("PROC_NET_TCP", "/proc/net/tcp"))
 	if err != nil {
 		logp.Err("Open: %s", err)
 		return
@@ -33,13 +42,7 @@ func pollCurrentConnections(c chan Connection) {
 	defer file.Close()
 	socks, err := procs.Parse_Proc_Net_Tcp(file)
 	for _, s := range socks {
-		c <- Connection{
-			localIp: formatIp(s.Src_ip),
-			localPort: s.Src_port,
-			remoteIp: formatIp(s.Dst_ip),
-			remotePort: s.Dst_port,
-			process: "nginx",
-		}
+		socketInfo <- s
 	}
 }
 
@@ -47,19 +50,49 @@ func formatIp(ip uint32) string {
 	return fmt.Sprintf("%d.%d.%d.%d", byte(ip), byte(ip>>8), byte(ip>>16), byte(ip>>24))
 }
 
-func bangOn(c chan Connection) {
+func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
 	for true {
-		// TODO use a scheduler instead of sleeping
+		// For now we poll periodically, eventually we want to also be triggered on-demand
 		time.Sleep(2 * time.Second)
-		pollCurrentConnections(c)
+		pollCurrentConnections(socketInfo)
+	}
+}
+
+func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+	listeningOn := make(map[uint16]bool)
+
+	for {
+		select {
+		case s := <-socketInfo:
+				if !listeningOn[s.Src_port] {
+					if s.Dst_port == 0 {
+						listeningOn[s.Src_port] = true
+						servers <- ServerConnection{
+							localPort: s.Src_port,
+							process: "nginx",
+						}
+					} else {
+						connections <- Connection{
+							localIp: formatIp(s.Src_ip),
+							localPort: s.Src_port,
+							remoteIp: formatIp(s.Dst_ip),
+							remotePort: s.Dst_port,
+							process: "curl",
+					}
+				}
+			}
+		}
 	}
 }
 
 func Listen() (chan Connection, chan ServerConnection) {
+	socketInfo := make(chan *procs.SocketInfo, 20)
+
+	go getSocketInfo(socketInfo)
+
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-
-	go bangOn(connections)
+	go filterAndPublish(socketInfo, connections, servers)
 
 	return connections, servers
 }
