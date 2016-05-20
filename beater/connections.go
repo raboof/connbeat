@@ -2,33 +2,64 @@ package beater
 
 import (
 	"time"
-	// "github.com/weaveworks/scope/probe/endpoint"
+	"os"
+	"fmt"
+
+	"github.com/elastic/beats/packetbeat/procs"
+	"github.com/elastic/beats/libbeat/logp"
 )
+
+type ServerConnection struct {
+	localPort uint16
+	process string
+}
 
 type Connection struct {
 	localIp    string
-	localPort  int
+	localPort  uint16
 	remoteIp   string
-	remotePort int
+	remotePort uint16
 	process    string
 }
 
-func bangOn(c chan Connection) {
-	for true {
-		time.Sleep(2 * time.Second)
+func pollCurrentConnections(c chan Connection) {
+	// TODO add support for IPv6
+	// TODO add support for darwin
+	file, err := os.Open("/proc/net/tcp")
+	if err != nil {
+		logp.Err("Open: %s", err)
+		return
+	}
+	defer file.Close()
+	socks, err := procs.Parse_Proc_Net_Tcp(file)
+	for _, s := range socks {
 		c <- Connection{
-			localIp:    "132.32.1.3",
-			localPort:  32,
-			remoteIp:   "43.34.1.3",
-			remotePort: 1243,
-			process:    "ftpd",
+			localIp: formatIp(s.Src_ip),
+			localPort: s.Src_port,
+			remoteIp: formatIp(s.Dst_ip),
+			remotePort: s.Dst_port,
+			process: "nginx",
 		}
 	}
 }
 
-func Listen() chan Connection {
-	result := make(chan Connection, 20)
-	// TODO actually start monitoring
-	go bangOn(result)
-	return result
+func formatIp(ip uint32) string {
+	return fmt.Sprintf("%d.%d.%d.%d", byte(ip), byte(ip>>8), byte(ip>>16), byte(ip>>24))
+}
+
+func bangOn(c chan Connection) {
+	for true {
+		// TODO use a scheduler instead of sleeping
+		time.Sleep(2 * time.Second)
+		pollCurrentConnections(c)
+	}
+}
+
+func Listen() (chan Connection, chan ServerConnection) {
+	connections := make(chan Connection, 20)
+	servers := make(chan ServerConnection, 20)
+
+	go bangOn(connections)
+
+	return connections, servers
 }

@@ -28,7 +28,20 @@ func (cb *Connbeat) Setup(b *beat.Beat) error {
 	return nil
 }
 
-func (cb *Connbeat) export(c Connection) error {
+func (cb *Connbeat) exportServerConnection(s ServerConnection) error {
+	event := common.MapStr{
+		"@timestamp":    common.Time(time.Now()),
+		"type":          "connbeat",
+		"local_port":    s.localPort,
+		"local_process": s.process,
+	}
+
+	cb.events.PublishEvent(event)
+
+	return nil
+}
+
+func (cb *Connbeat) exportConnection(c Connection) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -47,14 +60,16 @@ func (cb *Connbeat) export(c Connection) error {
 func (cb *Connbeat) Run(b *beat.Beat) error {
 	var err error
 
-	listener := Listen()
+	connectionListener, serverConnectionListener := Listen()
 
 	for {
 		select {
 		case <-cb.done:
 			return nil
-		case c := <-listener:
-			err = cb.export(c)
+		case c := <-connectionListener:
+			err = cb.exportConnection(c)
+		case s := <-serverConnectionListener:
+			err = cb.exportServerConnection(s)
 		}
 	}
 
