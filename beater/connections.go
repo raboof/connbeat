@@ -60,8 +60,14 @@ func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
 	}
 }
 
+type outgoingConnectionDedup struct {
+	remoteIp uint32
+	remotePort uint16
+}
+
 func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]bool)
+	outgoingConnectionSeen := make(map[outgoingConnectionDedup]bool)
 	ps := processes.New()
 
 	for {
@@ -75,12 +81,16 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 						process:   ps.FindProcessByInode(s.Inode),
 					}
 				} else {
-					connections <- Connection{
-						localIp:    formatIp(s.Src_ip),
-						localPort:  s.Src_port,
-						remoteIp:   formatIp(s.Dst_ip),
-						remotePort: s.Dst_port,
-						process:    ps.FindProcessByInode(s.Inode),
+					dedupId := outgoingConnectionDedup{s.Dst_ip, s.Dst_port}
+					if !outgoingConnectionSeen[dedupId] {
+						outgoingConnectionSeen[dedupId] = true
+						connections <- Connection{
+							localIp:    formatIp(s.Src_ip),
+							localPort:  s.Src_port,
+							remoteIp:   formatIp(s.Dst_ip),
+							remotePort: s.Dst_port,
+							process:    ps.FindProcessByInode(s.Inode),
+						}
 					}
 				}
 			}
