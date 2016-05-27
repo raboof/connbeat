@@ -1,4 +1,5 @@
 BEATNAME=connbeat
+BEAT_DIR=github.com/raboof
 SYSTEM_TESTS=false
 
 # Only crosscompile for linux because other OS'es use cgo.
