@@ -12,7 +12,7 @@ import (
 
 type ServerConnection struct {
 	localPort uint16
-	process   string
+	process   *processes.UnixProcess
 }
 
 type Connection struct {
@@ -20,7 +20,7 @@ type Connection struct {
 	localPort  uint16
 	remoteIp   string
 	remotePort uint16
-	process    string
+	process    *processes.UnixProcess
 }
 
 func getEnv(key, defaultValue string) string {

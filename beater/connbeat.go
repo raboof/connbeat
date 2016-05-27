@@ -1,11 +1,14 @@
 package beater
 
 import (
+	"strings"
 	"time"
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/publisher"
+
+	"github.com/raboof/connbeat/processes"
 )
 
 type Connbeat struct {
@@ -28,12 +31,23 @@ func (cb *Connbeat) Setup(b *beat.Beat) error {
 	return nil
 }
 
+func processAsMap(process *processes.UnixProcess) common.MapStr {
+	binary := strings.Trim(process.Binary, "\u0000 ")
+	cmdline := strings.Trim(strings.Replace(process.Cmdline, "\u0000", " ", -1), "\u0000 ")
+	environ := strings.Split(strings.Trim(process.Environ, "\u0000 "), "\u0000")
+	return common.MapStr{
+		"binary":  binary,
+		"cmdline": cmdline,
+		"environ": environ,
+	}
+}
+
 func (cb *Connbeat) exportServerConnection(s ServerConnection) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
 		"local_port":    s.localPort,
-		"local_process": s.process,
+		"local_process": processAsMap(s.process),
 	}
 
 	cb.events.PublishEvent(event)
@@ -49,7 +63,7 @@ func (cb *Connbeat) exportConnection(c Connection) error {
 		"local_port":    c.localPort,
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
-		"local_process": c.process,
+		"local_process": processAsMap(c.process),
 	}
 
 	cb.events.PublishEvent(event)

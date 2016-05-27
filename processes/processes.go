@@ -54,7 +54,9 @@ type UnixProcess struct {
 	sid    int
 	inodes []int64
 
-	binary string
+	Binary  string
+	Cmdline string
+	Environ string
 }
 
 func (p *UnixProcess) Pid() int {
@@ -65,24 +67,18 @@ func (p *UnixProcess) PPid() int {
 	return p.ppid
 }
 
-func (p *UnixProcess) Executable() string {
-	return p.binary
-}
-
 // Refresh reloads all the data associated with this process.
 func (p *UnixProcess) Refresh() error {
 	prefix := ""
-	statPath := fmt.Sprintf("%s/proc/%d/stat", prefix, p.pid)
-	dataBytes, err := ioutil.ReadFile(statPath)
+	data, err := readFile(prefix, p.pid, "stat")
 	if err != nil {
 		return err
 	}
 
 	// First, parse out the image name
-	data := string(dataBytes)
 	binStart := strings.IndexRune(data, '(') + 1
 	binEnd := strings.IndexRune(data[binStart:], ')')
-	p.binary = data[binStart : binStart+binEnd]
+	p.Binary = data[binStart : binStart+binEnd]
 
 	// Move past the image name and start parsing the rest
 	data = data[binStart+binEnd+2:]
@@ -100,7 +96,16 @@ func (p *UnixProcess) Refresh() error {
 	inodes, err := procs.FindSocketsOfPid(prefix, p.pid)
 	p.inodes = inodes
 
+	p.Cmdline, err = readFile(prefix, p.pid, "cmdline")
+	p.Environ, err = readFile(prefix, p.pid, "environ")
+
 	return err
+}
+
+func readFile(prefix string, pid int, filename string) (string, error) {
+	path := fmt.Sprintf("%s/proc/%d/%s", prefix, pid, filename)
+	bytes, err := ioutil.ReadFile(path)
+	return string(bytes), err
 }
 
 func findProcess(pid int) (*UnixProcess, error) {
@@ -170,7 +175,7 @@ func newUnixProcess(pid int) (*UnixProcess, error) {
 	return p, p.Refresh()
 }
 
-func (ps *Processes) FindProcessByInode(inode int64) string {
+func (ps *Processes) FindProcessByInode(inode int64) *UnixProcess {
 	proc := ps.byInode[inode]
 	if proc == nil {
 		// Refesh and try again
@@ -178,9 +183,11 @@ func (ps *Processes) FindProcessByInode(inode int64) string {
 
 		proc = ps.byInode[inode]
 		if proc == nil {
-			return fmt.Sprintf("Unknown process with inode %d", inode)
+			return &UnixProcess{
+				Binary: fmt.Sprintf("Unknown process with inode %d", inode),
+			}
 		}
-		return proc.binary
+		return proc
 	}
-	return proc.binary
+	return proc
 }
