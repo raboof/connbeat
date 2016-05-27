@@ -36,7 +36,7 @@ func (ps *Processes) Refresh() error {
 		if err != nil {
 			return err
 		}
-		for _, inode := range p.inodes{
+		for _, inode := range p.inodes {
 			ps.byInode[inode] = p
 		}
 	}
@@ -47,11 +47,11 @@ func (ps *Processes) Refresh() error {
 // UnixProcess is an implementation of Process that contains Unix-specific
 // fields and information.
 type UnixProcess struct {
-	pid   int
-	ppid  int
-	state rune
-	pgrp  int
-	sid   int
+	pid    int
+	ppid   int
+	state  rune
+	pgrp   int
+	sid    int
 	inodes []int64
 
 	binary string
@@ -182,5 +182,5 @@ func (ps *Processes) FindProcessByInode(inode int64) string {
 		}
 		return proc.binary
 	}
- 	return proc.binary
+	return proc.binary
 }

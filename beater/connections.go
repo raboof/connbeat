@@ -1,18 +1,18 @@
 package beater
 
 import (
-	"time"
-	"os"
 	"fmt"
+	"os"
+	"time"
 
-	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/elastic/beats/libbeat/logp"
+	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/raboof/connbeat/processes"
 )
 
 type ServerConnection struct {
 	localPort uint16
-	process string
+	process   string
 }
 
 type Connection struct {
@@ -27,7 +27,7 @@ func getEnv(key, defaultValue string) string {
 	env := os.Getenv(key)
 	if env != "" {
 		return env
-	 }
+	}
 	return defaultValue
 }
 
@@ -67,20 +67,20 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 	for {
 		select {
 		case s := <-socketInfo:
-				if !listeningOn[s.Src_port] {
-					if s.Dst_port == 0 {
-						listeningOn[s.Src_port] = true
-						servers <- ServerConnection{
-							localPort: s.Src_port,
-							process: ps.FindProcessByInode(s.Inode),
-						}
-					} else {
-						connections <- Connection{
-							localIp: formatIp(s.Src_ip),
-							localPort: s.Src_port,
-							remoteIp: formatIp(s.Dst_ip),
-							remotePort: s.Dst_port,
-							process: ps.FindProcessByInode(s.Inode),
+			if !listeningOn[s.Src_port] {
+				if s.Dst_port == 0 {
+					listeningOn[s.Src_port] = true
+					servers <- ServerConnection{
+						localPort: s.Src_port,
+						process:   ps.FindProcessByInode(s.Inode),
+					}
+				} else {
+					connections <- Connection{
+						localIp:    formatIp(s.Src_ip),
+						localPort:  s.Src_port,
+						remoteIp:   formatIp(s.Dst_ip),
+						remotePort: s.Dst_port,
+						process:    ps.FindProcessByInode(s.Inode),
 					}
 				}
 			}
