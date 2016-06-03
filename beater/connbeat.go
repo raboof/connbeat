@@ -8,13 +8,15 @@ import (
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
+	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/publisher"
 
 	"github.com/raboof/connbeat/processes"
 )
 
 type Connbeat struct {
-	events publisher.Client
+	events     publisher.Client
+	ConnConfig ConfigSettings
 
 	done chan struct{}
 }
@@ -24,6 +26,22 @@ func New() *Connbeat {
 }
 
 func (cb *Connbeat) Config(b *beat.Beat) error {
+	rawConnbeatConfig, err := b.RawConfig.Child("connbeat", -1)
+	if err != nil {
+		logp.Err("Error reading configuration file: %v", err)
+		return err
+	}
+
+	cb.ConnConfig.Connbeat = defaultConfig
+	err = rawConnbeatConfig.Unpack(&cb.ConnConfig.Connbeat)
+	if err != nil {
+		logp.Err("Error reading configuration file: %v", err)
+		return err
+	}
+
+	logp.Debug("connbeat", "Expose cmdline: %v", cb.ConnConfig.Connbeat.ExposeCmdline)
+	logp.Debug("connbeat", "Expose environ: %v", cb.ConnConfig.Connbeat.ExposeEnviron)
+
 	return nil
 }
 
@@ -103,7 +121,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener := Listen()
+	connectionListener, serverConnectionListener := Listen(cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron)
 
 	return cb.Pipe(connectionListener, serverConnectionListener)
 }

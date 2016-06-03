@@ -1,4 +1,6 @@
 connbeat:
+  expose_cmdline: true
+  expose_environ: false
 
 output:
   kafka:

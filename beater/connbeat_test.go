@@ -38,12 +38,12 @@ func TestLocalIps(t *testing.T) {
 	beater.done = make(chan struct{})
 
 	httpd := processes.UnixProcess{
-		Binary: "httpd",
+		Binary:  "httpd",
 		Cmdline: "/bin/httpd",
 		Environ: "",
 	}
 	curl := processes.UnixProcess{
-		Binary: "curl",
+		Binary:  "curl",
 		Cmdline: "/usr/bin/curl http://www.nu.nl",
 		Environ: "",
 	}

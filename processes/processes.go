@@ -17,22 +17,26 @@ import (
 )
 
 type Processes struct {
-	byInode map[int64]*UnixProcess
+	byInode       map[int64]*UnixProcess
+	exposeCmdline bool
+	exposeEnviron bool
 }
 
-func New() *Processes {
+func New(exposeCmdline, exposeEnviron bool) *Processes {
 	return &Processes{
-		byInode: make(map[int64]*UnixProcess),
+		byInode:       make(map[int64]*UnixProcess),
+		exposeCmdline: exposeCmdline,
+		exposeEnviron: exposeEnviron,
 	}
 }
 
 func (ps *Processes) Refresh() error {
-	procs, err := processes()
+	procs, err := processes(ps.exposeCmdline, ps.exposeEnviron)
 	if err != nil {
 		return err
 	}
 	for _, p := range procs {
-		err := p.Refresh()
+		err := p.Refresh(ps.exposeCmdline, ps.exposeEnviron)
 		if err != nil {
 			return err
 		}
@@ -68,7 +72,7 @@ func (p *UnixProcess) PPid() int {
 }
 
 // Refresh reloads all the data associated with this process.
-func (p *UnixProcess) Refresh() error {
+func (p *UnixProcess) Refresh(exposeCmdline, exposeEnviron bool) error {
 	prefix := ""
 	data, err := readFile(prefix, p.pid, "stat")
 	if err != nil {
@@ -96,8 +100,12 @@ func (p *UnixProcess) Refresh() error {
 	inodes, err := procs.FindSocketsOfPid(prefix, p.pid)
 	p.inodes = inodes
 
-	p.Cmdline, err = readFile(prefix, p.pid, "cmdline")
-	p.Environ, err = readFile(prefix, p.pid, "environ")
+	if exposeCmdline {
+		p.Cmdline, err = readFile(prefix, p.pid, "cmdline")
+	}
+	if exposeEnviron {
+		p.Environ, err = readFile(prefix, p.pid, "environ")
+	}
 
 	return err
 }
@@ -108,21 +116,7 @@ func readFile(prefix string, pid int, filename string) (string, error) {
 	return string(bytes), err
 }
 
-func findProcess(pid int) (*UnixProcess, error) {
-	dir := fmt.Sprintf("/proc/%d", pid)
-	_, err := os.Stat(dir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return newUnixProcess(pid)
-}
-
-func processes() ([]*UnixProcess, error) {
+func processes(exposeCmdline, exposeEnviron bool) ([]*UnixProcess, error) {
 	d, err := os.Open("/proc")
 	if err != nil {
 		return nil, err
@@ -158,7 +152,7 @@ func processes() ([]*UnixProcess, error) {
 				continue
 			}
 
-			p, err := newUnixProcess(int(pid))
+			p, err := newUnixProcess(int(pid), exposeCmdline, exposeEnviron)
 			if err != nil {
 				continue
 			}
@@ -170,9 +164,9 @@ func processes() ([]*UnixProcess, error) {
 	return results, nil
 }
 
-func newUnixProcess(pid int) (*UnixProcess, error) {
+func newUnixProcess(pid int, exposeCmdline, exposeEnviron bool) (*UnixProcess, error) {
 	p := &UnixProcess{pid: pid}
-	return p, p.Refresh()
+	return p, p.Refresh(exposeCmdline, exposeEnviron)
 }
 
 func (ps *Processes) FindProcessByInode(inode int64) *UnixProcess {
