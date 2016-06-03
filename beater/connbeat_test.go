@@ -6,6 +6,8 @@ import (
 
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/publisher"
+
+	"github.com/raboof/connbeat/processes"
 )
 
 type TestClient struct {
@@ -17,7 +19,6 @@ func (tc TestClient) PublishEvents(events []common.MapStr, opts ...publisher.Cli
 	for _, event := range events {
 		tc.evs <- event
 	}
-	// fmt.Printf("Publish! sink is now %d\n", len(*tc.sink))
 	return true
 }
 func (tc TestClient) PublishEvent(event common.MapStr, opts ...publisher.ClientOption) bool {
@@ -36,11 +37,22 @@ func TestLocalIps(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
+	httpd := processes.UnixProcess{
+		Binary:  "httpd",
+		Cmdline: "/bin/httpd",
+		Environ: "",
+	}
+	curl := processes.UnixProcess{
+		Binary:  "curl",
+		Cmdline: "/usr/bin/curl http://www.nu.nl",
+		Environ: "",
+	}
+
 	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, "httpd"}
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd}
 	_ = <-client.evs
 
-	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, "asdf"}
+	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 type ServerConnection struct {
 	localIp   string
 	localPort uint16
-	process   string
+	process   *processes.UnixProcess
 }
 
 type Connection struct {
@@ -21,7 +21,7 @@ type Connection struct {
 	localPort  uint16
 	remoteIp   string
 	remotePort uint16
-	process    string
+	process    *processes.UnixProcess
 }
 
 func getEnv(key, defaultValue string) string {
@@ -64,14 +64,14 @@ func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
 }
 
 type outgoingConnectionDedup struct {
-	remoteIp uint32
+	remoteIp   uint32
 	remotePort uint16
 }
 
-func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+func filterAndPublish(exposeCmdline, exposeEnviron bool, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]bool)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]bool)
-	ps := processes.New()
+	ps := processes.New(exposeCmdline, exposeEnviron)
 
 	for {
 		select {
@@ -102,14 +102,14 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 	}
 }
 
-func Listen() (chan Connection, chan ServerConnection) {
+func Listen(exposeCmdline, exposeEnviron bool) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *procs.SocketInfo, 20)
 
 	go getSocketInfo(socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-	go filterAndPublish(socketInfo, connections, servers)
+	go filterAndPublish(exposeCmdline, exposeEnviron, socketInfo, connections, servers)
 
 	return connections, servers
 }

@@ -18,14 +18,14 @@ func incomingConnection(localPort uint16) *procs.SocketInfo {
 }
 
 func outgoingConnection(remoteIp uint32, remotePort uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{rand.Uint32(), remoteIp, uint16(rand.Int()), remotePort, uint16(rand.Int()), rand.Int63() }
+	return &procs.SocketInfo{rand.Uint32(), remoteIp, uint16(rand.Int()), remotePort, uint16(rand.Int()), rand.Int63()}
 }
 
 func TestDeduplicateListeningSockets(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(input, connections, servers)
+	go filterAndPublish(true, true, input, connections, servers)
 
 	input <- listeningConnection(80)
 	_, ok := <-servers
@@ -48,7 +48,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(input, connections, servers)
+	go filterAndPublish(true, true, input, connections, servers)
 
 	input <- listeningConnection(80)
 	_, ok := <-servers
@@ -71,7 +71,7 @@ func TestDedupClientConnections(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(input, connections, servers)
+	go filterAndPublish(true, true, input, connections, servers)
 
 	input <- outgoingConnection(6543142, 80)
 	_, ok := <-connections
