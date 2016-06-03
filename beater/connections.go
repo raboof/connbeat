@@ -62,21 +62,22 @@ func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
 }
 
 type outgoingConnectionDedup struct {
-	remoteIp uint32
+	remoteIp   uint32
 	remotePort uint16
 }
 
-func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
-	listeningOn := make(map[uint16]bool)
-	outgoingConnectionSeen := make(map[outgoingConnectionDedup]bool)
+func filterAndPublish(aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+	listeningOn := make(map[uint16]time.Time)
+	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New()
 
 	for {
+		now := time.Now()
 		select {
 		case s := <-socketInfo:
-			if !listeningOn[s.Src_port] {
+			if when, seen := listeningOn[s.Src_port]; !seen || now.Sub(when) > aggregation {
 				if s.Dst_port == 0 {
-					listeningOn[s.Src_port] = true
+					listeningOn[s.Src_port] = now
 					servers <- ServerConnection{
 						localIp:   formatIp(s.Src_ip),
 						localPort: s.Src_port,
@@ -84,8 +85,8 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 					}
 				} else {
 					dedupId := outgoingConnectionDedup{s.Dst_ip, s.Dst_port}
-					if !outgoingConnectionSeen[dedupId] {
-						outgoingConnectionSeen[dedupId] = true
+					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
+						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
 							localIp:    formatIp(s.Src_ip),
 							localPort:  s.Src_port,
@@ -100,14 +101,14 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 	}
 }
 
-func Listen() (chan Connection, chan ServerConnection) {
+func Listen(aggregation time.Duration) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *procs.SocketInfo, 20)
 
 	go getSocketInfo(socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-	go filterAndPublish(socketInfo, connections, servers)
+	go filterAndPublish(aggregation, socketInfo, connections, servers)
 
 	return connections, servers
 }

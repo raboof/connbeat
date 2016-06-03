@@ -7,11 +7,13 @@ import (
 
 	"github.com/elastic/beats/libbeat/beat"
 	"github.com/elastic/beats/libbeat/common"
+	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/publisher"
 )
 
 type Connbeat struct {
-	events publisher.Client
+	events     publisher.Client
+	ConnConfig ConfigSettings
 
 	done chan struct{}
 }
@@ -21,6 +23,21 @@ func New() *Connbeat {
 }
 
 func (cb *Connbeat) Config(b *beat.Beat) error {
+	rawConnbeatConfig, err := b.RawConfig.Child("connbeat", -1)
+	if err != nil {
+		logp.Err("Error reading configuration file: %v", err)
+		return err
+	}
+
+	cb.ConnConfig.Connbeat = defaultConfig
+	err = rawConnbeatConfig.Unpack(&cb.ConnConfig.Connbeat)
+	if err != nil {
+		logp.Err("Error reading configuration file: %v", err)
+		return err
+	}
+
+	logp.Debug("connbeat", "Connection aggregation: %v", cb.ConnConfig.Connbeat.ConnectionAggregation)
+
 	return nil
 }
 
@@ -89,7 +106,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener := Listen()
+	connectionListener, serverConnectionListener := Listen(cb.ConnConfig.Connbeat.ConnectionAggregation)
 
 	return cb.Pipe(connectionListener, serverConnectionListener)
 }

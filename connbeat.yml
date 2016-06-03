@@ -1,4 +1,5 @@
 connbeat:
+  aggregation: 10s
 
 output:
   kafka:
