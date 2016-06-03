@@ -1,5 +1,10 @@
 language: go
 
+addons:
+  apt:
+    packages:
+      - python-virtualenv
+
 script: make test
 
 install: go get -t ./...
