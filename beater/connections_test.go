@@ -25,7 +25,7 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(5*time.Second, input, connections, servers)
+	go filterAndPublish(true, true, 5*time.Second, input, connections, servers)
 
 	input <- listeningConnection(80)
 	_, ok := <-servers
@@ -48,7 +48,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(5*time.Second, input, connections, servers)
+	go filterAndPublish(true, true, 5*time.Second, input, connections, servers)
 
 	input <- listeningConnection(80)
 	_, ok := <-servers
@@ -71,7 +71,7 @@ func TestDedupClientConnections(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(5*time.Second, input, connections, servers)
+	go filterAndPublish(true, true, 5*time.Second, input, connections, servers)
 
 	input <- outgoingConnection(6543142, 80)
 	_, ok := <-connections
@@ -94,7 +94,7 @@ func TestRepublishOldClientConnections(t *testing.T) {
 	input := make(chan *procs.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(0*time.Second, input, connections, servers)
+	go filterAndPublish(false, false, 0*time.Second, input, connections, servers)
 
 	input <- outgoingConnection(6543142, 80)
 	_, ok := <-connections

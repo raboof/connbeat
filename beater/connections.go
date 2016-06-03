@@ -13,7 +13,7 @@ import (
 type ServerConnection struct {
 	localIp   string
 	localPort uint16
-	process   string
+	process   *processes.UnixProcess
 }
 
 type Connection struct {
@@ -21,7 +21,7 @@ type Connection struct {
 	localPort  uint16
 	remoteIp   string
 	remotePort uint16
-	process    string
+	process    *processes.UnixProcess
 }
 
 func getEnv(key, defaultValue string) string {
@@ -45,7 +45,9 @@ func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) {
 	// TODO error handling
 	socks, _ := procs.Parse_Proc_Net_Tcp(file)
 	for _, s := range socks {
-		socketInfo <- s
+		if s.Inode != 0 {
+			socketInfo <- s
+		}
 	}
 }
 
@@ -66,10 +68,10 @@ type outgoingConnectionDedup struct {
 	remotePort uint16
 }
 
-func filterAndPublish(aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]time.Time)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
-	ps := processes.New()
+	ps := processes.New(exposeCmdline, exposeEnviron)
 
 	for {
 		now := time.Now()
@@ -101,14 +103,14 @@ func filterAndPublish(aggregation time.Duration, socketInfo <-chan *procs.Socket
 	}
 }
 
-func Listen(aggregation time.Duration) (chan Connection, chan ServerConnection) {
+func Listen(exposeCmdline, exposeEnviron bool, aggregation time.Duration) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *procs.SocketInfo, 20)
 
 	go getSocketInfo(socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-	go filterAndPublish(aggregation, socketInfo, connections, servers)
+	go filterAndPublish(exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
 
 	return connections, servers
 }
