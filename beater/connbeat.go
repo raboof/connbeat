@@ -116,8 +116,6 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			err = cb.exportServerConnection(s, localIps)
 		}
 	}
-
-	return err
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
