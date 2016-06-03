@@ -39,7 +39,10 @@ For connections where the agent is the server:
       "@timestamp": "2016-05-20T14:54:29.442Z",
       "beat": {
         "hostname": "yinka",
-        "name": "yinka"
+        "name": "yinka",
+        "local_ips": [
+          "192.168.2.243"
+        ]
       },
       "local_port": 80,
       "local_process": {
@@ -63,7 +66,10 @@ For connections where the agent appears to be the client:
       "@timestamp": "2016-05-20T14:54:29.506Z",
       "beat": {
         "hostname": "yinka",
-        "name": "yinka"
+        "name": "yinka",
+        "local_ips": [
+          "192.168.2.243"
+        ]
       },
       "local_ip": "192.168.2.243",
       "local_port": 40074,
