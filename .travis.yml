@@ -5,6 +5,12 @@ addons:
     packages:
       - python-virtualenv
 
+env:
+  matrix:
+    - TARGETS="check"
+    - TARGETS="testsuite"
+    - TARGETS="crosscompile"
+
 script: make test
 
 install: go get -t ./...
