@@ -1,0 +1,9 @@
+connbeat:
+  expose_cmdline: {{ expose_cmdline|default("true") }}
+  expose_environ: {{ expose_cmdline|default("false") }}
+
+output.file:
+  path: {{ output_file_path|default(beat.working_dir + "/output") }}
+  filename: "{{ output_file_filename|default("metricbeat") }}"
+  rotate_every_kb: 1000
+  #number_of_files: 7

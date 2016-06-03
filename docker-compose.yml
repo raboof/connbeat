@@ -1,0 +1,8 @@
+beat:
+  build: ${PWD}/.
+  environment: 
+   - TEST_ENVIRONMENT=false
+  working_dir: /go/src/github.com/raboof/connbeat
+  volumes:
+   - ${PWD}/../..:/go/src/github.com
+  command: make
