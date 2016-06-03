@@ -109,11 +109,17 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 		case c := <-connectionListener:
 			localIps.Add(c.localIp)
 			err = cb.exportConnection(c, localIps)
+			if err != nil {
+				return err
+			}
 		case s := <-serverConnectionListener:
 			if s.localIp != "0.0.0.0" {
 				localIps.Add(s.localIp)
 			}
 			err = cb.exportServerConnection(s, localIps)
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
