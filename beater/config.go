@@ -1,8 +1,13 @@
 package beater
 
+import (
+	"time"
+)
+
 type ConnConfig struct {
-	ExposeCmdline bool `config:"expose_cmdline"`
-	ExposeEnviron bool `config:"expose_environ"`
+	ExposeCmdline         bool          `config:"expose_cmdline"`
+	ExposeEnviron         bool          `config:"expose_environ"`
+	ConnectionAggregation time.Duration `config:"aggregation"`
 }
 
 type ConfigSettings struct {
@@ -15,7 +20,8 @@ func (c *ConnConfig) Validate() error {
 
 var (
 	defaultConfig = ConnConfig{
-		ExposeCmdline: true,
-		ExposeEnviron: false,
+		ExposeCmdline:         true,
+		ExposeEnviron:         false,
+		ConnectionAggregation: 30 * time.Second,
 	}
 )

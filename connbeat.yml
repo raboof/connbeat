@@ -1,6 +1,7 @@
 connbeat:
   expose_cmdline: true
   expose_environ: false
+  aggregation: 10s
 
 output:
   kafka:
