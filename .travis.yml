@@ -15,6 +15,8 @@ env:
     - TARGETS="check"
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
+  global:
+    - DOCKER_COMPOSE_VERSION: 1.7.0
 
 script: make $TARGETS
 
