@@ -11,7 +11,7 @@ env:
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
 
-script: make test
+script: make $TARGETS
 
 install: go get -t ./...
 
