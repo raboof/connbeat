@@ -11,6 +11,7 @@ import (
 )
 
 type ServerConnection struct {
+	localIp   string
 	localPort uint16
 	process   string
 }
@@ -71,6 +72,7 @@ func filterAndPublish(socketInfo <-chan *procs.SocketInfo, connections chan<- Co
 				if s.Dst_port == 0 {
 					listeningOn[s.Src_port] = true
 					servers <- ServerConnection{
+						localIp:   formatIp(s.Src_ip),
 						localPort: s.Src_port,
 						process:   ps.FindProcessByInode(s.Inode),
 					}
