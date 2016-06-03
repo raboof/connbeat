@@ -45,7 +45,9 @@ func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) {
 	// TODO error handling
 	socks, _ := procs.Parse_Proc_Net_Tcp(file)
 	for _, s := range socks {
-		socketInfo <- s
+		if s.Inode != 0 {
+			socketInfo <- s
+		}
 	}
 }
 
