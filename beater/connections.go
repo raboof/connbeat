@@ -68,17 +68,18 @@ type outgoingConnectionDedup struct {
 	remotePort uint16
 }
 
-func filterAndPublish(exposeCmdline, exposeEnviron bool, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
-	listeningOn := make(map[uint16]bool)
-	outgoingConnectionSeen := make(map[outgoingConnectionDedup]bool)
+func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+	listeningOn := make(map[uint16]time.Time)
+	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New(exposeCmdline, exposeEnviron)
 
 	for {
+		now := time.Now()
 		select {
 		case s := <-socketInfo:
-			if !listeningOn[s.Src_port] {
+			if when, seen := listeningOn[s.Src_port]; !seen || now.Sub(when) > aggregation {
 				if s.Dst_port == 0 {
-					listeningOn[s.Src_port] = true
+					listeningOn[s.Src_port] = now
 					servers <- ServerConnection{
 						localIp:   formatIp(s.Src_ip),
 						localPort: s.Src_port,
@@ -86,8 +87,8 @@ func filterAndPublish(exposeCmdline, exposeEnviron bool, socketInfo <-chan *proc
 					}
 				} else {
 					dedupId := outgoingConnectionDedup{s.Dst_ip, s.Dst_port}
-					if !outgoingConnectionSeen[dedupId] {
-						outgoingConnectionSeen[dedupId] = true
+					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
+						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
 							localIp:    formatIp(s.Src_ip),
 							localPort:  s.Src_port,
@@ -102,14 +103,14 @@ func filterAndPublish(exposeCmdline, exposeEnviron bool, socketInfo <-chan *proc
 	}
 }
 
-func Listen(exposeCmdline, exposeEnviron bool) (chan Connection, chan ServerConnection) {
+func Listen(exposeCmdline, exposeEnviron bool, aggregation time.Duration) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *procs.SocketInfo, 20)
 
 	go getSocketInfo(socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-	go filterAndPublish(exposeCmdline, exposeEnviron, socketInfo, connections, servers)
+	go filterAndPublish(exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
 
 	return connections, servers
 }
