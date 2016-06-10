@@ -1,6 +1,6 @@
 beat:
   build: ${PWD}/.
-  environment: 
+  environment:
    - TEST_ENVIRONMENT=false
   working_dir: /go/src/github.com/raboof/connbeat
   volumes:
