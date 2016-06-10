@@ -1,5 +1,9 @@
 language: go
 
+env:
+  # To statically link
+  - CGO_ENABLED=0
+
 script: make test
 
 install: go get -t ./...
