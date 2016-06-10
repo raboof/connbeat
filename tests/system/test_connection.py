@@ -18,3 +18,9 @@ class ConnectionTest(connbeat.BaseTest):
 
         output = self.read_output_json()
         evt = output[0]
+
+        self.assertEqual(evt['local_port'], 80)
+
+        evt = output[1]
+        self.assertEqual(evt['local_port'], 631)
+        self.assertItemsEqual(evt['beat']['local_ips'], ['127.0.0.1'])
