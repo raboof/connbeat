@@ -1,5 +1,7 @@
 # Connectionbeat
 
+[![Build Status](https://travis-ci.org/raboof/connbeat.svg?branch=master)](https://travis-ci.org/raboof/connbeat)
+
 Connectionbeat is an open source agent that monitors connection metadata and
 ships the data to Kafka or Elasticsearch.
 
@@ -10,7 +12,7 @@ package/connection contents, only metadata.
 
 ## Status
 
-This is currently a PoC sketch, not in fact functional (and certainly not performant or beautiful).
+This is a proof-of-concept sketch. While functional, it is not currently performant or beautiful.
 
 ## Building
 
@@ -84,3 +86,9 @@ For connections where the agent appears to be the client:
       "remote_port": 443,
       "type": "connbeat"
     }
+
+## Testing
+
+To run the regular go unit test, run 'make test'.
+
+To also run docker-based system tests, run 'make testsuite'
