@@ -22,6 +22,12 @@ env:
   global:
     - DOCKER_COMPOSE_VERSION: 1.7.0
 
+matrix:
+  exclude:
+    - env: TARGETS="testsuite"
+      os: osx
+
+
 before_install:
   # Update to most recent docker version
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -38,7 +44,3 @@ before_install:
 install: go get -t ./...
 
 script: make $TARGETS
-
-go:
-  - 1.5.1
-  - tip
