@@ -3,6 +3,10 @@ dist: trusty
 services:
   - docker
 
+os:
+  - linux
+  - osx
+
 language: go
 
 addons:
