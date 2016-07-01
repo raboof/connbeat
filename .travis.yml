@@ -2,7 +2,9 @@ language: go
 
 script: make test
 
-install: go get -t ./...
+install:
+  - go get -t ./...
+  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
 
 go:
   - 1.5.1
