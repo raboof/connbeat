@@ -11,3 +11,6 @@ include ../../elastic/beats/libbeat/scripts/Makefile
 .PHONY: before-build
 before-build:
 
+.PHONY: build
+build:
+	go build -ldflags "-linkmode external -extldflags -static"

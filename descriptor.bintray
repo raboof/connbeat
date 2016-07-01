@@ -1,14 +1,20 @@
 {
   "package": {
-    "name": "connbeat"
+    "name": "connbeat",
+    "repo": "generic",
+    "subject": "raboofje"
   },
   "version": {
-    "name": "SNAPSHOT"
+    "name": "SNAPSHOT",
+    "gpgSign": false
   },
   "files": [
     { 
       "includePattern": "connbeat",
-      "uploadPattern": "$1"
+      "uploadPattern": "connbeat",
+      "matrixParams": {
+        "override": 1
+      }
     } 
   ],
   "publish": true
