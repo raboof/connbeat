@@ -1,9 +1,16 @@
 language: go
-
 script: make test
 
-install: go get -t ./...
+install:
+- go get -t ./...
+
+deploy:
+  provider: bintray
+  file: descriptor.bintray
+  user: raboofje
+  key:
+    secure: tfIfS/tL4zC1KcOW8CA3BJoETX1FsGUAlO+Wtt3jD9qBcilMdWZV9K+H6r638lNcl1xJu+pZyu6HTjDtenAle6V0Tp1/EXGw4Zamubyb1OlCVyov3dpLa9VpHNuXXgsek7F6YeimEqfAmUh3Yd9G/HOIj+iAAzbX5NAKbUVRZGWtuKpA+ylGK1g5oq4xdF0Hck9KIiD7E4rniwf7Lh9lVmOmeUUMvO+GRoq+kV1GK9V5ZcyjJLjuQoUeqSl1VPUbzJDmA5NTZD0PjIPaAUxtrXKeqcKxh3xW2WigDqi1aG+TevNvAon5vsDiLjN25PA+9fhOo6KWjZPSeVtTmk4D4TOAIKQF2dv78JBn3PawCMfVi9RTHdpoMKV/2T172q3nSTXWsk0zIrJC5ufiaaORCEefWpK7IYp+JD+W99Z4R5nBEAUNQ+/z7/v6PFoqpuetDuA1kRK793ZIZ7VN6GhAGqv5U7bsn1Z17pnCmyZq4nYME/aFveC5Oe9mF6NF8tRgN2GDoVAB7S32e0n/qFQd/5qyz1KGWoOrNnID+mh6uDNISAmhBcO1Om5D2jyZpIaYIdDYEdW4068bpAm2Se7cNcp7T9Mnej/SRDQPfhh6RKChnfimrrnDoHsMKvHmrFOCpD3VJQ/EVCSv1pkqyehjDgzQ3PL0tLLJblQ6lLAyLNo=
 
 go:
-  - 1.5.1
-  - tip
+- 1.5.1
+- tip

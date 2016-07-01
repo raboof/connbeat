@@ -1,0 +1,15 @@
+{
+  "package": {
+    "name": "connbeat"
+  },
+  "version": {
+    "name": "SNAPSHOT"
+  },
+  "files": [
+    { 
+      "includePattern": "connbeat",
+      "uploadPattern": "$1"
+    } 
+  ],
+  "publish": true
+}
