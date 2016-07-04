@@ -1,13 +1,17 @@
 language: go
 script: make test && make
+
 install:
-- go get -t ./...
+  - go get -t ./...
+  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
+
 deploy:
   provider: bintray
   file: descriptor.bintray
   user: raboofje
   key:
     secure: UGUblnbWWS1gvnoY/HhFmOG9rqoE7eb9EiHeTC8dQHoQlfdEDrGOiCWwgzxZHKNEuNLyE1PDZ+YY7xfSdmMt9Vt6/lJDSYIQUkeX9x8uDUx9/UtWt9omChZSW7c/Z5b+cpY9QQEKTJvbg6g4ScEWPeAeCrPXN+m8OgqPB3vDDWebPqq9YJOfFxLVEnF97dduTK+CP7Xo0/4yAvZdLD+BCkHWLnLS/Qr1ka2IgB2p8y6lz7PdjFE5spBTeYv51jzwF3FtOZC7RgfXNbZpRwG+5KL3JpsaKi7odMBUpGDGoPeAQnCVEjGjyvlcXdhxvxmgWnNvVqoxZZ9XcohsI0Lag66VAK4ZmkYgrh7pKx4CEqMpPCbJAoMF/ycMjdNFf0Dp6UtAJJASCZmqb5G922apkrVgCtDo9+3pIcbFzItkOyODajCrThJ0uDwSvu6pHPeWICgexI9ONFB3mqE6WkKpV9c6YY3dgnOy33E8z7xpVRXnS0NE/f9XWtem+m6EYyjzGQa5ZVK+zsBnW1my1gS/yT2ETliVE55Rp0DsSyU/ra6xJnxHoJ110AxysbkOfFRwO7+9A62QRs/P+sXER/vXcq+bkLYoOkaOegyhkYtVQmTubv6b+0y8ZemoCVs6yNWFIKNX0mzRW5u7vN/kkKEhaKgtfJXxOw73OrST387sLzc=
+
 go:
 - 1.5.1
 - tip
