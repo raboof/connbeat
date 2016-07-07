@@ -6,7 +6,7 @@ connbeat:
 output:
   http:
     hosts: ["pi.bzzt.net:80/foo"]
-    
+
   #kafka:
   #  hosts: ["localhost:9092"]
   #  topic: connbeat

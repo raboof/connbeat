@@ -111,7 +111,10 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			localIps.Add(c.localIp)
 			err = cb.exportConnection(c, localIps)
 		case s := <-serverConnectionListener:
-			if s.localIp != "0.0.0.0" {
+			if s.localIp != "0.0.0.0" &&
+				s.localIp != "127.0.0.1" &&
+				s.localIp != "::" &&
+				s.localIp != "::1" {
 				localIps.Add(s.localIp)
 			}
 			err = cb.exportServerConnection(s, localIps)

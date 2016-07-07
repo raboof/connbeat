@@ -3,7 +3,7 @@ script: make test && make
 
 install:
   - go get -t ./...
-  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
+  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats stackstate
 
 deploy:
   provider: bintray
