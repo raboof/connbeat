@@ -41,6 +41,7 @@ func (cb *Connbeat) Config(b *beat.Beat) error {
 
 	logp.Debug("connbeat", "Expose cmdline: %v", cb.ConnConfig.Connbeat.ExposeCmdline)
 	logp.Debug("connbeat", "Expose environ: %v", cb.ConnConfig.Connbeat.ExposeEnviron)
+	logp.Debug("connbeat", "Connection aggregation: %v", cb.ConnConfig.Connbeat.ConnectionAggregation)
 
 	return nil
 }
@@ -125,7 +126,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener := Listen(cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron)
+	connectionListener, serverConnectionListener := Listen(cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron, cb.ConnConfig.Connbeat.ConnectionAggregation)
 
 	return cb.Pipe(connectionListener, serverConnectionListener)
 }
