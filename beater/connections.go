@@ -42,14 +42,12 @@ func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) error {
 }
 
 func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *procs.SocketInfo) error {
-	// TODO bubble up errors
 	file, err := os.Open(filename)
 	if err != nil {
 		logp.Err("Open: %s", err)
 		return err
 	}
 	defer file.Close()
-	// TODO error handling
 	socks, err := procs.Parse_Proc_Net_Tcp(file, ipv6)
 	if err != nil {
 		return err
