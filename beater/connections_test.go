@@ -15,7 +15,7 @@ func randByte() byte {
 }
 
 func randIp() net.IP {
-	if rand.Int() % 2 == 0 {
+	if rand.Int()%2 == 0 {
 		return net.IPv4(randByte(), randByte(), randByte(), randByte())
 	} else {
 		ip := make(net.IP, net.IPv6len)
@@ -135,7 +135,7 @@ func TestRepublishOldClientConnections(t *testing.T) {
 
 	go filterAndPublish(false, false, 0*time.Second, input, connections, servers)
 
-  remoteIp := randIp()
+	remoteIp := randIp()
 	input <- outgoingConnection(remoteIp, 80)
 	_, ok := <-connections
 	assert.Equal(t, ok, true, "a client connection should be reported")
