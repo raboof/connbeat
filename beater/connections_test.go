@@ -27,15 +27,36 @@ func randIp() net.IP {
 }
 
 func listeningConnection(port uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{randIp(), randIp(), port, 0, uint16(rand.Int()), rand.Int63()}
+	return &procs.SocketInfo{
+		Src_ip:   randIp(),
+		Dst_ip:   randIp(),
+		Src_port: port,
+		Dst_port: 0,
+		Uid:      uint16(rand.Int()),
+		Inode:    rand.Int63(),
+	}
 }
 
 func incomingConnection(localPort uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{randIp(), randIp(), localPort, uint16(rand.Int()), uint16(rand.Int()), rand.Int63()}
+	return &procs.SocketInfo{
+		Src_ip:   randIp(),
+		Dst_ip:   randIp(),
+		Src_port: localPort,
+		Dst_port: uint16(rand.Int()),
+		Uid:      uint16(rand.Int()),
+		Inode:    rand.Int63(),
+	}
 }
 
 func outgoingConnection(remoteIp net.IP, remotePort uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{randIp(), remoteIp, uint16(rand.Int()), remotePort, uint16(rand.Int()), rand.Int63()}
+	return &procs.SocketInfo{
+		Src_ip:   randIp(),
+		Dst_ip:   remoteIp,
+		Src_port: uint16(rand.Int()),
+		Dst_port: remotePort,
+		Uid:      uint16(rand.Int()),
+		Inode:    rand.Int63(),
+	}
 }
 
 func TestDeduplicateListeningSockets(t *testing.T) {
