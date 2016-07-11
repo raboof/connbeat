@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Update to most recent docker version
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
