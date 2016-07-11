@@ -1,2 +1,6 @@
+build
 connbeat
+connbeat.test
 logs
+
+*.pyc

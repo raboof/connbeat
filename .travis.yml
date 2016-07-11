@@ -1,5 +1,38 @@
+sudo: required
+dist: trusty
+services:
+  - docker
+
 language: go
-script: make test && make
+
+addons:
+  apt:
+    packages:
+      - python-virtualenv
+
+env:
+  matrix:
+    - TARGETS="test"
+    - TARGETS="check"
+    - TARGETS="testsuite"
+    - TARGETS="crosscompile"
+  global:
+    - DOCKER_COMPOSE_VERSION: 1.7.0
+
+before_install:
+  - if [[ "$TARGETS" == "testsuite" ]]; then
+      # Update to most recent docker version
+      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        sudo apt-get update;
+        sudo apt-cache search docker;
+        sudo apt-get -o Dpkg::Options::="--force-confnew" install -y docker-engine;
+      fi
+      # Docker-compose installation
+      sudo rm /usr/local/bin/docker-compose || true
+      curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+      chmod +x docker-compose
+      sudo mv docker-compose /usr/local/bin
+    fi
 
 install:
   - go get -t ./...
@@ -11,6 +44,8 @@ deploy:
   user: raboofje
   key:
     secure: UGUblnbWWS1gvnoY/HhFmOG9rqoE7eb9EiHeTC8dQHoQlfdEDrGOiCWwgzxZHKNEuNLyE1PDZ+YY7xfSdmMt9Vt6/lJDSYIQUkeX9x8uDUx9/UtWt9omChZSW7c/Z5b+cpY9QQEKTJvbg6g4ScEWPeAeCrPXN+m8OgqPB3vDDWebPqq9YJOfFxLVEnF97dduTK+CP7Xo0/4yAvZdLD+BCkHWLnLS/Qr1ka2IgB2p8y6lz7PdjFE5spBTeYv51jzwF3FtOZC7RgfXNbZpRwG+5KL3JpsaKi7odMBUpGDGoPeAQnCVEjGjyvlcXdhxvxmgWnNvVqoxZZ9XcohsI0Lag66VAK4ZmkYgrh7pKx4CEqMpPCbJAoMF/ycMjdNFf0Dp6UtAJJASCZmqb5G922apkrVgCtDo9+3pIcbFzItkOyODajCrThJ0uDwSvu6pHPeWICgexI9ONFB3mqE6WkKpV9c6YY3dgnOy33E8z7xpVRXnS0NE/f9XWtem+m6EYyjzGQa5ZVK+zsBnW1my1gS/yT2ETliVE55Rp0DsSyU/ra6xJnxHoJ110AxysbkOfFRwO7+9A62QRs/P+sXER/vXcq+bkLYoOkaOegyhkYtVQmTubv6b+0y8ZemoCVs6yNWFIKNX0mzRW5u7vN/kkKEhaKgtfJXxOw73OrST387sLzc=
+
+script: make $TARGETS
 
 go:
 - 1.5.1
