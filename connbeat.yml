@@ -1,7 +1,10 @@
 connbeat:
+  expose_process_info: true
   expose_cmdline: true
   expose_environ: false
   aggregation: 10s
+  poll_interval: 2s
+  enable_tcp_diag: false
 
 output:
   http:
@@ -17,5 +20,5 @@ output:
     #  name: "connbeat"
     #  path: "connbeat.template.json"
 
-  #console:
-    #pretty: true
+  console:
+    pretty: true

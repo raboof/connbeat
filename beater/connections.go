@@ -8,6 +8,7 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/raboof/connbeat/processes"
+	"github.com/raboof/connbeat/tcp_diag"
 )
 
 type ServerConnection struct {
@@ -55,11 +56,28 @@ func formatIp(ip uint32) string {
 	return fmt.Sprintf("%d.%d.%d.%d", byte(ip), byte(ip>>8), byte(ip>>16), byte(ip>>24))
 }
 
-func getSocketInfo(socketInfo chan<- *procs.SocketInfo) {
-	for true {
-		// For now we poll periodically, eventually we want to also be triggered on-demand
-		time.Sleep(2 * time.Second)
+func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+	for {
+		// For now we poll periodically
 		pollCurrentConnections(socketInfo)
+		time.Sleep(pollInterval)
+	}
+}
+
+func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+	err := tcp_diag.GetSocketInfo(pollInterval, socketInfo)
+
+	if err != nil {
+		logp.Info("tcp_diag failed, falling back to /proc/net/tcp")
+		getSocketInfoFromProc(pollInterval, socketInfo)
+	}
+}
+
+func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+	if enableTcpDiag {
+		getSocketInfoFromTcpDiag(pollInterval, socketInfo)
+	} else {
+		getSocketInfoFromProc(pollInterval, socketInfo)
 	}
 }
 
@@ -68,7 +86,23 @@ type outgoingConnectionDedup struct {
 	remotePort uint16
 }
 
-func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+func process(ps *processes.Processes, exposeProcessInfo bool, inode int64) *processes.UnixProcess {
+	if exposeProcessInfo {
+		proc := ps.FindProcessByInode(inode)
+		if proc != nil {
+			return proc
+		}
+		return &processes.UnixProcess{
+			Binary: fmt.Sprintf("Unknown process with inode %d", inode),
+		}
+	} else {
+		return &processes.UnixProcess{
+			Binary: fmt.Sprintf("Process with inode %d", inode),
+		}
+	}
+}
+
+func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]time.Time)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New(exposeCmdline, exposeEnviron)
@@ -83,7 +117,7 @@ func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Durati
 					servers <- ServerConnection{
 						localIp:   formatIp(s.Src_ip),
 						localPort: s.Src_port,
-						process:   ps.FindProcessByInode(s.Inode),
+						process:   process(ps, exposeProcessInfo, s.Inode),
 					}
 				} else {
 					dedupId := outgoingConnectionDedup{s.Dst_ip, s.Dst_port}
@@ -94,7 +128,7 @@ func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Durati
 							localPort:  s.Src_port,
 							remoteIp:   formatIp(s.Dst_ip),
 							remotePort: s.Dst_port,
-							process:    ps.FindProcessByInode(s.Inode),
+							process:    process(ps, exposeProcessInfo, s.Inode),
 						}
 					}
 				}
@@ -103,14 +137,14 @@ func filterAndPublish(exposeCmdline, exposeEnviron bool, aggregation time.Durati
 	}
 }
 
-func Listen(exposeCmdline, exposeEnviron bool, aggregation time.Duration) (chan Connection, chan ServerConnection) {
+func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *procs.SocketInfo, 20)
 
-	go getSocketInfo(socketInfo)
+	go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
-	go filterAndPublish(exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
+	go filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
 
 	return connections, servers
 }

@@ -175,13 +175,7 @@ func (ps *Processes) FindProcessByInode(inode int64) *UnixProcess {
 		// Refesh and try again
 		ps.Refresh()
 
-		proc = ps.byInode[inode]
-		if proc == nil {
-			return &UnixProcess{
-				Binary: fmt.Sprintf("Unknown process with inode %d", inode),
-			}
-		}
-		return proc
+		return ps.byInode[inode]
 	}
 	return proc
 }
