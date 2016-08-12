@@ -57,6 +57,4 @@ func GetSocketInfo(pollInterval time.Duration, socketInfo chan<- *procs.SocketIn
 		}
 		time.Sleep(pollInterval)
 	}
-
-	return nil
 }
