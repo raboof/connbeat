@@ -12,13 +12,17 @@ package/connection contents, only metadata.
 
 ## Status
 
-This is a proof-of-concept sketch. While functional, it is not currently performant or beautiful.
+This is a proof-of-concept. While functional, battle-testing and performance tuning is still in progress.
 
 ## Building
 
-    // Make sure $GOPATH is set
+    # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
+    go get -t ./...
+    # While we work on upstreaming our improvements,
+    # connbeat currently depends on a fork of the beats framework:
+    ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
     make
 
 ## Running
