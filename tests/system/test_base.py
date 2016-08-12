@@ -23,5 +23,6 @@ class Test(BaseTest):
         self.assertRegexpMatches(log, re.compile("(?i).*".join([
             "Setup Beat: connbeat",
             "connbeat start running",
-            "connbeat cleanup"
+            "Received sigterm/sigint, stopping",
+            "connbeat stopped"
         ]), re.DOTALL))
