@@ -26,7 +26,7 @@ func (tc TestClient) PublishEvent(event common.MapStr, opts ...publisher.ClientO
 }
 
 func TestLocalIps(t *testing.T) {
-	beater := New()
+	beater := &Connbeat{}
 
 	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
 

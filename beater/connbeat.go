@@ -21,32 +21,29 @@ type Connbeat struct {
 	done chan struct{}
 }
 
-func New() *Connbeat {
-	return &Connbeat{}
-}
-
-func (cb *Connbeat) Config(b *beat.Beat) error {
-	rawConnbeatConfig, err := b.RawConfig.Child("connbeat", -1)
+func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
+	rawConnbeatConfig := rawConfig
+  cb := &Connbeat{}
+	err := cb.init(b)
 	if err != nil {
-		logp.Err("Error reading configuration file: %v", err)
-		return err
+		return nil, err
 	}
 
 	cb.ConnConfig.Connbeat = defaultConfig
 	err = rawConnbeatConfig.Unpack(&cb.ConnConfig.Connbeat)
 	if err != nil {
 		logp.Err("Error reading configuration file: %v", err)
-		return err
+		return nil, err
 	}
 
 	logp.Debug("connbeat", "Expose cmdline: %v", cb.ConnConfig.Connbeat.ExposeCmdline)
 	logp.Debug("connbeat", "Expose environ: %v", cb.ConnConfig.Connbeat.ExposeEnviron)
 	logp.Debug("connbeat", "Connection aggregation: %v", cb.ConnConfig.Connbeat.ConnectionAggregation)
 
-	return nil
+	return cb, nil
 }
 
-func (cb *Connbeat) Setup(b *beat.Beat) error {
+func (cb *Connbeat) init(b *beat.Beat) error {
 	cb.events = b.Publisher.Connect()
 	cb.done = make(chan struct{})
 	return nil
