@@ -23,7 +23,7 @@ type Connbeat struct {
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 	rawConnbeatConfig := rawConfig
-  cb := &Connbeat{}
+	cb := &Connbeat{}
 	err := cb.init(b)
 	if err != nil {
 		return nil, err
