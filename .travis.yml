@@ -9,6 +9,7 @@ addons:
   apt:
     packages:
       - python-virtualenv
+      - libmnl-dev
 
 env:
   matrix:
