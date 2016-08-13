@@ -36,5 +36,4 @@ deploy:
 script: make $TARGETS
 
 go:
-- 1.5.1
-- tip
+- 1.7
