@@ -3,8 +3,8 @@
 package tcp_diag
 
 import (
-	"time"
 	"errors"
+	"time"
 
 	"github.com/elastic/beats/packetbeat/procs"
 )
