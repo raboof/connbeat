@@ -23,6 +23,7 @@ before_install: if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
 
 install:
   - go get -t ./...
+  - go get -t ../beats-output-http/...
 # We can be on master again:
 #  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
 
