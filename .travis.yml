@@ -36,4 +36,4 @@ deploy:
 script: make $TARGETS
 
 go:
-- 1.7beta2
+- 1.7rc2
