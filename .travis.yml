@@ -23,7 +23,8 @@ before_install: if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
 
 install:
   - go get -t ./...
-  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
+# We can be on master again:
+#  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
 
 deploy:
   provider: bintray
