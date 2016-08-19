@@ -23,8 +23,9 @@ before_install: if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
 
 install:
   - go get -d github.com/elastic/beats/libbeat
-  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats stackstate
+  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats packetbeat-ipv6
   - go get -t ./...
+  - go get -t ../beats-output-http/...
 
 deploy:
   provider: bintray
