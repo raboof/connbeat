@@ -36,9 +36,12 @@ func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 		return nil, err
 	}
 
+	logp.Debug("connbeat", "Expose process information: %v", cb.ConnConfig.Connbeat.ExposeProcessInfo)
 	logp.Debug("connbeat", "Expose cmdline: %v", cb.ConnConfig.Connbeat.ExposeCmdline)
 	logp.Debug("connbeat", "Expose environ: %v", cb.ConnConfig.Connbeat.ExposeEnviron)
 	logp.Debug("connbeat", "Connection aggregation: %v", cb.ConnConfig.Connbeat.ConnectionAggregation)
+	logp.Debug("connbeat", "Poll Interval %v", cb.ConnConfig.Connbeat.PollInterval)
+	logp.Debug("connbeat", "Enable tcp_diag %v", cb.ConnConfig.Connbeat.TcpDiagEnabled)
 
 	return cb, nil
 }
@@ -123,7 +126,9 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener := Listen(cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron, cb.ConnConfig.Connbeat.ConnectionAggregation)
+	connectionListener, serverConnectionListener := Listen(
+		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron, cb.ConnConfig.Connbeat.TcpDiagEnabled,
+		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation)
 
 	return cb.Pipe(connectionListener, serverConnectionListener)
 }
