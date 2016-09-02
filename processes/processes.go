@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/elastic/beats/packetbeat/procs"
 )
@@ -52,10 +51,6 @@ func (ps *Processes) Refresh() error {
 // fields and information.
 type UnixProcess struct {
 	pid    int
-	ppid   int
-	state  rune
-	pgrp   int
-	sid    int
 	inodes []int64
 
 	Binary  string
@@ -67,35 +62,9 @@ func (p *UnixProcess) Pid() int {
 	return p.pid
 }
 
-func (p *UnixProcess) PPid() int {
-	return p.ppid
-}
-
 // Refresh reloads all the data associated with this process.
 func (p *UnixProcess) Refresh(exposeCmdline, exposeEnviron bool) error {
 	prefix := ""
-	data, err := readFile(prefix, p.pid, "stat")
-	if err != nil {
-		return err
-	}
-
-	// First, parse out the image name
-	binStart := strings.IndexRune(data, '(') + 1
-	binEnd := strings.IndexRune(data[binStart:], ')')
-	p.Binary = data[binStart : binStart+binEnd]
-
-	// Move past the image name and start parsing the rest
-	data = data[binStart+binEnd+2:]
-	_, err = fmt.Sscanf(data,
-		"%c %d %d %d",
-		&p.state,
-		&p.ppid,
-		&p.pgrp,
-		&p.sid)
-
-	if err != nil {
-		return err
-	}
 
 	inodes, err := procs.FindSocketsOfPid(prefix, p.pid)
 	p.inodes = inodes
@@ -175,13 +144,7 @@ func (ps *Processes) FindProcessByInode(inode int64) *UnixProcess {
 		// Refesh and try again
 		ps.Refresh()
 
-		proc = ps.byInode[inode]
-		if proc == nil {
-			return &UnixProcess{
-				Binary: fmt.Sprintf("Unknown process with inode %d", inode),
-			}
-		}
-		return proc
+		return ps.byInode[inode]
 	}
 	return proc
 }
