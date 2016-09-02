@@ -33,33 +33,42 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) {
-	// TODO add support for IPv6
+func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) error {
 	// TODO add support for darwin
 	// TODO prefer tcp_diag where available
-	file, err := os.Open(getEnv("PROC_NET_TCP", "/proc/net/tcp"))
+	err := pollCurrentConnectionsFrom(getEnv("PROC_NET_TCP", "/proc/net/tcp"), false, socketInfo)
+	if err != nil {
+		return err
+	}
+	return pollCurrentConnectionsFrom(getEnv("PROC_NET_TCP6", "/proc/net/tcp6"), true, socketInfo)
+}
+
+func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *procs.SocketInfo) error {
+	file, err := os.Open(filename)
 	if err != nil {
 		logp.Err("Open: %s", err)
-		return
+		return err
 	}
 	defer file.Close()
-	// TODO error handling
-	socks, _ := procs.Parse_Proc_Net_Tcp(file)
+	socks, err := procs.Parse_Proc_Net_Tcp(file, ipv6)
+	if err != nil {
+		return err
+	}
 	for _, s := range socks {
 		if s.Inode != 0 {
 			socketInfo <- s
 		}
 	}
-}
-
-func formatIp(ip uint32) string {
-	return fmt.Sprintf("%d.%d.%d.%d", byte(ip), byte(ip>>8), byte(ip>>16), byte(ip>>24))
+	return nil
 }
 
 func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
 	for {
 		// For now we poll periodically
-		pollCurrentConnections(socketInfo)
+		err := pollCurrentConnections(socketInfo)
+		if err != nil {
+			logp.Err("Polling connections: %s", err)
+		}
 		time.Sleep(pollInterval)
 	}
 }
@@ -82,7 +91,7 @@ func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo ch
 }
 
 type outgoingConnectionDedup struct {
-	remoteIp   uint32
+	remoteIp   string
 	remotePort uint16
 }
 
@@ -115,18 +124,19 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 				if s.Dst_port == 0 {
 					listeningOn[s.Src_port] = now
 					servers <- ServerConnection{
-						localIp:   formatIp(s.Src_ip),
+						localIp:   s.Src_ip.String(),
 						localPort: s.Src_port,
 						process:   process(ps, exposeProcessInfo, s.Inode),
 					}
 				} else {
-					dedupId := outgoingConnectionDedup{s.Dst_ip, s.Dst_port}
+					dstIp := s.Dst_ip.String()
+					dedupId := outgoingConnectionDedup{dstIp, s.Dst_port}
 					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
-							localIp:    formatIp(s.Src_ip),
+							localIp:    s.Src_ip.String(),
 							localPort:  s.Src_port,
-							remoteIp:   formatIp(s.Dst_ip),
+							remoteIp:   dstIp,
 							remotePort: s.Dst_port,
 							process:    process(ps, exposeProcessInfo, s.Inode),
 						}

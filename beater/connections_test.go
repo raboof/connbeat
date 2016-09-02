@@ -1,18 +1,35 @@
 package beater
 
 import (
-	"github.com/stvp/assert"
 	"math/rand"
+	"net"
 	"testing"
 	"time"
 
 	"github.com/elastic/beats/packetbeat/procs"
+	"github.com/stvp/assert"
 )
+
+func randByte() byte {
+	return byte(rand.Intn(256))
+}
+
+func randIp() net.IP {
+	if rand.Int()%2 == 0 {
+		return net.IPv4(randByte(), randByte(), randByte(), randByte())
+	} else {
+		ip := make(net.IP, net.IPv6len)
+		for i := 0; i < 16; i++ {
+			ip[i] = randByte()
+		}
+		return ip
+	}
+}
 
 func listeningConnection(port uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   rand.Uint32(),
-		Dst_ip:   rand.Uint32(),
+		Src_ip:   randIp(),
+		Dst_ip:   randIp(),
 		Src_port: port,
 		Dst_port: 0,
 		Uid:      uint16(rand.Int()),
@@ -22,8 +39,8 @@ func listeningConnection(port uint16) *procs.SocketInfo {
 
 func incomingConnection(localPort uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   rand.Uint32(),
-		Dst_ip:   rand.Uint32(),
+		Src_ip:   randIp(),
+		Dst_ip:   randIp(),
 		Src_port: localPort,
 		Dst_port: uint16(rand.Int()),
 		Uid:      uint16(rand.Int()),
@@ -31,9 +48,9 @@ func incomingConnection(localPort uint16) *procs.SocketInfo {
 	}
 }
 
-func outgoingConnection(remoteIp uint32, remotePort uint16) *procs.SocketInfo {
+func outgoingConnection(remoteIp net.IP, remotePort uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   rand.Uint32(),
+		Src_ip:   randIp(),
 		Dst_ip:   remoteIp,
 		Src_port: uint16(rand.Int()),
 		Dst_port: remotePort,
@@ -94,10 +111,11 @@ func TestDedupClientConnections(t *testing.T) {
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
-	input <- outgoingConnection(6543142, 80)
+	remoteIp := randIp()
+	input <- outgoingConnection(remoteIp, 80)
 	_, ok := <-connections
 	assert.Equal(t, ok, true, "a client connection should be reported")
-	input <- outgoingConnection(6543142, 80)
+	input <- outgoingConnection(remoteIp, 80)
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -117,10 +135,11 @@ func TestRepublishOldClientConnections(t *testing.T) {
 
 	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
 
-	input <- outgoingConnection(6543142, 80)
+	remoteIp := randIp()
+	input <- outgoingConnection(remoteIp, 80)
 	_, ok := <-connections
 	assert.Equal(t, ok, true, "a client connection should be reported")
-	input <- outgoingConnection(6543142, 80)
+	input <- outgoingConnection(remoteIp, 80)
 	_, ok = <-connections
 	assert.Equal(t, ok, true, "another client connection should be reported")
 }
