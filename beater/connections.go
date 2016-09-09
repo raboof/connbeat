@@ -2,7 +2,13 @@ package beater
 
 import (
 	"fmt"
+	"bytes"
+	"errors"
 	"os"
+	"os/exec"
+	"strings"
+	"strconv"
+	"net"
 	"time"
 
 	"github.com/elastic/beats/libbeat/logp"
@@ -43,6 +49,23 @@ func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) error {
 	return pollCurrentConnectionsFrom(getEnv("PROC_NET_TCP6", "/proc/net/tcp6"), true, socketInfo)
 }
 
+func parse_ip_port(str string) (net.IP, uint16, error) {
+	words := strings.Split(str, ":")
+	if len(words) < 2 {
+		return nil, 0, errors.New("Didn't find ':' as a separator")
+	}
+
+	ip := net.ParseIP(words[0])
+
+	port, err := strconv.ParseInt(words[1], 10, 32)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return ip, uint16(port), nil
+}
+
 func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *procs.SocketInfo) error {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -60,6 +83,54 @@ func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *p
 		}
 	}
 	return nil
+}
+
+func getSocketInfoFromNetstat(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+	//attr := os.ProcAttr{}
+	//attr.Sys.HideWindow = true
+	for {
+		// For now we poll periodically
+		cmd := exec.Command("netstat", "-ano", "-p", "TCP")
+    stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			logp.Err("opening stdout: %s", err)
+		}
+		err = cmd.Start()
+		if err != nil {
+			logp.Err("starting netstat: %s", err)
+		}
+		buf := new(bytes.Buffer)
+		// TODO eventually we'd want to stream this, for now just get the whole thing:
+		buf.ReadFrom(stdout)
+		lines := strings.Split(buf.String(), "\n")[4:]
+		for _, l := range lines {
+		  words := strings.Fields(l)
+			if len(words) == 5 {
+				var sock procs.SocketInfo
+				var err_ error
+				sock.Src_ip, sock.Src_port, err_ = parse_ip_port(words[1])
+				if err_ != nil {
+					logp.Debug("connections", "Error parsing src IP and port: %s", err_)
+					continue
+				}
+				sock.Dst_ip, sock.Dst_port, err_ = parse_ip_port(words[2])
+				if err_ != nil {
+					logp.Debug("connections", "Error parsing dst IP and port: %s", err_)
+					continue
+				}
+				pid, err_ := strconv.Atoi(words[4])
+				if err != nil {
+					logp.Debug("connections", "Error parsing pid: %s", err_)
+					continue
+				}
+				// TODO For now we abuse the Uid+Inode fields to store the Pid...
+				sock.Inode = int64(pid)
+				sock.Uid = 65535
+				socketInfo <- &sock
+			}
+		}
+		time.Sleep(pollInterval)
+	}
 }
 
 func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
@@ -83,11 +154,12 @@ func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *pro
 }
 
 func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
-	if enableTcpDiag {
-		getSocketInfoFromTcpDiag(pollInterval, socketInfo)
-	} else {
-		getSocketInfoFromProc(pollInterval, socketInfo)
-	}
+	getSocketInfoFromNetstat(pollInterval, socketInfo)
+	// if enableTcpDiag {
+	// 	getSocketInfoFromTcpDiag(pollInterval, socketInfo)
+	// } else {
+	// 	getSocketInfoFromProc(pollInterval, socketInfo)
+	// }
 }
 
 type outgoingConnectionDedup struct {
@@ -95,14 +167,32 @@ type outgoingConnectionDedup struct {
 	remotePort uint16
 }
 
-func process(ps *processes.Processes, exposeProcessInfo bool, inode int64) *processes.UnixProcess {
+func processByPid(ps *processes.Processes, pid int64) *processes.UnixProcess {
+	proc := ps.FindProcessByPid(pid)
+	if proc != nil {
+		return proc
+	}
+	return &processes.UnixProcess{
+		Binary: fmt.Sprintf("Unknown process with pid %d", pid),
+	}
+}
+
+func processByInode(ps *processes.Processes, inode int64) *processes.UnixProcess {
+	proc := ps.FindProcessByInode(inode)
+	if proc != nil {
+		return proc
+	}
+	return &processes.UnixProcess{
+		Binary: fmt.Sprintf("Unknown process with inode %d", inode),
+	}
+}
+
+func process(ps *processes.Processes, exposeProcessInfo bool, uid uint16, inode int64) *processes.UnixProcess {
 	if exposeProcessInfo {
-		proc := ps.FindProcessByInode(inode)
-		if proc != nil {
-			return proc
-		}
-		return &processes.UnixProcess{
-			Binary: fmt.Sprintf("Unknown process with inode %d", inode),
+		if uid == 65535 {
+			return processByPid(ps, inode)
+		} else {
+			return processByInode(ps, inode)
 		}
 	} else {
 		return &processes.UnixProcess{
@@ -126,7 +216,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 					servers <- ServerConnection{
 						localIp:   s.Src_ip.String(),
 						localPort: s.Src_port,
-						process:   process(ps, exposeProcessInfo, s.Inode),
+						process:   process(ps, exposeProcessInfo, s.Uid, s.Inode),
 					}
 				} else {
 					dstIp := s.Dst_ip.String()
@@ -138,7 +228,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 							localPort:  s.Src_port,
 							remoteIp:   dstIp,
 							remotePort: s.Dst_port,
-							process:    process(ps, exposeProcessInfo, s.Inode),
+							process:    process(ps, exposeProcessInfo, s.Uid, s.Inode),
 						}
 					}
 				}

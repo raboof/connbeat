@@ -3,10 +3,7 @@
 package tcp_diag
 
 import (
-	// #cgo LDFLAGS: -lmnl
-	// #include <libmnl/libmnl.h>
-	// int poll(int sockfd, const struct mnl_socket * sock);
-	"C"
+	//"C"
 
 	"encoding/binary"
 	"net"
@@ -36,33 +33,6 @@ func SocketInfoCallback(uid uint16, inode int64, src uint32, dst uint32, sport u
 	}
 }
 
-func pollCurrentConnections(fd C.int, sock *C.struct_mnl_socket) error {
-	_, err := C.poll(fd, sock)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func GetSocketInfo(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) error {
-	socketInfoChan = socketInfo
-
-	sock, err := C.mnl_socket_open(C.NETLINK_INET_DIAG)
-	if err != nil {
-		return err
-	}
-	fd, err := C.mnl_socket_get_fd(sock)
-	if err != nil {
-		return err
-	}
-
-	for {
-		err := pollCurrentConnections(fd, sock)
-		if err != nil {
-			C.mnl_socket_close(sock)
-			return err
-		}
-		time.Sleep(pollInterval)
-	}
+	return nil
 }
