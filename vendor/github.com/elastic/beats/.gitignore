@@ -1,0 +1,26 @@
+# Directories
+/.vagrant
+/.idea
+/build
+/*/data
+/*/logs
+
+# Files
+.DS_Store
+/glide.lock
+/beats.iml
+*.dev.yml
+
+# Editor swap files
+*.swp
+*.swo
+*.swn
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+*.exe
+*.test
+*.prof
+*.pyc
