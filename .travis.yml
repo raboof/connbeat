@@ -24,7 +24,7 @@ before_install: if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
 
 install:
   - go get -d github.com/elastic/beats/libbeat
-  - go get -t ./...
+  - go get -t $(glide novendor)
   - go get -t ../beats-output-http/...
 # We can be on master again:
 #  - ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats packetbeat-ipv6
