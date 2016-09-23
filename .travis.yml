@@ -10,6 +10,7 @@ addons:
     packages:
       - python-virtualenv
       - libmnl-dev
+      - glide
 
 env:
   matrix:
