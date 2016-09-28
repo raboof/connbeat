@@ -20,9 +20,6 @@ This is a proof-of-concept. While functional, battle-testing and performance tun
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
     go get -t ./...
-    # While we work on upstreaming our improvements,
-    # connbeat currently depends on a fork of the beats framework:
-    ./switchGoPath.sh github.com/elastic/beats github.com/raboof/beats httpOutput
     make
 
 ## Running
