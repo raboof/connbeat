@@ -19,7 +19,7 @@ This is a proof-of-concept. While functional, battle-testing and performance tun
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
-    go get -t ./...
+    go get -t $(glide novendor)
     make
 
 ## Running
