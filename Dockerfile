@@ -10,7 +10,8 @@ RUN set -x \
   go get \
 	github.com/pierrre/gotestcover \
 	github.com/tsg/goautotest \
-	golang.org/x/tools/cmd/vet
+	golang.org/x/tools/cmd/vet \
+ 	github.com/Masterminds/glide
 
 # Setup work environment
 ENV CONNBEAT_PATH /go/src/github.com/raboof/connbeat
