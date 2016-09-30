@@ -21,6 +21,11 @@ env:
     - DOCKER_COMPOSE_VERSION: 1.7.0
 
 before_install:
+  # Redo the travis setup but with the elastic/libbeat path. This is needed so the package path is correct
+  - mkdir -p $HOME/gopath/src/github.com/raboof/connbeat/
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/raboof/connbeat/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/raboof/connbeat/
+  - cd $HOME/gopath/src/github.com/raboof/connbeat/
   - if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover; fi
   - go get -v github.com/Masterminds/glide
 
