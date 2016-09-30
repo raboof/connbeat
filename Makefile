@@ -4,7 +4,7 @@ SYSTEM_TESTS=true
 TEST_ENVIRONMENT?=true
 ES_BEATS?=./vendor/github.com/elastic/beats
 GOPACKAGES=$(shell glide novendor)
-DOCKER_COMPOSE=docker-compose -f ../../elastic/beats/testing/environments/base.yml -f ../../elastic/beats/testing/environments/${TESTING_ENVIRONMENT}.yml -f docker-compose.yml
+DOCKER_COMPOSE=docker-compose -f vendor/github.com/elastic/beats/testing/environments/base.yml -f vendor/github.com/elastic/beats/testing/environments/${TESTING_ENVIRONMENT}.yml -f docker-compose.yml
 CGO=true
 PREFIX?=.
 
