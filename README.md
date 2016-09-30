@@ -95,3 +95,15 @@ For connections where the agent appears to be the client:
 To run the regular go unit test, run 'make test'.
 
 To also run docker-based system tests, run 'make testsuite'
+
+## Packaging
+
+Preliminary packaging is available, but the resulting packages are not yet
+intended for general consumption.
+
+You'll a version of tudorg/beats-builder that contains go 1.7. The version
+that's on dockerhub currently has an older version, so for now you'll have
+to build it yourself using vendor/github.com/elastic/beats/dev-tools/packer/docker/xgo-image/build.sh
+
+After that it should be a matter of 'make package' to get deb, rpm and
+a binary .tar.gz
