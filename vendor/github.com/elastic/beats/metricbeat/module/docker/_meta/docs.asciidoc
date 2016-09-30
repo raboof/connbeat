@@ -1,4 +1,0 @@
-== docker Module
-
-This is the docker Module.
-

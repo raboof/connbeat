@@ -1,3 +1,0 @@
-=== docker diskio MetricSet
-
-This is the diskio metricset of the module docker.

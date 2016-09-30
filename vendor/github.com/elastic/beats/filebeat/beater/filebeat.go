@@ -1,7 +1,6 @@
 package beater
 
 import (
-	"flag"
 	"fmt"
 	"sync"
 
@@ -16,12 +15,11 @@ import (
 	"github.com/elastic/beats/filebeat/spooler"
 )
 
-var once = flag.Bool("once", false, "Run filebeat only once until all harvesters reach EOF")
-
 // Filebeat is a beater object. Contains all objects needed to run the beat
 type Filebeat struct {
-	config *cfg.Config
-	done   chan struct{}
+	config  *cfg.Config
+	sigWait *signalWait
+	done    chan struct{}
 }
 
 // New creates a new Filebeat pointer instance.
@@ -35,8 +33,9 @@ func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 	}
 
 	fb := &Filebeat{
-		done:   make(chan struct{}),
-		config: &config,
+		done:    make(chan struct{}),
+		sigWait: newSignalWait(),
+		config:  &config,
 	}
 	return fb, nil
 }
@@ -46,12 +45,13 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 	var err error
 	config := fb.config
 
-	waitFinished := newSignalWait()
-	waitEvents := newSignalWait()
+	var wgEvents *sync.WaitGroup // count active events for waiting on shutdown
+	var finishedLogger publisher.SuccessLogger
 
-	// count active events for waiting on shutdown
-	wgEvents := &sync.WaitGroup{}
-	finishedLogger := newFinishedLogger(wgEvents)
+	if fb.config.ShutdownTimeout > 0 {
+		wgEvents = &sync.WaitGroup{}
+		finishedLogger = newFinishedLogger(wgEvents)
+	}
 
 	// Setup registrar to persist state
 	registrar, err := registrar.New(config.RegistryFile, finishedLogger)
@@ -60,14 +60,13 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 		return err
 	}
 
-	// Make sure all events that were published in
-	registrarChannel := newRegistrarLogger(registrar)
-
-	// Channel from spooler to harvester
+	// Channel from harvesters to spooler
+	successLogger := newRegistrarLogger(registrar)
 	publisherChan := newPublisherChannel()
 
 	// Publishes event to output
-	publisher := publisher.New(config.PublishAsync, publisherChan.ch, registrarChannel, b.Publisher)
+	publisher := publisher.New(config.PublishAsync,
+		publisherChan.ch, successLogger, b.Publisher)
 
 	// Init and Start spooler: Harvesters dump events into the spooler.
 	spooler, err := spooler.New(config, publisherChan)
@@ -76,7 +75,9 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 		return err
 	}
 
-	crawler, err := crawler.New(newSpoolerOutlet(fb.done, spooler, wgEvents), config.Prospectors)
+	crawler, err := crawler.New(
+		newSpoolerOutlet(fb.done, spooler, wgEvents),
+		config.Prospectors)
 	if err != nil {
 		logp.Err("Could not init crawler: %v", err)
 		return err
@@ -89,7 +90,7 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 	// Start the registrar
 	err = registrar.Start()
 	if err != nil {
-		return fmt.Errorf("Could not start registrar: %v", err)
+		logp.Err("Could not start registrar: %v", err)
 	}
 	// Stopping registrar will write last state
 	defer registrar.Stop()
@@ -97,45 +98,30 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 	// Start publisher
 	publisher.Start()
 	// Stopping publisher (might potentially drop items)
-	defer func() {
-		// Closes first the registrar logger to make sure not more events arrive at the registrar
-		// registrarChannel must be closed first to potentially unblock (pretty unlikely) the publisher
-		registrarChannel.Close()
-		publisher.Stop()
-	}()
+	defer publisher.Stop()
+	defer successLogger.Close()
 
 	// Starting spooler
 	spooler.Start()
 
 	// Stopping spooler will flush items
 	defer func() {
-		// Wait for all events to be processed or timeout
-		waitEvents.Wait()
+		// With harvesters being stopped, optionally wait for all enqueued events being
+		// published and written by registrar before continuing shutdown.
+		fb.sigWait.Wait()
 
-		// Closes publisher so no further events can be sent
+		// continue shutdown
 		publisherChan.Close()
-		// Stopping spooler
 		spooler.Stop()
 	}()
 
-	err = crawler.Start(registrar.GetStates(), *once)
+	err = crawler.Start(registrar.GetStates())
 	if err != nil {
 		return err
 	}
+	// Blocks progressing. As soon as channel is closed, all defer statements come into play
 
-	// If run once, add crawler completion check as alternative to done signal
-	if *once {
-		runOnce := func() {
-			logp.Info("Running filebeat once. Waiting for completion ...")
-			crawler.WaitForCompletion()
-			logp.Info("All data collection completed. Shutting down.")
-		}
-		waitFinished.Add(runOnce)
-	}
-
-	// Add done channel to wait for shutdown signal
-	waitFinished.AddChan(fb.done)
-	waitFinished.Wait()
+	<-fb.done
 
 	// Stop crawler -> stop prospectors -> stop harvesters
 	// Note: waiting for crawlers to stop here in order to install wgEvents.Wait
@@ -144,20 +130,14 @@ func (fb *Filebeat) Run(b *beat.Beat) error {
 	crawler.Stop()
 
 	timeout := fb.config.ShutdownTimeout
-	// Checks if on shutdown it should wait for all events to be published
-	waitPublished := fb.config.ShutdownTimeout > 0 || *once
-	if waitPublished {
-		// Wait for registrar to finish writing registry
-		waitEvents.Add(withLog(wgEvents.Wait,
-			"Continue shutdown: All enqueued events being published."))
+	if timeout > 0 {
+		logp.Info("Shutdown output timer started. Waiting for max %v.", timeout)
+
 		// Wait for either timeout or all events having been ACKed by outputs.
-		if fb.config.ShutdownTimeout > 0 {
-			logp.Info("Shutdown output timer started. Waiting for max %v.", timeout)
-			waitEvents.Add(withLog(waitDuration(timeout),
-				"Continue shutdown: Time out waiting for events being published."))
-		} else {
-			waitEvents.AddChan(fb.done)
-		}
+		fb.sigWait.Add(withLog(wgEvents.Wait,
+			"Continue shutdown: All enqueued events being published."))
+		fb.sigWait.Add(withLog(waitDuration(timeout),
+			"Continue shutdown: Time out waiting for events being published."))
 	}
 
 	return nil

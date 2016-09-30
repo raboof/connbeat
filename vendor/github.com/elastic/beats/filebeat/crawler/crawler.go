@@ -29,7 +29,7 @@ func New(out prospector.Outlet, prospectorConfigs []*common.Config) (*Crawler, e
 	}, nil
 }
 
-func (c *Crawler) Start(states file.States, once bool) error {
+func (c *Crawler) Start(states file.States) error {
 
 	logp.Info("Loading Prospectors: %v", len(c.prospectorConfigs))
 
@@ -54,7 +54,7 @@ func (c *Crawler) Start(states file.States, once bool) error {
 				logp.Debug("crawler", "Prospector %v stopped", id)
 			}()
 			logp.Debug("crawler", "Starting prospector %v", id)
-			prospector.Run(once)
+			prospector.Run()
 		}(i, p)
 	}
 
@@ -76,10 +76,6 @@ func (c *Crawler) Stop() {
 		c.wg.Add(1)
 		go stopProspector(p)
 	}
-	c.WaitForCompletion()
-	logp.Info("Crawler stopped")
-}
-
-func (c *Crawler) WaitForCompletion() {
 	c.wg.Wait()
+	logp.Info("Crawler stopped")
 }

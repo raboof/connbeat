@@ -497,8 +497,6 @@ data path. See the <<directory-layout>> section for details. The default is `reg
 filebeat.registry_file: registry
 -------------------------------------------------------------------------------------
 
-It is not possible to use a symlink as registry file.
-
 
 ===== config_dir
 

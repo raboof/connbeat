@@ -1,3 +1,0 @@
-=== docker memory MetricSet
-
-This is the memory metricset of the module docker.
