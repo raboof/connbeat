@@ -9,8 +9,13 @@ DOCKER_COMPOSE=docker-compose -f vendor/github.com/elastic/beats/testing/environ
 CGO=false
 PREFIX?=.
 
+EXTRA_BUILD_FLAGS=-ldflags "-linkmode external -extldflags -static"
+
 # Only crosscompile for linux because other OS'es use cgo.
 GOX_OS=linux
+# Warning: when crosscompiling the extra build flags are not taken
+# into account, so those will not be statically linked
+#GOX_FLAGS=${EXTRA_BUILD_FLAGS}
 
 # For packaging: for now we know how to package on linux amd64
 TARGETS="linux/amd64 linux/386"
@@ -37,4 +42,4 @@ before-build:
 	-apt-get --assume-yes install libmnl-dev
 
 connbeat:
-	go build -ldflags "-linkmode external -extldflags -static"
+	go build ${EXTRA_BUILD_FLAGS}
