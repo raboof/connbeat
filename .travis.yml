@@ -10,7 +10,6 @@ addons:
     packages:
       - python-virtualenv
       - libmnl-dev
-      - glide
 
 env:
   matrix:
@@ -21,7 +20,9 @@ env:
   global:
     - DOCKER_COMPOSE_VERSION: 1.7.0
 
-before_install: if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
+before_install:
+  - if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
+  - go get -v github.com/Masterminds/glide
 
 install:
   go get -t $(glide novendor)
