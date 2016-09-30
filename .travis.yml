@@ -21,7 +21,7 @@ env:
     - DOCKER_COMPOSE_VERSION: 1.7.0
 
 before_install:
-  - if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; fi
+  - if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover; fi
   - go get -v github.com/Masterminds/glide
 
 install:
