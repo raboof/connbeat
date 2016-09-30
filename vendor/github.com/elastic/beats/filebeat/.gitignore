@@ -1,0 +1,8 @@
+/etc/filebeat.dev.yml
+.vagrant
+/docs/html_docs
+
+filebeat
+
+build
+/tests/load/logs
