@@ -11,9 +11,9 @@ GOX_OS=linux
 
 include ../../elastic/beats/libbeat/scripts/Makefile
 
-# This is called by the beats packer before building starts
+# This is called by the beats packer before starts
 .PHONY: build before-build
 before-build:
 
-build:
+connbeat:
 	go build -ldflags "-linkmode external -extldflags -static"
