@@ -3,7 +3,7 @@
 package tcp_diag
 
 import (
-	// #cgo LDFLAGS: -lmnl
+	// #cgo LDFLAGS: -l:libmnl.a
 	// #include <libmnl/libmnl.h>
 	// int poll(int sockfd, const struct mnl_socket * sock);
 	"C"

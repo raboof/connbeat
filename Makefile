@@ -29,6 +29,3 @@ copy-vendor:
 # This is called by the beats packer before starts
 .PHONY: build before-build
 before-build:
-
-connbeat:
-	go build -ldflags "-linkmode external -extldflags -static"
