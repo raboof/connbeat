@@ -14,6 +14,8 @@ https://github.com/elastic/beats/compare/v5.0.0-beta1...master[Check the HEAD di
 
 *Affecting all Beats*
 
+- A dynamic mapping rule is added to the default Elasticsearch template to treat strings as keywords by default. {pull}2688[2688]
+
 *Metricbeat*
 
 *Packetbeat*
@@ -28,6 +30,12 @@ https://github.com/elastic/beats/compare/v5.0.0-beta1...master[Check the HEAD di
 ==== Bugfixes
 
 *Affecting all Beats*
+- Make sure Beats sent always float values when they are defined as float by sending 5.00000 instead of 5.
+  {pull}2627[2627]
+- Fix ignoring all fields from drop_fields in case the first field is unknown. {pull}2685[2685]
+- Fix dynamic configuration int/uint to float type conversation. {pull}2698[2698]
+- Fix primitive types conversation if values are read from environment variables. {pull}2698[2698]
+
 
 *Metricbeat*
 
@@ -35,9 +43,12 @@ https://github.com/elastic/beats/compare/v5.0.0-beta1...master[Check the HEAD di
 
 *Packetbeat*
 
+- Fix the `bpf_filter` setting. {issue}2660[2660]
+
 *Topbeat*
 
 *Filebeat*
+- Fix input buffer on encoding problem
 
 *Winlogbeat*
 
@@ -49,6 +60,7 @@ https://github.com/elastic/beats/compare/v5.0.0-beta1...master[Check the HEAD di
 
 - Add experimental filebeat metricset in the beats module. {pull}2297[2297]
 - Add experimental libbeat metricset in the beats module. {pull}2339[2339]
+- Add experimental docker module. Provided by Ingensi and @douaejeouit based on dockbeat.
 
 *Packetbeat*
 
@@ -56,13 +68,16 @@ https://github.com/elastic/beats/compare/v5.0.0-beta1...master[Check the HEAD di
 
 *Filebeat*
 
-- Add command line option -once to run filebeat only once and then close {pull}2456[2456]
+- Add command line option -once to run filebeat only once and then close. {pull}2456[2456]
 
 *Winlogbeat*
+
+- Add `event_logs.batch_read_size` configuration option. {pull}2641[2641]
 
 ==== Deprecated
 
 *Affecting all Beats*
+- Setting `port` has been deprecated in redis and logstash outputs. {pull}2620[2620]
 
 *Metricbeat*
 

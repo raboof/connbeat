@@ -1,0 +1,15 @@
+package: github.com/raboof/connbeat
+import:
+- package: github.com/deckarep/golang-set
+  version: ^1.5.0
+- package: github.com/elastic/beats
+  version: master
+  subpackages:
+  - libbeat/beat
+  - libbeat/common
+  - libbeat/logp
+  - libbeat/publisher
+  - packetbeat/procs
+- package: github.com/raboof/beats-output-http
+testImport:
+- package: github.com/stvp/assert
