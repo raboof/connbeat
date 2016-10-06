@@ -17,7 +17,7 @@ env:
     - TARGETS="check"
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
-    - TARGETS="package"
+    #- TARGETS="package"
   global:
     - DOCKER_COMPOSE_VERSION: 1.7.0
 
