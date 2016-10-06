@@ -5,8 +5,6 @@ TEST_ENVIRONMENT?=true
 ES_BEATS?=./vendor/github.com/elastic/beats
 GOPACKAGES=$(shell go list ${BEAT_DIR}/... 2>/dev/null | grep -v /vendor/)
 DOCKER_COMPOSE=docker-compose -f vendor/github.com/elastic/beats/testing/environments/base.yml -f vendor/github.com/elastic/beats/testing/environments/${TESTING_ENVIRONMENT}.yml -f docker-compose.yml
-# Disable cgo for easier packaging for now
-CGO=false
 PREFIX?=.
 
 # Only crosscompile for linux because other OS'es use cgo.
