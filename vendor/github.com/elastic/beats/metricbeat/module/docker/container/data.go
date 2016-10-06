@@ -6,7 +6,6 @@ import (
 	dc "github.com/fsouza/go-dockerclient"
 
 	"github.com/elastic/beats/libbeat/common"
-
 	"github.com/elastic/beats/metricbeat/module/docker"
 )
 
@@ -17,24 +16,48 @@ func eventsMapping(containersList []dc.APIContainers) []common.MapStr {
 	}
 	return myEvents
 }
-func eventMapping(mycontainer *dc.APIContainers) common.MapStr {
+
+func eventMapping(cont *dc.APIContainers) common.MapStr {
 
 	event := common.MapStr{
-		"@timestamp": time.Now(),
-		"container": common.MapStr{
-			"created":    common.Time(time.Unix(mycontainer.Created, 0)),
-			"id":         mycontainer.ID,
-			"name":       docker.ExtractContainerName(mycontainer.Names),
-			"labels":     docker.BuildLabelArray(mycontainer.Labels),
-			"command":    mycontainer.Command,
-			"image":      mycontainer.Image,
-			"ports":      docker.ConvertContainerPorts(&mycontainer.Ports),
-			"sizeRootFs": mycontainer.SizeRootFs,
-			"sizeRw":     mycontainer.SizeRw,
-			"status":     mycontainer.Status,
+		"created": common.Time(time.Unix(cont.Created, 0)),
+		"id":      cont.ID,
+		"name":    docker.ExtractContainerName(cont.Names),
+		"command": cont.Command,
+		"image":   cont.Image,
+		"size": common.MapStr{
+			"root_fs": cont.SizeRootFs,
+			"rw":      cont.SizeRw,
 		},
-		"socket": docker.GetSocket(),
+		"status": cont.Status,
+	}
+
+	labels := docker.BuildLabelArray(cont.Labels)
+	if len(labels) > 0 {
+		event["labels"] = labels
+	}
+
+	ports := convertContainerPorts(cont.Ports)
+	if len(ports) > 0 {
+		event["ports"] = ports
 	}
 
 	return event
+}
+
+func convertContainerPorts(ports []dc.APIPort) []map[string]interface{} {
+	var outputPorts = []map[string]interface{}{}
+	for _, port := range ports {
+		outputPort := common.MapStr{
+			"ip": port.IP,
+			"port": common.MapStr{
+				"private": port.PrivatePort,
+				"public":  port.PublicPort,
+			},
+			"type": port.Type,
+		}
+		outputPorts = append(outputPorts, outputPort)
+	}
+
+	return outputPorts
 }
