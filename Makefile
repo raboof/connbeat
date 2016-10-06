@@ -26,9 +26,6 @@ copy-vendor:
 	cp -R ${GOPATH}/src/github.com/elastic/beats vendor/github.com/elastic/
 	rm -rf vendor/github.com/elastic/beats/.git
 
-# This is called by the beats packer before building starts
+# This is called by the beats packer before starts
 .PHONY: build before-build
 before-build:
-
-connbeat:
-	go build -ldflags "-linkmode external -extldflags -static"

@@ -16,6 +16,8 @@ This is a proof-of-concept. While functional, battle-testing and performance tun
 
 ## Building
 
+You need at least golang 1.7 (see also: http://stackoverflow.com/questions/38922080/how-can-i-fallback-to-a-go-implementation-when-cgo-is-not-available-during-build)
+
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
