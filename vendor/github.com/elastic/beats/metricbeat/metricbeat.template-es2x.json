@@ -11,14 +11,13 @@
       },
       "dynamic_templates": [
         {
-          "fields": {
+          "strings_as_keyword": {
             "mapping": {
               "ignore_above": 1024,
               "index": "not_analyzed",
               "type": "string"
             },
-            "match_mapping_type": "string",
-            "path_match": "fields.*"
+            "match_mapping_type": "string"
           }
         }
       ],
@@ -305,7 +304,40 @@
           "properties": {
             "container": {
               "properties": {
-                "example": {
+                "command": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                },
+                "created": {
+                  "type": "date"
+                },
+                "id": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                },
+                "image": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                },
+                "name": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                },
+                "size": {
+                  "properties": {
+                    "root_fs": {
+                      "type": "long"
+                    },
+                    "rw": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "status": {
                   "ignore_above": 1024,
                   "index": "not_analyzed",
                   "type": "string"
@@ -314,9 +346,15 @@
             },
             "cpu": {
               "properties": {
-                "cpu": {
+                "usage": {
                   "properties": {
-                    "usage_in_user_mode": {
+                    "kernel_mode": {
+                      "type": "float"
+                    },
+                    "total": {
+                      "type": "float"
+                    },
+                    "user_mode": {
                       "type": "float"
                     }
                   }
@@ -325,28 +363,120 @@
             },
             "diskio": {
               "properties": {
-                "example": {
+                "reads": {
+                  "type": "float"
+                },
+                "total": {
+                  "type": "float"
+                },
+                "writes": {
+                  "type": "float"
+                }
+              }
+            },
+            "info": {
+              "properties": {
+                "containers": {
+                  "properties": {
+                    "paused": {
+                      "type": "long"
+                    },
+                    "running": {
+                      "type": "long"
+                    },
+                    "stopped": {
+                      "type": "long"
+                    },
+                    "total": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "id": {
                   "ignore_above": 1024,
                   "index": "not_analyzed",
                   "type": "string"
+                },
+                "images": {
+                  "type": "long"
                 }
               }
             },
             "memory": {
               "properties": {
-                "example": {
-                  "ignore_above": 1024,
-                  "index": "not_analyzed",
-                  "type": "string"
+                "fail": {
+                  "properties": {
+                    "count": {
+                      "type": "float"
+                    }
+                  }
+                },
+                "limit": {
+                  "type": "long"
+                },
+                "rss": {
+                  "properties": {
+                    "pct": {
+                      "type": "float"
+                    },
+                    "total": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "usage": {
+                  "properties": {
+                    "max": {
+                      "type": "long"
+                    },
+                    "pct": {
+                      "type": "float"
+                    },
+                    "total": {
+                      "type": "long"
+                    }
+                  }
                 }
               }
             },
             "network": {
               "properties": {
-                "example": {
+                "in": {
+                  "properties": {
+                    "bytes": {
+                      "type": "long"
+                    },
+                    "dropped": {
+                      "type": "float"
+                    },
+                    "errors": {
+                      "type": "long"
+                    },
+                    "packets": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "interface": {
                   "ignore_above": 1024,
                   "index": "not_analyzed",
                   "type": "string"
+                },
+                "out": {
+                  "properties": {
+                    "bytes": {
+                      "type": "long"
+                    },
+                    "dropped": {
+                      "type": "float"
+                    },
+                    "errors": {
+                      "type": "long"
+                    },
+                    "packets": {
+                      "type": "long"
+                    }
+                  }
                 }
               }
             }
