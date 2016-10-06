@@ -5,7 +5,7 @@
         "norms": false
       },
       "_meta": {
-        "version": "5.0.0-rc1"
+        "version": "6.0.0-alpha1"
       },
       "dynamic_templates": [
         {
@@ -182,6 +182,174 @@
             "name": {
               "ignore_above": 1024,
               "type": "keyword"
+            }
+          }
+        },
+        "beats": {
+          "properties": {
+            "filebeat": {
+              "properties": {
+                "harvesters": {
+                  "properties": {
+                    "closed": {
+                      "type": "long"
+                    },
+                    "files": {
+                      "properties": {
+                        "open": {
+                          "type": "long"
+                        },
+                        "truncated": {
+                          "type": "long"
+                        }
+                      }
+                    },
+                    "running": {
+                      "type": "long"
+                    },
+                    "skipped": {
+                      "type": "long"
+                    },
+                    "started": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "prospectors": {
+                  "properties": {
+                    "log_files": {
+                      "properties": {
+                        "renamed": {
+                          "type": "long"
+                        },
+                        "truncated": {
+                          "type": "long"
+                        }
+                      }
+                    }
+                  }
+                },
+                "registrar": {
+                  "properties": {
+                    "states": {
+                      "properties": {
+                        "cleanup": {
+                          "type": "long"
+                        },
+                        "current": {
+                          "type": "long"
+                        },
+                        "update": {
+                          "type": "long"
+                        }
+                      }
+                    },
+                    "writes": {
+                      "type": "long"
+                    }
+                  }
+                }
+              }
+            },
+            "libbeat": {
+              "properties": {
+                "output": {
+                  "properties": {
+                    "elasticsearch": {
+                      "properties": {
+                        "events": {
+                          "properties": {
+                            "ack": {
+                              "type": "long"
+                            },
+                            "not_ack": {
+                              "type": "long"
+                            }
+                          }
+                        },
+                        "read": {
+                          "properties": {
+                            "bytes": {
+                              "type": "long"
+                            },
+                            "errors": {
+                              "type": "long"
+                            }
+                          }
+                        },
+                        "write": {
+                          "properties": {
+                            "bytes": {
+                              "type": "long"
+                            },
+                            "errors": {
+                              "type": "long"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "publisher": {
+                  "properties": {
+                    "events": {
+                      "properties": {
+                        "published": {
+                          "type": "long"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "docker": {
+          "properties": {
+            "container": {
+              "properties": {
+                "example": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            },
+            "cpu": {
+              "properties": {
+                "cpu": {
+                  "properties": {
+                    "usage_in_user_mode": {
+                      "type": "float"
+                    }
+                  }
+                }
+              }
+            },
+            "diskio": {
+              "properties": {
+                "example": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            },
+            "memory": {
+              "properties": {
+                "example": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            },
+            "network": {
+              "properties": {
+                "example": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
             }
           }
         },

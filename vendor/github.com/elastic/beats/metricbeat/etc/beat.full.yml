@@ -67,6 +67,30 @@ metricbeat.modules:
   # Password of hosts. Empty by default
   #password: test123
 
+#-------------------------------- beats Module -------------------------------
+#- module: beats
+  #metricsets: ["filebeat", "libbeat"]
+  #enabled: true
+  #period: 10s
+  #hosts: ["localhost:6060"]
+
+  # Path to httpprof variables
+  #vars_path: /debug/vars
+
+
+#------------------------------- docker Module -------------------------------
+#- module: docker
+  #metricsets: ["cpu","memory","network","diskio","container"]
+  #enabled: true
+  #period: 5s
+  #hosts: ["localhost"]
+  #socket: unix:///var/run/docker.sock
+
+  # If dockerbeat has to deal with a TLS-enabled docker daemon, you need to enable TLS and configure path for key and certificates.
+  #tls:
+    # By default, TLS is disabled
+    #enabled: false
+
 #------------------------------- haproxy Module ------------------------------
 #- module: haproxy
   #metricsets: [stat, info]
