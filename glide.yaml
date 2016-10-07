@@ -3,7 +3,8 @@ import:
 - package: github.com/deckarep/golang-set
   version: ^1.5.0
 - package: github.com/elastic/beats
-  version: master
+  version: widerInodeAndUidTypes
+  repo: git@github.com:raboof/beats
   subpackages:
   - libbeat/beat
   - libbeat/common
@@ -11,5 +12,8 @@ import:
   - libbeat/publisher
   - packetbeat/procs
 - package: github.com/raboof/beats-output-http
+- package: github.com/eleme/netlink
+  repo: git@github.com:raboof/netlink
+  version: ipv6
 testImport:
 - package: github.com/stvp/assert

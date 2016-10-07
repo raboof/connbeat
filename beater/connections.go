@@ -95,7 +95,7 @@ type outgoingConnectionDedup struct {
 	remotePort uint16
 }
 
-func process(ps *processes.Processes, exposeProcessInfo bool, inode int64) *processes.UnixProcess {
+func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *processes.UnixProcess {
 	if exposeProcessInfo {
 		proc := ps.FindProcessByInode(inode)
 		if proc != nil {
