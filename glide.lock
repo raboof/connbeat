@@ -1,5 +1,5 @@
-hash: 5a81dd7e4150539f3c6522abb741e5851abdeff84fecbc11681ab132b516242f
-updated: 2016-10-07T17:05:12.770967321+02:00
+hash: b8ccf9e82ec3185fd3f64c08314f61bed52f7ad48174e234596527cd9b1d1c2d
+updated: 2016-10-07T17:45:41.050608608+02:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
@@ -62,6 +62,8 @@ imports:
   - flag
   - json
   - yaml
+- name: github.com/eleme/netlink
+  version: 773642c54f75a456f46ad4261c4e18ef3a2fd16a
 - name: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
