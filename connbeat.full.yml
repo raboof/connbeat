@@ -7,8 +7,8 @@ connbeat:
   enable_tcp_diag: false
 
 output:
-  http:
-    hosts: ["pi.bzzt.net:80/foo"]
+  #http:
+  #  hosts: ["target.net:80/foo"]
 
   #kafka:
   #  hosts: ["localhost:9092"]
@@ -20,5 +20,5 @@ output:
     #  name: "connbeat"
     #  path: "connbeat.template.json"
 
-  console:
-    pretty: true
+  #console:
+  #  pretty: true
