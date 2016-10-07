@@ -7,8 +7,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/elastic/beats/libbeat/logp"
+	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/eleme/netlink"
 )
 
