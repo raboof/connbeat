@@ -32,8 +32,8 @@ func listeningConnection(port uint16) *procs.SocketInfo {
 		Dst_ip:   randIp(),
 		Src_port: port,
 		Dst_port: 0,
-		Uid:      uint16(rand.Int()),
-		Inode:    rand.Int63(),
+		Uid:      uint32(rand.Int()),
+		Inode:    uint64(rand.Int()),
 	}
 }
 
@@ -43,8 +43,8 @@ func incomingConnection(localPort uint16) *procs.SocketInfo {
 		Dst_ip:   randIp(),
 		Src_port: localPort,
 		Dst_port: uint16(rand.Int()),
-		Uid:      uint16(rand.Int()),
-		Inode:    rand.Int63(),
+		Uid:      uint32(rand.Int()),
+		Inode:    uint64(rand.Int63()),
 	}
 }
 
@@ -54,8 +54,8 @@ func outgoingConnection(remoteIp net.IP, remotePort uint16) *procs.SocketInfo {
 		Dst_ip:   remoteIp,
 		Src_port: uint16(rand.Int()),
 		Dst_port: remotePort,
-		Uid:      uint16(rand.Int()),
-		Inode:    rand.Int63(),
+		Uid:      uint32(rand.Int()),
+		Inode:    uint64(rand.Int63()),
 	}
 }
 

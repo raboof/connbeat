@@ -62,8 +62,6 @@ imports:
   - flag
   - json
   - yaml
-- name: github.com/eleme/netlink
-  version: 773642c54f75a456f46ad4261c4e18ef3a2fd16a
 - name: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
