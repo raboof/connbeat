@@ -94,6 +94,7 @@ func ipv6ip(original [4]be32) net.IP {
 		}
 	}
 
+
 	if isIpv6 {
 		return ipv4ip(original[0])
 	} else {
