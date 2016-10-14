@@ -1,5 +1,5 @@
 hash: 952b4eb04b38c4be2feb921cf51ee8ad1d83d96bd01e3b69a4e1f5f48061cea7
-updated: 2016-10-06T15:22:40.300466319+02:00
+updated: 2016-10-14T14:09:33.859234109+02:00
 imports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
@@ -16,7 +16,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 5e0e7e75281d27b8381d5b4b3261d756f3532b8b
+  version: b85820f674614a0cdd56575516db3af6386c71e0
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -44,6 +44,8 @@ imports:
   - libbeat/processors/actions
   - libbeat/publisher
   - libbeat/service
+  - metricbeat/schema
+  - metricbeat/schema/mapstriface
   - packetbeat/procs
 - name: github.com/elastic/go-lumber
   version: 616041e345fc33c97bc0eb0fa6b388aa07bca3e1
@@ -92,6 +94,9 @@ imports:
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
+  - icmp
+  - ipv4
+  - ipv6
   - proxy
   - publicsuffix
 - name: golang.org/x/sys
