@@ -16,7 +16,7 @@ The software is functional, but battle-testing and performance tuning is still i
 
 ## Building
 
-You need at least golang 1.7 (see also: http://stackoverflow.com/questions/38922080/how-can-i-fallback-to-a-go-implementation-when-cgo-is-not-available-during-build)
+You need at least golang 1.7.1 (also required for the testing infrastructure of the latest version of the Beats framework)
 
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
