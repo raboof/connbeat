@@ -42,4 +42,4 @@ deploy:
 script: make $TARGETS
 
 go:
-- 1.7rc2
+- 1.7.1
