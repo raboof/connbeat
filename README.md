@@ -1,12 +1,12 @@
-# Connectionbeat
+# Connbeat
 
 [![Build Status](https://travis-ci.org/raboof/connbeat.svg?branch=master)](https://travis-ci.org/raboof/connbeat)
 
-Connectionbeat is an open source agent that monitors connection metadata and
+Connbeat, short for 'Connectionbeat', is an open source agent that monitors connection metadata and
 ships the data to Kafka or Elasticsearch, or a HTTP endpoint.
 
 The main distinction from [Packetbeat](https://www.elastic.co/products/beats/packetbeat)
-is that Connectionbeat is intended to be able to monitor all connections on a
+is that Connbeat is intended to be able to monitor all connections on a
 machine (rather than just selected protocols), and does not inspect the
 package/connection contents, only metadata.
 
