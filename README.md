@@ -1,22 +1,22 @@
-# Connectionbeat
+# Connbeat
 
 [![Build Status](https://travis-ci.org/raboof/connbeat.svg?branch=master)](https://travis-ci.org/raboof/connbeat)
 
-Connectionbeat is an open source agent that monitors connection metadata and
-ships the data to Kafka or Elasticsearch.
+Connbeat, short for 'Connectionbeat', is an open source agent that monitors connection metadata and
+ships the data to Kafka or Elasticsearch, or a HTTP endpoint.
 
 The main distinction from [Packetbeat](https://www.elastic.co/products/beats/packetbeat)
-is that Connectionbeat is intended to be able to monitor all connections on a
+is that Connbeat is intended to be able to monitor all connections on a
 machine (rather than just selected protocols), and does not inspect the
 package/connection contents, only metadata.
 
 ## Status
 
-This is a proof-of-concept. While functional, battle-testing and performance tuning is still in progress.
+The software is functional, but battle-testing and performance tuning is still in progress.
 
 ## Building
 
-You need at least golang 1.7 (see also: http://stackoverflow.com/questions/38922080/how-can-i-fallback-to-a-go-implementation-when-cgo-is-not-available-during-build)
+You need at least golang 1.7.1 (also required for the testing infrastructure of the latest version of the Beats framework)
 
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
@@ -26,7 +26,7 @@ You need at least golang 1.7 (see also: http://stackoverflow.com/questions/38922
 
 ## Running
 
-The default configuration (connbeat.yml) logs to kafka on localhost:9092 and to the console.
+Edit the configuration (connbeat.yml) to specify where you want your events to go (e.g. Kafka, Elasticsearch, the console).
 
 You need to be root if you want to see the process for processes other than your own:
 
@@ -95,3 +95,9 @@ For connections where the agent appears to be the client:
 To run the regular go unit test, run 'make test'.
 
 To also run docker-based system tests, run 'make testsuite'
+
+## Contributing
+
+Contributions are welcome! Feel free to [submit issues](https://github.com/raboof/connbeat/issues) to discuss problems and propose solutions, or send a [pull request](https://github.com/raboof/connbeat/pulls).
+
+Pull requests are expected to include tests (which are run on Travis). We strive to merge any reasonable features, though features that might increase the load on the machine will likely have to be behind a feature switch that is off by default.
