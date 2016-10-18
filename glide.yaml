@@ -12,8 +12,5 @@ import:
   - libbeat/publisher
   - packetbeat/procs
 - package: github.com/raboof/beats-output-http
-- package: github.com/eleme/netlink
-  version: ipv6
-  repo: git@github.com:raboof/netlink
 testImport:
 - package: github.com/stvp/assert
