@@ -2,10 +2,12 @@ package tcp_diag
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/packetbeat/procs"
@@ -34,19 +36,26 @@ func pollConnections(family uint8, socket *netlink.NetlinkSocket, socketInfo cha
 	}
 	responses, err := socket.Receive()
 	if err != nil {
-		fmt.Println("Error receiving netlink results")
+		logp.Err("Error receiving netlink results: %s", err)
 		return err
 	}
 	for _, msg := range responses {
-		inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
-		socketInfo <- &procs.SocketInfo{
-			Src_ip:   inetDiagMsg.Id.SrcIP(),
-			Dst_ip:   inetDiagMsg.Id.DstIP(),
-			Src_port: port(inetDiagMsg.Id.IDiagSPort),
-			Dst_port: port(inetDiagMsg.Id.IDiagDPort),
+		if msg.Header.Type == syscall.NLMSG_ERROR {
+			msgerr := (*syscall.NlMsgerr)(unsafe.Pointer(&msg.Data[0]))
+			// Unfortunately no easy way to convert from uint32 to syscall.Errno, so we just log the int value...
+			return errors.New(fmt.Sprintf("Netlink returned error with errno %d", (-msgerr.Error)))
+		} else {
+			inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
+			fmt.Printf("Processing netlink response for remote port %d\n", inetDiagMsg.Id.IDiagDPort)
+			socketInfo <- &procs.SocketInfo{
+				Src_ip:   inetDiagMsg.Id.SrcIP(),
+				Dst_ip:   inetDiagMsg.Id.DstIP(),
+				Src_port: port(inetDiagMsg.Id.IDiagSPort),
+				Dst_port: port(inetDiagMsg.Id.IDiagDPort),
 
-			Uid:   inetDiagMsg.IDiagUid,
-			Inode: uint64(inetDiagMsg.IDiagInode),
+				Uid:   inetDiagMsg.IDiagUid,
+				Inode: uint64(inetDiagMsg.IDiagInode),
+			}
 		}
 	}
 	return nil
@@ -73,7 +82,8 @@ func GetSocketInfo(pollInterval time.Duration, socketInfo chan<- *procs.SocketIn
 		// For now we poll periodically
 		err := pollCurrentConnections(socketInfo)
 		if err != nil {
-			logp.Err("Polling connections: %s", err)
+			logp.Err("Polling connections: %s, degrading to /proc/net/tcp-based monitoring", err)
+			return err
 		}
 		time.Sleep(pollInterval)
 	}
