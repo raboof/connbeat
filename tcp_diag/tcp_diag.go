@@ -42,8 +42,9 @@ func pollConnections(family uint8, socket *netlink.NetlinkSocket, socketInfo cha
 	for _, msg := range responses {
 		if msg.Header.Type == syscall.NLMSG_ERROR {
 			msgerr := (*syscall.NlMsgerr)(unsafe.Pointer(&msg.Data[0]))
-			// Unfortunately no easy way to convert from uint32 to syscall.Errno, so we just log the int value...
-			return errors.New(fmt.Sprintf("Netlink returned error with errno %d", (-msgerr.Error)))
+			return errors.New(fmt.Sprintf("Netlink returned error message with error code %d: %s",
+				-msgerr.Error,
+				syscall.Errno(-msgerr.Error).Error()))
 		} else {
 			inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
 			fmt.Printf("Processing netlink response for remote port %d\n", inetDiagMsg.Id.IDiagDPort)
