@@ -2,7 +2,7 @@ FROM golang:1.7.1
 
 RUN set -x && \
     apt-get update && \
-    apt-get install -y netcat python-virtualenv python-pip libmnl-dev && \
+    apt-get install -y netcat python-virtualenv python-pip && \
     apt-get clean
 
 ## Install go package dependencies

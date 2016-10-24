@@ -9,7 +9,6 @@ addons:
   apt:
     packages:
       - python-virtualenv
-      - libmnl-dev
 
 env:
   matrix:
@@ -42,4 +41,4 @@ deploy:
 script: make $TARGETS
 
 go:
-- 1.7.1
+- 1.7.3
