@@ -23,8 +23,8 @@ type SocketInfo struct {
 	Src_ip, Dst_ip     net.IP
 	Src_port, Dst_port uint16
 
-	Uid   uint16
-	Inode int64
+	Uid   uint32
+	Inode uint64
 }
 
 type PortProcMapping struct {
@@ -105,7 +105,7 @@ func (proc *ProcessesWatcher) Init(config ProcsConfig) error {
 
 	// Read the local IP addresses
 	var err error
-	proc.LocalAddrs, err = common.LocalIpAddrs()
+	proc.LocalAddrs, err = common.LocalIPAddrs()
 	if err != nil {
 		logp.Err("Error getting local IP addresses: %s", err)
 		proc.LocalAddrs = []net.IP{}
@@ -194,26 +194,26 @@ func FindPidsByCmdlineGrep(prefix string, process string) ([]int, error) {
 	return pids, nil
 }
 
-func (proc *ProcessesWatcher) FindProcessesTuple(tuple *common.IpPortTuple) (proc_tuple *common.CmdlineTuple) {
+func (proc *ProcessesWatcher) FindProcessesTuple(tuple *common.IPPortTuple) (proc_tuple *common.CmdlineTuple) {
 	proc_tuple = &common.CmdlineTuple{}
 
 	if !proc.ReadFromProc {
 		return
 	}
 
-	if proc.IsLocalIp(tuple.Src_ip) {
-		logp.Debug("procs", "Looking for port %d", tuple.Src_port)
-		proc_tuple.Src = []byte(proc.FindProc(tuple.Src_port))
+	if proc.IsLocalIp(tuple.SrcIP) {
+		logp.Debug("procs", "Looking for port %d", tuple.SrcPort)
+		proc_tuple.Src = []byte(proc.FindProc(tuple.SrcPort))
 		if len(proc_tuple.Src) > 0 {
-			logp.Debug("procs", "Found device %s for port %d", proc_tuple.Src, tuple.Src_port)
+			logp.Debug("procs", "Found device %s for port %d", proc_tuple.Src, tuple.SrcPort)
 		}
 	}
 
-	if proc.IsLocalIp(tuple.Dst_ip) {
-		logp.Debug("procs", "Looking for port %d", tuple.Dst_port)
-		proc_tuple.Dst = []byte(proc.FindProc(tuple.Dst_port))
+	if proc.IsLocalIp(tuple.DstIP) {
+		logp.Debug("procs", "Looking for port %d", tuple.DstPort)
+		proc_tuple.Dst = []byte(proc.FindProc(tuple.DstPort))
 		if len(proc_tuple.Dst) > 0 {
-			logp.Debug("procs", "Found device %s for port %d", proc_tuple.Dst, tuple.Dst_port)
+			logp.Debug("procs", "Found device %s for port %d", proc_tuple.Dst, tuple.DstPort)
 		}
 	}
 
@@ -308,7 +308,7 @@ func (proc *ProcessesWatcher) UpdateMap() {
 		logp.Err("Parse_Proc_Net_Tcp ipv6: %s", err)
 		return
 	}
-	socks_map := map[int64]*SocketInfo{}
+	socks_map := map[uint64]*SocketInfo{}
 	for _, s := range ipv4socks {
 		socks_map[s.Inode] = s
 	}
@@ -380,9 +380,9 @@ func Parse_Proc_Net_Tcp(input io.Reader, ipv6 bool) ([]*SocketInfo, error) {
 		}
 
 		uid, _ := strconv.Atoi(string(words[7]))
-		sock.Uid = uint16(uid)
+		sock.Uid = uint32(uid)
 		inode, _ := strconv.Atoi(string(words[9]))
-		sock.Inode = int64(inode)
+		sock.Inode = uint64(inode)
 
 		sockets = append(sockets, &sock)
 	}
@@ -401,17 +401,17 @@ func (proc *ProcessesWatcher) UpdateMappingEntry(port uint16, pid int, p *Proces
 	logp.Debug("procsdetailed", "UpdateMappingEntry(): port=%d pid=%d", port, p.Name)
 }
 
-func FindSocketsOfPid(prefix string, pid int) (inodes []int64, err error) {
+func FindSocketsOfPid(prefix string, pid int) (inodes []uint64, err error) {
 
 	dirname := filepath.Join(prefix, "/proc", strconv.Itoa(pid), "fd")
 	procfs, err := os.Open(dirname)
 	if err != nil {
-		return []int64{}, fmt.Errorf("Open: %s", err)
+		return []uint64{}, fmt.Errorf("Open: %s", err)
 	}
 	defer procfs.Close()
 	names, err := procfs.Readdirnames(0)
 	if err != nil {
-		return []int64{}, fmt.Errorf("Readdirnames: %s", err)
+		return []uint64{}, fmt.Errorf("Readdirnames: %s", err)
 	}
 
 	for _, name := range names {
@@ -428,7 +428,7 @@ func FindSocketsOfPid(prefix string, pid int) (inodes []int64, err error) {
 				continue
 			}
 
-			inodes = append(inodes, int64(inode))
+			inodes = append(inodes, uint64(inode))
 		}
 	}
 
