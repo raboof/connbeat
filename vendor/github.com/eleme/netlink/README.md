@@ -70,9 +70,12 @@ the following arguments to call `socker()`:
 socket(AF_NETLINK, SOCK_RAW, netlink_type)
 ```
 You can find more details [here](https://www.infradead.org/~tgr/libnl/)
+
 ### kernel space
-Any kernel's module wants to use `netlink` need to include header file `linux/netlink.h`. Compared with the usage of `netlink`, kernel has to 
+Any kernel's module wants to use `netlink`(in Linux, not this project) need to include header file `linux/netlink.h`. Compared with the usage of `netlink`, kernel has to 
 use particular API defined in `netlink`. For now, `netlink` alraedy implemented a generic protocol `NETLINK_GENERIC` which reduces the extra work.
+
+### example
 
 ```go
 func (c *ExecCollector) prepareSocket() (*netlink.NetlinkSocket, error) {
@@ -100,7 +103,8 @@ func (c *ExecCollector) prepareSocket() (*netlink.NetlinkSocket, error) {
 ```
 
 ## future work
+- [ ] need add all test for this project
 
-WIP
 
+## miscellaneous
 more information **[here](https://github.com/eleme/sre/blob/master/linux/netlink-i.md)**

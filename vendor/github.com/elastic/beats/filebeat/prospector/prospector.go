@@ -159,8 +159,8 @@ func (p *Prospector) Run(once bool) {
 // All state updates done by the prospector itself are synchronous to make sure not states are overwritten
 func (p *Prospector) updateState(event *input.Event) error {
 
-	// Add ttl if cleanOlder is enabled
-	if p.config.CleanInactive > 0 {
+	// Add ttl if cleanOlder is enabled and TTL is not already 0
+	if p.config.CleanInactive > 0 && event.State.TTL != 0 {
 		event.State.TTL = p.config.CleanInactive
 	}
 
@@ -218,7 +218,7 @@ func (p *Prospector) startHarvester(state file.State, offset int64) error {
 		return fmt.Errorf("Error setting up harvester: %s", err)
 	}
 
-	// State is directly updated and not through channel to make state update immidiate
+	// State is directly updated and not through channel to make state update immediate
 	// State is only updated after setup is completed successfully
 	err = p.updateState(input.NewEvent(state))
 	if err != nil {

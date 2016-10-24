@@ -3,8 +3,7 @@ import:
 - package: github.com/deckarep/golang-set
   version: ^1.5.0
 - package: github.com/elastic/beats
-  version: widerInodeAndUidTypes
-  repo: git@github.com:raboof/beats
+  version: master
   subpackages:
   - libbeat/beat
   - libbeat/common

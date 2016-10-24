@@ -131,12 +131,22 @@ func (r *Registrar) loadAndConvertOldState(f *os.File) bool {
 	// Make sure file reader is reset afterwards
 	defer f.Seek(0, 0)
 
+	stat, err := f.Stat()
+	if err != nil {
+		logp.Err("Error getting stat for old state: %+v", err)
+		return false
+	}
+
+	// Empty state does not have to be transformed ({} + newline)
+	if stat.Size() <= 4 {
+		return false
+	}
+
 	decoder := json.NewDecoder(f)
 	oldStates := map[string]file.State{}
-	err := decoder.Decode(&oldStates)
-
+	err = decoder.Decode(&oldStates)
 	if err != nil {
-		logp.Debug("registrar", "Error decoding old state: %+v", err)
+		logp.Err("Error decoding old state: %+v", err)
 		return false
 	}
 
@@ -146,16 +156,8 @@ func (r *Registrar) loadAndConvertOldState(f *os.File) bool {
 	}
 
 	// Convert old states to new states
-	states := make([]file.State, len(oldStates))
 	logp.Info("Old registry states found: %v", len(oldStates))
-	counter := 0
-	for _, state := range oldStates {
-		// Makes timestamp time of migration, as this is the best guess
-		state.Timestamp = time.Now()
-		states[counter] = state
-		counter++
-	}
-
+	states := convertOldStates(oldStates)
 	r.states.SetStates(states)
 
 	// Rewrite registry in new format
@@ -164,6 +166,32 @@ func (r *Registrar) loadAndConvertOldState(f *os.File) bool {
 	logp.Info("Old states converted to new states and written to registrar: %v", len(oldStates))
 
 	return true
+}
+
+func convertOldStates(oldStates map[string]file.State) []file.State {
+	// Convert old states to new states
+	states := []file.State{}
+	for _, state := range oldStates {
+		// Makes timestamp time of migration, as this is the best guess
+		state.Timestamp = time.Now()
+
+		// Check for duplicates
+		dupe := false
+		for i, other := range states {
+			if state.FileStateOS.IsSame(other.FileStateOS) {
+				dupe = true
+				if state.Offset > other.Offset {
+					// replace other
+					states[i] = state
+					break
+				}
+			}
+		}
+		if !dupe {
+			states = append(states, state)
+		}
+	}
+	return states
 }
 
 func (r *Registrar) Start() error {
