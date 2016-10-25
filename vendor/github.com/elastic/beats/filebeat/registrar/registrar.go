@@ -119,6 +119,12 @@ func (r *Registrar) loadStates() error {
 		return fmt.Errorf("Error decoding states: %s", err)
 	}
 
+	// Set all states to finished on restart
+	for key, state := range states {
+		state.Finished = true
+		states[key] = state
+	}
+
 	r.states.SetStates(states)
 	logp.Info("States Loaded from registrar: %+v", len(states))
 
@@ -142,7 +148,17 @@ func (r *Registrar) loadAndConvertOldState(f *os.File) bool {
 		return false
 	}
 
+	// Check if already new state format
 	decoder := json.NewDecoder(f)
+	newState := []file.State{}
+	err = decoder.Decode(&newState)
+	// No error means registry is already in new format
+	if err == nil {
+		return false
+	}
+
+	// Reset file offset
+	f.Seek(0, 0)
 	oldStates := map[string]file.State{}
 	err = decoder.Decode(&oldStates)
 	if err != nil {
