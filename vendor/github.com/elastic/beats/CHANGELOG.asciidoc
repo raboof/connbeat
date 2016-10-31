@@ -8,7 +8,7 @@
 // Template, add newest changes here
 
 === Beats version HEAD
-https://github.com/elastic/beats/compare/v5.0.0-rc1...master[Check the HEAD diff]
+https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 
 ==== Breaking changes
 
@@ -29,25 +29,22 @@ https://github.com/elastic/beats/compare/v5.0.0-rc1...master[Check the HEAD diff
 
 *Affecting all Beats*
 
-- Fix kafka output re-trying batches with too large events. {issue}2735[2735]
-- Fix kafka output protocol error if `version: 0.10` is configured. {issue}2651[2651]
-- Fix kafka output connection closed by broker on SASL/PLAIN. {issue}2717[2717]
-
 *Metricbeat*
 
-- Fix high CPU usage on macOS when encountering processes with long command lines. {issue}2747[2747]
-- Fix high value of `system.memory.actual.free` and `system.memory.actual.used`. {issue}2653[2653]
-- Change several `OpenProcess` calls on Windows to request the lowest possible access provilege.  {issue}1897[1897]
-- Fix system.memory.actual.free high value on Windows. {issue}2653[2653]
 - Calculate the fsstat values per mounting point, and not filesystem. {pull}2777[2777]
+- Fix `system.process.start_time` on Windows. {pull}2848[2848]
+- Fix `system.process.ppid` on Windows. {issue}2860[2860]
+- Fix system process metricset for Windows XP and 2003. `cmdline` will be unavailable. {issue}1704[1704]
+- Fix access denied issues in system process metricset by enabling SeDebugPrivilege on Windows. {issue}1897[1897]
+- Fix system diskio metricset for Windows XP and 2003. {issue}2885[2885]
 
 *Packetbeat*
+
+- Fix 'index out of bounds' bug in Packetbeat DNS protocol plugin. {issue}2872[2872]
 
 *Topbeat*
 
 *Filebeat*
-- Fix issue when clean_removed and clean_inactive were used together that states were not directly removed from the registry.
-- Fix issue where upgrading a 1.x registry file resulted in duplicate state entries. {pull}2792[2792]
 - Fix registry cleanup issue when files falling under ignore_older after restart. {issue}2818[2818]
 
 *Winlogbeat*
@@ -55,7 +52,6 @@ https://github.com/elastic/beats/compare/v5.0.0-rc1...master[Check the HEAD diff
 ==== Added
 
 *Affecting all Beats*
-- Add beat.version fields to all events.
 - Add add_cloud_metadata processor for collecting cloud provider metadata. {pull}2728[2728]
 
 *Metricbeat*
@@ -63,6 +59,8 @@ https://github.com/elastic/beats/compare/v5.0.0-rc1...master[Check the HEAD diff
 - Add experimental filebeat metricset in the beats module. {pull}2297[2297]
 - Add experimental libbeat metricset in the beats module. {pull}2339[2339]
 - Add experimental docker module. Provided by Ingensi and @douaejeouit based on dockbeat.
+- Add username and password config options to the MongoDB module. {pull}2889[2889]
+- Add system core metricset for Windows. {pull}2883}[2883]
 
 *Packetbeat*
 - Define `client_geoip.location` as geo_point in the mappings to be used by the GeoIP processor in the Ingest Node pipeline.
@@ -93,6 +91,41 @@ https://github.com/elastic/beats/compare/v5.0.0-rc1...master[Check the HEAD diff
 *Winlogbeat*
 
 ////////////////////////////////////////////////////////////
+
+
+include::libbeat/docs/release-notes/5.0.0.asciidoc[]
+
+[[release-notes-5.0.0-ga]]
+=== Beats version 5.0.0-GA
+https://github.com/elastic/beats/compare/v5.0.0-rc1...v5.0.0[View commits]
+
+The list below covers the changes between 5.0.0-rc1 and 5.0.0 GA only.
+
+==== Bugfixes
+
+*Affecting all Beats*
+
+- Fix kafka output re-trying batches with too large events. {issue}2735[2735]
+- Fix kafka output protocol error if `version: 0.10` is configured. {issue}2651[2651]
+- Fix kafka output connection closed by broker on SASL/PLAIN. {issue}2717[2717]
+
+*Metricbeat*
+
+- Fix high CPU usage on macOS when encountering processes with long command lines. {issue}2747[2747]
+- Fix high value of `system.memory.actual.free` and `system.memory.actual.used`. {issue}2653[2653]
+- Change several `OpenProcess` calls on Windows to request the lowest possible access provilege.  {issue}1897[1897]
+- Fix system.memory.actual.free high value on Windows. {issue}2653[2653]
+
+*Filebeat*
+
+- Fix issue when clean_removed and clean_inactive were used together that states were not directly removed from the registry.
+- Fix issue where upgrading a 1.x registry file resulted in duplicate state entries. {pull}2792[2792]
+
+==== Added
+
+*Affecting all Beats*
+
+- Add beat.version fields to all events.
 
 [[release-notes-5.0.0-rc1]]
 === Beats version 5.0.0-rc1
@@ -425,30 +458,6 @@ https://github.com/elastic/beats/compare/v5.0.0-alpha2...v5.0.0-alpha3[View comm
 
 - The support for doing GeoIP lookups is deprecated and will be removed in version 6.0. {pull}1601[1601]
 
-[[release-notes-1.2.3]]
-=== Beats version 1.2.3
-https://github.com/elastic/beats/compare/v1.2.2...v1.2.3[View commits]
-
-==== Bugfixes
-
-*Topbeat*
-
-- Fix high CPU usage when using filtering under Windows. {pull}1598[1598]
-
-*Filebeat*
-
-- Fix rotation issue with ignore_older. {issue}1528[1528]
-
-*Winlogbeat*
-
-- Fix panic when reading messages larger than 32K characters on Windows XP and 2003. {pull}1498[1498]
-
-==== Added
-
-*Filebeat*
-
-- Prevent file opening for files which reached ignore_older. {pull}1649[1649]
-
 
 [[release-notes-5.0.0-alpha2]]
 === Beats version 5.0.0-alpha2
@@ -522,43 +531,6 @@ https://github.com/elastic/beats/compare/v5.0.0-alpha1...v5.0.0-alpha2[View comm
 
 - Updated elastic/gosigar version so Topbeat can compile on OpenBSD. {pull}1403[1403]
 
-[[release-notes-1.2.2]]
-=== Beats version 1.2.2
-https://github.com/elastic/beats/compare/v1.2.0...v1.2.2[View commits]
-
-==== Bugfixes
-
-*Affecting all Beats*
-
-- Fix race when multiple outputs access the same event with Logstash output manipulating event. {issue}1410[1410]
-- Fix go-daemon (supervisor used in init scripts) hanging when executed over SSH. {issue}1394[1394]
-
-*Filebeat*
-
-- Improvements in registrar dealing with file rotation. {issue}1281[1281]
-
-
-[[release-notes-1.2.1]]
-=== Beats version 1.2.1
-https://github.com/elastic/beats/compare/v1.2.0...v1.2.1[View commits]
-
-==== Breaking changes
-
-*Affecting all Beats*
-
-- Require braces for environment variable expansion in config files {pull}1304[1304]
-- Removed deprecation warning for the Redis output. {pull}1282[1282]
-
-*Topbeat*
-
-- Fixed name of the setting `stats.proc` to `stats.process` in the default configuration file. {pull}1343[1343]
-- Fix issue with cpu.system_p being greater than 1 on Windows {pull}1128[1128]
-
-==== Added
-
-*Topbeat*
-
-- Add username to processes {pull}845[845]
 
 [[release-notes-5.0.0-alpha1]]
 === Beats version 5.0.0-alpha1
@@ -668,6 +640,120 @@ https://github.com/elastic/beats/compare/v1.2.0...v5.0.0-alpha1[View commits]
 * When running the Beats as a service on Windows, you need to manually load the Elasticsearch mapping
   template. {issue}1315[1315]
 * The ES template automatic load doesn't work if Elasticsearch is not available when the Beat is starting. {issue}1321[1321]
+
+[[release-notes-1.3.1]]
+=== Beats version 1.3.1
+https://github.com/elastic/beats/compare/v1.3.0...v1.3.1[View commits]
+
+==== Bugfixes
+
+*Filebeat*
+
+- Fix a concurrent bug on filebeat startup with a large number of prospectors defined. {pull}2509[2509]
+
+*Packetbeat*
+
+- Fix description for the -I CLI flag. {pull}2480[2480]
+
+*Winlogbeat*
+
+- Fix corrupt registry file that occurs on power loss by disabling file write caching. {issue}2313[2313]
+
+[[release-notes-1.3.0]]
+=== Beats version 1.3.0
+https://github.com/elastic/beats/compare/v1.2.3...v1.3.0[View commits]
+
+==== Deprecated
+
+*Filebeat*
+
+- Undocumented support for following symlinks is deprecated. Filebeat will not follow symlinks in version 5.0. {pull}1767[1767]
+
+==== Bugfixes
+
+*Affecting all Beats*
+
+- Fix beats load balancer deadlock if `max_retries: -1` or `publish_async` is enabled in filebeat. {issue}1829[1829]
+- Fix output modes backoff counter reset. {issue}1803[1803] {pull}1814[1814] {pull}1818[1818]
+- Set logstash output default bulk_max_size to 2048. {issue}1662[1662]
+- Seed random number generator using crypto.rand package. {pull}1503[1503]
+- Check stdout being available when console output is configured. {issue}2063[2063]
+
+*Packetbeat*
+
+- Add missing nil-check to memcached GapInStream handler. {issue}1162[1162]
+- Fix NFSv4 Operation returning the first found first-class operation available in compound requests. {pull}1821[1821]
+- Fix TCP overlapping segments not being handled correctly. {pull}1917[1917]
+
+==== Added
+
+*Affecting all Beats*
+
+- Updated to Go 1.7
+
+
+[[release-notes-1.2.3]]
+=== Beats version 1.2.3
+https://github.com/elastic/beats/compare/v1.2.2...v1.2.3[View commits]
+
+==== Bugfixes
+
+*Topbeat*
+
+- Fix high CPU usage when using filtering under Windows. {pull}1598[1598]
+
+*Filebeat*
+
+- Fix rotation issue with ignore_older. {issue}1528[1528]
+
+*Winlogbeat*
+
+- Fix panic when reading messages larger than 32K characters on Windows XP and 2003. {pull}1498[1498]
+
+==== Added
+
+*Filebeat*
+
+- Prevent file opening for files which reached ignore_older. {pull}1649[1649]
+
+
+[[release-notes-1.2.2]]
+=== Beats version 1.2.2
+https://github.com/elastic/beats/compare/v1.2.0...v1.2.2[View commits]
+
+==== Bugfixes
+
+*Affecting all Beats*
+
+- Fix race when multiple outputs access the same event with Logstash output manipulating event. {issue}1410[1410]
+- Fix go-daemon (supervisor used in init scripts) hanging when executed over SSH. {issue}1394[1394]
+
+*Filebeat*
+
+- Improvements in registrar dealing with file rotation. {issue}1281[1281]
+
+
+[[release-notes-1.2.1]]
+=== Beats version 1.2.1
+https://github.com/elastic/beats/compare/v1.2.0...v1.2.1[View commits]
+
+==== Breaking changes
+
+*Affecting all Beats*
+
+- Require braces for environment variable expansion in config files {pull}1304[1304]
+- Removed deprecation warning for the Redis output. {pull}1282[1282]
+
+*Topbeat*
+
+- Fixed name of the setting `stats.proc` to `stats.process` in the default configuration file. {pull}1343[1343]
+- Fix issue with cpu.system_p being greater than 1 on Windows {pull}1128[1128]
+
+==== Added
+
+*Topbeat*
+
+- Add username to processes {pull}845[845]
 
 
 [[release-notes-1.2.0]]
