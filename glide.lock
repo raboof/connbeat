@@ -1,5 +1,5 @@
 hash: 952b4eb04b38c4be2feb921cf51ee8ad1d83d96bd01e3b69a4e1f5f48061cea7
-updated: 2016-10-25T22:01:37.35268253Z
+updated: 2016-11-02T23:01:38.461275034Z
 imports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
@@ -16,7 +16,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: dd71402258d4848ae4ea0f642fd1a279cb35e6b9
+  version: be3afe040c0eb803ff86404e49f38159c8be1d70
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -42,6 +42,7 @@ imports:
   - libbeat/paths
   - libbeat/processors
   - libbeat/processors/actions
+  - libbeat/processors/add_cloud_metadata
   - libbeat/publisher
   - libbeat/service
   - metricbeat/schema
