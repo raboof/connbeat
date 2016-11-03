@@ -6,7 +6,9 @@ versions (e.g.  5.x to 5.y) so you can upgrade without any configuration file
 changes, but there are breaking changes between major versions (e.g. 5.x to
 6.y).
 
-We list the breaking changes at the top of the <<release-notes,release notes>>
+* <<breaking-changes-5.0>>
+
+We also list the breaking changes at the top of the <<release-notes,release notes>>
 for each version.
 
 [[breaking-changes-5.0]]
@@ -14,6 +16,12 @@ for each version.
 
 This section discusses the changes that you should be aware of if you upgrade
 the Beats from version 1.x to 5.x.
+
+==== URL changes for DEB/RPM packages
+
+The previous `packages.elastic.co` URL has been altered to `artifacts.elastic.co`. 
+Ensure you update your repository files before running the upgrade process, or 
+your operating system may not see the new packages.
 
 ==== Configuration File Changes
 

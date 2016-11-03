@@ -12,11 +12,9 @@ TARGETS?="windows/amd64 windows/386 darwin/amd64"
 TARGETS_OLD?="linux/amd64 linux/386"
 CGO=true
 
-# Metricbeat can only be cross-compiled on platforms not requiring CGO which
-# are the same platforms where the system metrics (cpu, memory) are not
-# implemented.
-GOX_OS=solaris netbsd
-GOX_FLAGS='-arch=amd64'
+# Metricbeat can only be cross-compiled on platforms not requiring CGO.
+GOX_OS=solaris netbsd linux windows
+GOX_FLAGS='-arch=amd64 386 arm ppc64 ppc64le'
 
 
 include ${ES_BEATS}/libbeat/scripts/Makefile
@@ -40,13 +38,13 @@ fields:
 collect-docs: python-env
 	-rm -r docs/modules
 	mkdir -p docs/modules
-	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/docs_collector.py
+	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/docs_collector.py --beat ${BEATNAME}
 
 # Collects all module configs
 .PHONY: configs
 configs: python-env
-	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/config_collector.py $(PWD) > etc/beat.yml
-	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/config_collector.py --full $(PWD) > etc/beat.full.yml
+	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/config_collector.py --beat ${BEATNAME} $(PWD) > etc/beat.yml
+	. ${PYTHON_ENV}/bin/activate; python ${ES_BEATS}/metricbeat/scripts/config_collector.py --beat ${BEATNAME} --full $(PWD) > etc/beat.full.yml
 
 # Generates imports for all modules and metricsets
 .PHONY: imports
