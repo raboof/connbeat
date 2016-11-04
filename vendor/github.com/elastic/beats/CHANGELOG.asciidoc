@@ -21,6 +21,9 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 *Topbeat*
 
 *Filebeat*
+- If a file is falling under ignore_older during startup, offset is now set to end of file instead of 0.
+  With the previous logic the whole file was sent in case a line was added and it was inconsitent with
+  files which were harvested previously. {pull}2907[2907]
 
 *Winlogbeat*
 
@@ -61,7 +64,8 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 - Add experimental docker module. Provided by Ingensi and @douaejeouit based on dockbeat.
 - Add username and password config options to the MongoDB module. {pull}2889[2889]
 - Add username and password config options to the PostgreSQL module. {pull}2889[2890]
-- Add system core metricset for Windows. {pull}2883}[2883]
+- Add system core metricset for Windows. {pull}2883[2883]
+- Add a sample Redis Kibana dashboard. {pull}2916[2916]
 
 *Packetbeat*
 - Define `client_geoip.location` as geo_point in the mappings to be used by the GeoIP processor in the Ingest Node pipeline.
