@@ -50,7 +50,7 @@ func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *p
 		return err
 	}
 	defer file.Close()
-	socks, err := procs.Parse_Proc_Net_Tcp(file, ipv6)
+	socks, err := procs.ParseProcNetTCP(file, ipv6)
 	if err != nil {
 		return err
 	}
@@ -120,24 +120,24 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 		now := time.Now()
 		select {
 		case s := <-socketInfo:
-			if when, seen := listeningOn[s.Src_port]; !seen || now.Sub(when) > aggregation {
-				if s.Dst_port == 0 {
-					listeningOn[s.Src_port] = now
+			if when, seen := listeningOn[s.SrcPort]; !seen || now.Sub(when) > aggregation {
+				if s.DstPort == 0 {
+					listeningOn[s.SrcPort] = now
 					servers <- ServerConnection{
-						localIp:   s.Src_ip.String(),
-						localPort: s.Src_port,
+						localIp:   s.SrcIP.String(),
+						localPort: s.SrcPort,
 						process:   process(ps, exposeProcessInfo, s.Inode),
 					}
 				} else {
-					dstIp := s.Dst_ip.String()
-					dedupId := outgoingConnectionDedup{dstIp, s.Dst_port}
+					dstIP := s.DstIP.String()
+					dedupId := outgoingConnectionDedup{dstIP, s.DstPort}
 					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
-							localIp:    s.Src_ip.String(),
-							localPort:  s.Src_port,
-							remoteIp:   dstIp,
-							remotePort: s.Dst_port,
+							localIp:    s.SrcIP.String(),
+							localPort:  s.SrcPort,
+							remoteIp:   dstIP,
+							remotePort: s.DstPort,
 							process:    process(ps, exposeProcessInfo, s.Inode),
 						}
 					}
