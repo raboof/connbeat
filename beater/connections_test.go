@@ -14,7 +14,7 @@ func randByte() byte {
 	return byte(rand.Intn(256))
 }
 
-func randIp() net.IP {
+func randIP() net.IP {
 	if rand.Int()%2 == 0 {
 		return net.IPv4(randByte(), randByte(), randByte(), randByte())
 	} else {
@@ -28,34 +28,34 @@ func randIp() net.IP {
 
 func listeningConnection(port uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   randIp(),
-		Dst_ip:   randIp(),
-		Src_port: port,
-		Dst_port: 0,
-		Uid:      uint32(rand.Int()),
-		Inode:    uint64(rand.Int()),
+		SrcIP:   randIP(),
+		DstIP:   randIP(),
+		SrcPort: port,
+		DstPort: 0,
+		UID:     uint32(rand.Int()),
+		Inode:   uint64(rand.Int()),
 	}
 }
 
 func incomingConnection(localPort uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   randIp(),
-		Dst_ip:   randIp(),
-		Src_port: localPort,
-		Dst_port: uint16(rand.Int()),
-		Uid:      uint32(rand.Int()),
-		Inode:    uint64(rand.Int63()),
+		SrcIP:   randIP(),
+		DstIP:   randIP(),
+		SrcPort: localPort,
+		DstPort: uint16(rand.Int()),
+		UID:     uint32(rand.Int()),
+		Inode:   uint64(rand.Int63()),
 	}
 }
 
-func outgoingConnection(remoteIp net.IP, remotePort uint16) *procs.SocketInfo {
+func outgoingConnection(remoteIP net.IP, remotePort uint16) *procs.SocketInfo {
 	return &procs.SocketInfo{
-		Src_ip:   randIp(),
-		Dst_ip:   remoteIp,
-		Src_port: uint16(rand.Int()),
-		Dst_port: remotePort,
-		Uid:      uint32(rand.Int()),
-		Inode:    uint64(rand.Int63()),
+		SrcIP:   randIP(),
+		DstIP:   remoteIP,
+		SrcPort: uint16(rand.Int()),
+		DstPort: remotePort,
+		UID:     uint32(rand.Int()),
+		Inode:   uint64(rand.Int63()),
 	}
 }
 
@@ -111,7 +111,7 @@ func TestDedupClientConnections(t *testing.T) {
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
-	remoteIp := randIp()
+	remoteIp := randIP()
 	input <- outgoingConnection(remoteIp, 80)
 	_, ok := <-connections
 	assert.Equal(t, ok, true, "a client connection should be reported")
@@ -135,7 +135,7 @@ func TestRepublishOldClientConnections(t *testing.T) {
 
 	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
 
-	remoteIp := randIp()
+	remoteIp := randIP()
 	input <- outgoingConnection(remoteIp, 80)
 	_, ok := <-connections
 	assert.Equal(t, ok, true, "a client connection should be reported")

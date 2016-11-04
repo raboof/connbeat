@@ -63,14 +63,14 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
-func (cb *Connbeat) exportServerConnection(s ServerConnection, localIps mapset.Set) error {
+func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
 		"beat": common.MapStr{
-			"local_ips": localIps.ToSlice(),
+			"local_ips": localIPs.ToSlice(),
 		},
 	}
 
@@ -79,17 +79,17 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIps mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIps mapset.Set) error {
+func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
-		"local_ip":      c.localIp,
+		"local_ip":      c.localIP,
 		"local_port":    c.localPort,
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
 		"beat": common.MapStr{
-			"local_ips": localIps.ToSlice(),
+			"local_ips": localIPs.ToSlice(),
 		},
 	}
 
@@ -101,24 +101,24 @@ func (cb *Connbeat) exportConnection(c Connection, localIps mapset.Set) error {
 func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
 	var err error
 
-	localIps := mapset.NewSet()
+	localIPs := mapset.NewSet()
 
 	for {
 		select {
 		case <-cb.done:
 			return nil
 		case c := <-connectionListener:
-			localIps.Add(c.localIp)
-			err = cb.exportConnection(c, localIps)
+			localIPs.Add(c.localIP)
+			err = cb.exportConnection(c, localIPs)
 			if err != nil {
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if s.localIp != "0.0.0.0" &&
-				s.localIp != "::" {
-				localIps.Add(s.localIp)
+			if s.localIP != "0.0.0.0" &&
+				s.localIP != "::" {
+				localIPs.Add(s.localIP)
 			}
-			err = cb.exportServerConnection(s, localIps)
+			err = cb.exportServerConnection(s, localIPs)
 			if err != nil {
 				return err
 			}

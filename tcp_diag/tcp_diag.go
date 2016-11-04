@@ -49,12 +49,12 @@ func pollConnections(family uint8, socket *netlink.NetlinkSocket, socketInfo cha
 			inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
 			fmt.Printf("Processing netlink response for remote port %d\n", inetDiagMsg.Id.IDiagDPort)
 			socketInfo <- &procs.SocketInfo{
-				Src_ip:   inetDiagMsg.Id.SrcIP(),
-				Dst_ip:   inetDiagMsg.Id.DstIP(),
-				Src_port: port(inetDiagMsg.Id.IDiagSPort),
-				Dst_port: port(inetDiagMsg.Id.IDiagDPort),
+				SrcIP:   inetDiagMsg.Id.SrcIP(),
+				DstIP:   inetDiagMsg.Id.DstIP(),
+				SrcPort: port(inetDiagMsg.Id.IDiagSPort),
+				DstPort: port(inetDiagMsg.Id.IDiagDPort),
 
-				Uid:   inetDiagMsg.IDiagUid,
+				UID:   inetDiagMsg.IDiagUid,
 				Inode: uint64(inetDiagMsg.IDiagInode),
 			}
 		}
