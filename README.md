@@ -36,6 +36,27 @@ You can view the events on kafka with something like kafkacat:
 
     kafkacat -C -b localhost -t connbeat
 
+## Performance overhead
+
+We tested the overhead of running the connbeat agent using the
+[TechEmpower web framework benchmarks](https://www.techempower.com/benchmarks/).
+
+After deploying to AWS, we ran the [query](https://www.techempower.com/benchmarks/#test=query)
+benchmark workload against the Spring Boot framework.
+
+The result was encouraging: the total requests throughput took a hit of only
+0.47% (58 fewer requests on a total of 12312). The average latency was in fact
+a little better in the test runs with connbeat - which must of course be caused
+by noise, but inspires confidence that connbeat introduce no noticable degredation.
+
+The complete test results can be found in the /tests/performance folder of this repo.
+
+Of course performance impact may vary due to all kinds of circumstances and
+differences in workload. We're aware of several potential further
+optimizations, which can be applied when a situation comes up where connbeat
+does have a noticable impact. If you encounter such a situation, be sure to
+file an issue.
+
 ## Events
 
 For connections where the agent is the server:
