@@ -1,0 +1,184 @@
+Welcome to Ubuntu 12.04.5 LTS (GNU/Linux 3.2.0-107-virtual x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Fri Nov  4 15:26:28 UTC 2016
+
+  System load:  0.0                Processes:           60
+  Usage of /:   15.9% of 14.76GB   Users logged in:     0
+  Memory usage: 4%                 IP address for eth0: 172.16.0.17
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+Welcome to the FrameworkBenchmarks project!
+
+  To get started, perhaps try this:
+    $ cd FrameworkBenchmarks
+    $ toolset/run-tests.py --install server --test go
+    $ cat results/latest/logs/go/out.txt
+
+  You can get lots of help:
+    $ toolset/run-tests.py --help
+
+  This Vagrant environment is already setup and ready to go, so you
+  can safely ignore any flags about users, hosts, or identity files 
+New release '14.04.5 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+
+
+---------------------------------------------------------
+ Running Primer spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 5 -c 8 --timeout 8 -t 8 http://172.16.0.16:8080/queries?queries=2
+---------------------------------------------------------
+
+Running 5s test @ http://172.16.0.16:8080/queries?queries=2
+  8 threads and 8 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   161.22ms   67.78ms 409.53ms   71.77%
+    Req/Sec     7.27      3.21    20.00     82.76%
+  Latency Distribution
+     50%  149.49ms
+     75%  196.47ms
+     90%  250.60ms
+     99%  363.36ms
+  244 requests in 5.01s, 49.95KB read
+Requests/sec:     48.72
+Transfer/sec:      9.97KB
+
+---------------------------------------------------------
+ Running Warmup spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=2
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=2
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.73s     1.40s    7.99s    71.54%
+    Req/Sec   121.70    139.40   646.00     86.73%
+  Latency Distribution
+     50%    2.53s 
+     75%    3.60s 
+     90%    4.46s 
+     99%    6.49s 
+  1319 requests in 15.03s, 270.37KB read
+  Socket errors: connect 0, read 0, write 0, timeout 5
+Requests/sec:     87.75
+Transfer/sec:     17.99KB
+
+---------------------------------------------------------
+ Synchronizing time
+---------------------------------------------------------
+
+
+---------------------------------------------------------
+ Queries: 1 for spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=1
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=1
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.46s   719.45ms   4.92s    69.43%
+    Req/Sec   203.10    157.57   727.00     75.86%
+  Latency Distribution
+     50%    1.35s 
+     75%    1.88s 
+     90%    2.40s 
+     99%    3.58s 
+  2554 requests in 15.03s, 443.76KB read
+Requests/sec:    169.93
+Transfer/sec:     29.52KB
+STARTTIME 1478273220
+ENDTIME 1478273235
+
+---------------------------------------------------------
+ Queries: 5 for spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=5
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=5
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.74s     1.46s    7.82s    71.73%
+    Req/Sec    73.03    117.32   710.00     90.91%
+  Latency Distribution
+     50%    3.75s 
+     75%    4.61s 
+     90%    5.61s 
+     99%    7.32s 
+  826 requests in 15.05s, 245.98KB read
+  Socket errors: connect 0, read 0, write 0, timeout 30
+Requests/sec:     54.88
+Transfer/sec:     16.34KB
+STARTTIME 1478273237
+ENDTIME 1478273252
+
+---------------------------------------------------------
+ Queries: 10 for spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=10
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=10
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.08s     2.33s    7.98s    64.34%
+    Req/Sec    31.07     22.73   101.00     80.17%
+  Latency Distribution
+     50%    5.82s 
+     75%    6.92s 
+     90%    7.63s 
+     99%    7.94s 
+  410 requests in 15.03s, 186.51KB read
+  Socket errors: connect 0, read 0, write 0, timeout 152
+Requests/sec:     27.28
+Transfer/sec:     12.41KB
+STARTTIME 1478273254
+ENDTIME 1478273269
+
+---------------------------------------------------------
+ Queries: 15 for spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=15
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=15
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.81s     1.09s    7.80s    68.06%
+    Req/Sec    29.18     44.32   313.00     95.52%
+  Latency Distribution
+     50%    5.67s 
+     75%    6.53s 
+     90%    7.51s 
+     99%    7.80s 
+  223 requests in 15.03s, 136.05KB read
+  Socket errors: connect 0, read 0, write 0, timeout 151
+Requests/sec:     14.84
+Transfer/sec:      9.05KB
+STARTTIME 1478273272
+ENDTIME 1478273287
+
+---------------------------------------------------------
+ Queries: 20 for spring
+ wrk -H 'Host: localhost' -H 'application/json,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 256 --timeout 8 -t 1 http://172.16.0.16:8080/queries?queries=20
+---------------------------------------------------------
+
+Running 15s test @ http://172.16.0.16:8080/queries?queries=20
+  1 threads and 256 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.39s     1.76s    7.94s    61.90%
+    Req/Sec    19.61     17.65    70.00     74.67%
+  Latency Distribution
+     50%    5.60s 
+     75%    6.80s 
+     90%    7.47s 
+     99%    7.94s 
+  168 requests in 15.03s, 128.61KB read
+  Socket errors: connect 0, read 0, write 0, timeout 147
+Requests/sec:     11.17
+Transfer/sec:      8.55KB
+STARTTIME 1478273289
+ENDTIME 1478273304

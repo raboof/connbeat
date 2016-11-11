@@ -1,0 +1,120 @@
+{
+  "succeeded": {
+    "fortune": [], 
+    "plaintext": [], 
+    "db": [], 
+    "update": [], 
+    "json": [], 
+    "query": [
+      "spring"
+    ]
+  }, 
+  "frameworks": [
+    "spring"
+  ], 
+  "verify": {
+    "spring": {
+      "query": "pass"
+    }
+  }, 
+  "completed": {
+    "spring": "20161104143934"
+  }, 
+  "failed": {
+    "fortune": [], 
+    "plaintext": [], 
+    "db": [], 
+    "update": [], 
+    "json": [], 
+    "query": []
+  }, 
+  "concurrencyLevels": [
+    8, 
+    16, 
+    32, 
+    64, 
+    128, 
+    256
+  ], 
+  "duration": 15, 
+  "queryIntervals": [
+    1, 
+    5, 
+    10, 
+    15, 
+    20
+  ], 
+  "rawData": {
+    "fortune": {}, 
+    "plaintext": {}, 
+    "slocCounts": {
+      "spring": 308
+    }, 
+    "db": {}, 
+    "update": {}, 
+    "json": {}, 
+    "commitCounts": {
+      "spring": 19
+    }, 
+    "query": {
+      "spring": [
+        {
+          "latencyAvg": "1.46s", 
+          "latencyMax": "6.33s", 
+          "latencyStdev": "732.91ms", 
+          "totalRequests": 2555, 
+          "startTime": 1478270265, 
+          "endTime": 1478270280
+        }, 
+        {
+          "latencyAvg": "3.93s", 
+          "timeout": 2, 
+          "latencyMax": "7.92s", 
+          "latencyStdev": "1.67s", 
+          "totalRequests": 771, 
+          "write": 0, 
+          "read": 0, 
+          "connect": 0, 
+          "startTime": 1478270282, 
+          "endTime": 1478270297
+        }, 
+        {
+          "latencyAvg": "5.76s", 
+          "timeout": 100, 
+          "latencyMax": "7.99s", 
+          "latencyStdev": "1.73s", 
+          "totalRequests": 463, 
+          "write": 0, 
+          "read": 0, 
+          "connect": 0, 
+          "startTime": 1478270299, 
+          "endTime": 1478270315
+        }, 
+        {
+          "latencyAvg": "7.23s", 
+          "timeout": 193, 
+          "latencyMax": "7.97s", 
+          "latencyStdev": "540.29ms", 
+          "totalRequests": 252, 
+          "write": 0, 
+          "read": 0, 
+          "connect": 0, 
+          "startTime": 1478270317, 
+          "endTime": 1478270332
+        }, 
+        {
+          "latencyAvg": "7.55s", 
+          "timeout": 194, 
+          "latencyMax": "7.79s", 
+          "latencyStdev": "336.42ms", 
+          "totalRequests": 196, 
+          "write": 0, 
+          "read": 0, 
+          "connect": 0, 
+          "startTime": 1478270334, 
+          "endTime": 1478270349
+        }
+      ]
+    }
+  }
+}
