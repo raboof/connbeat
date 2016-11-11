@@ -16,14 +16,14 @@ import (
 )
 
 type Processes struct {
-	byInode       map[int64]*UnixProcess
+	byInode       map[uint64]*UnixProcess
 	exposeCmdline bool
 	exposeEnviron bool
 }
 
 func New(exposeCmdline, exposeEnviron bool) *Processes {
 	return &Processes{
-		byInode:       make(map[int64]*UnixProcess),
+		byInode:       make(map[uint64]*UnixProcess),
 		exposeCmdline: exposeCmdline,
 		exposeEnviron: exposeEnviron,
 	}
@@ -51,7 +51,7 @@ func (ps *Processes) Refresh() error {
 // fields and information.
 type UnixProcess struct {
 	pid    int
-	inodes []int64
+	inodes []uint64
 
 	Binary  string
 	Cmdline string
@@ -138,7 +138,7 @@ func newUnixProcess(pid int, exposeCmdline, exposeEnviron bool) (*UnixProcess, e
 	return p, p.Refresh(exposeCmdline, exposeEnviron)
 }
 
-func (ps *Processes) FindProcessByInode(inode int64) *UnixProcess {
+func (ps *Processes) FindProcessByInode(inode uint64) *UnixProcess {
 	proc := ps.byInode[inode]
 	if proc == nil {
 		// Refesh and try again

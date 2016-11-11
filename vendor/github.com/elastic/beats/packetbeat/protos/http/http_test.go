@@ -1048,11 +1048,11 @@ func Test_gap_in_body_http1dot0(t *testing.T) {
 
 }
 
-func testCreateTCPTuple() *common.TcpTuple {
-	t := &common.TcpTuple{
-		Ip_length: 4,
-		Src_ip:    net.IPv4(192, 168, 0, 1), Dst_ip: net.IPv4(192, 168, 0, 2),
-		Src_port: 6512, Dst_port: 80,
+func testCreateTCPTuple() *common.TCPTuple {
+	t := &common.TCPTuple{
+		IPLength: 4,
+		SrcIP:    net.IPv4(192, 168, 0, 1), DstIP: net.IPv4(192, 168, 0, 2),
+		SrcPort: 6512, DstPort: 80,
 	}
 	t.ComputeHashebles()
 	return t
@@ -1107,7 +1107,7 @@ func Test_gap_in_body_http1dot0_fin(t *testing.T) {
 	private, drop := http.GapInStream(tcptuple, 1, 10, private)
 	assert.Equal(t, false, drop)
 
-	private = http.ReceivedFin(tcptuple, 1, private)
+	http.ReceivedFin(tcptuple, 1, private)
 
 	trans := expectTransaction(t, http)
 	assert.NotNil(t, trans)
@@ -1124,11 +1124,11 @@ func TestHttp_configsSettingAll(t *testing.T) {
 
 	config.SendRequest = true
 	config.SendResponse = true
-	config.Hide_keywords = []string{"a", "b"}
-	config.Redact_authorization = true
-	config.Send_all_headers = true
-	config.Split_cookie = true
-	config.Real_ip_header = "X-Forwarded-For"
+	config.HideKeywords = []string{"a", "b"}
+	config.RedactAuthorization = true
+	config.SendAllHeaders = true
+	config.SplitCookie = true
+	config.RealIPHeader = "X-Forwarded-For"
 
 	// Set config
 	http.setFromConfig(&config)
@@ -1138,12 +1138,12 @@ func TestHttp_configsSettingAll(t *testing.T) {
 	assert.Equal(t, config.Ports, http.GetPorts())
 	assert.Equal(t, config.SendRequest, http.SendRequest)
 	assert.Equal(t, config.SendResponse, http.SendResponse)
-	assert.Equal(t, config.Hide_keywords, http.HideKeywords)
-	assert.Equal(t, config.Redact_authorization, http.RedactAuthorization)
+	assert.Equal(t, config.HideKeywords, http.HideKeywords)
+	assert.Equal(t, config.RedactAuthorization, http.RedactAuthorization)
 	assert.True(t, http.parserConfig.SendHeaders)
 	assert.True(t, http.parserConfig.SendAllHeaders)
-	assert.Equal(t, config.Split_cookie, http.SplitCookie)
-	assert.Equal(t, strings.ToLower(config.Real_ip_header), http.parserConfig.RealIPHeader)
+	assert.Equal(t, config.SplitCookie, http.SplitCookie)
+	assert.Equal(t, strings.ToLower(config.RealIPHeader), http.parserConfig.RealIPHeader)
 }
 
 func TestHttp_configsSettingHeaders(t *testing.T) {
@@ -1152,14 +1152,14 @@ func TestHttp_configsSettingHeaders(t *testing.T) {
 	config := defaultConfig
 
 	// Assign config vars
-	config.Send_headers = []string{"a", "b", "c"}
+	config.SendHeaders = []string{"a", "b", "c"}
 
 	// Set config
 	http.setFromConfig(&config)
 
 	// Check if http config is set correctly
 	assert.True(t, http.parserConfig.SendHeaders)
-	assert.Equal(t, len(config.Send_headers), len(http.parserConfig.HeadersWhitelist))
+	assert.Equal(t, len(config.SendHeaders), len(http.parserConfig.HeadersWhitelist))
 
 	for _, val := range http.parserConfig.HeadersWhitelist {
 		assert.True(t, val)
@@ -1284,7 +1284,7 @@ func BenchmarkHttpSimpleTransaction(b *testing.B) {
 		private = http.ReceivedFin(tcptuple, 0, private)
 
 		private = http.Parse(&resp, tcptuple, 1, private)
-		private = http.ReceivedFin(tcptuple, 1, private)
+		http.ReceivedFin(tcptuple, 1, private)
 
 		select {
 		case <-client.Channel:

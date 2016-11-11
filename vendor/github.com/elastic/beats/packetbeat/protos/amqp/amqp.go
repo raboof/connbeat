@@ -79,15 +79,15 @@ func (amqp *Amqp) init(results publish.Transactions, config *amqpConfig) error {
 
 func (amqp *Amqp) initMethodMap() {
 	amqp.MethodMap = map[codeClass]map[codeMethod]AmqpMethod{
-		connectionCode: map[codeMethod]AmqpMethod{
+		connectionCode: {
 			connectionClose:   connectionCloseMethod,
 			connectionCloseOk: okMethod,
 		},
-		channelCode: map[codeMethod]AmqpMethod{
+		channelCode: {
 			channelClose:   channelCloseMethod,
 			channelCloseOk: okMethod,
 		},
-		exchangeCode: map[codeMethod]AmqpMethod{
+		exchangeCode: {
 			exchangeDeclare:   exchangeDeclareMethod,
 			exchangeDeclareOk: okMethod,
 			exchangeDelete:    exchangeDeleteMethod,
@@ -97,7 +97,7 @@ func (amqp *Amqp) initMethodMap() {
 			exchangeUnbind:    exchangeUnbindMethod,
 			exchangeUnbindOk:  okMethod,
 		},
-		queueCode: map[codeMethod]AmqpMethod{
+		queueCode: {
 			queueDeclare:   queueDeclareMethod,
 			queueDeclareOk: queueDeclareOkMethod,
 			queueBind:      queueBindMethod,
@@ -109,7 +109,7 @@ func (amqp *Amqp) initMethodMap() {
 			queueDelete:    queueDeleteMethod,
 			queueDeleteOk:  queueDeleteOkMethod,
 		},
-		basicCode: map[codeMethod]AmqpMethod{
+		basicCode: {
 			basicConsume:   basicConsumeMethod,
 			basicConsumeOk: basicConsumeOkMethod,
 			basicCancel:    basicCancelMethod,
@@ -126,7 +126,7 @@ func (amqp *Amqp) initMethodMap() {
 			basicRecoverOk: okMethod,
 			basicNack:      basicNackMethod,
 		},
-		txCode: map[codeMethod]AmqpMethod{
+		txCode: {
 			txSelect:     txSelectMethod,
 			txSelectOk:   okMethod,
 			txCommit:     txCommitMethod,
@@ -171,7 +171,7 @@ func (amqp *Amqp) ConnectionTimeout() time.Duration {
 	return amqp.transactionTimeout
 }
 
-func (amqp *Amqp) Parse(pkt *protos.Packet, tcptuple *common.TcpTuple,
+func (amqp *Amqp) Parse(pkt *protos.Packet, tcptuple *common.TCPTuple,
 	dir uint8, private protos.ProtocolData) protos.ProtocolData {
 
 	defer logp.Recover("ParseAmqp exception")
@@ -195,7 +195,7 @@ func (amqp *Amqp) Parse(pkt *protos.Packet, tcptuple *common.TcpTuple,
 	} else {
 		// concatenate databytes
 		priv.Data[dir].data = append(priv.Data[dir].data, pkt.Payload...)
-		if len(priv.Data[dir].data) > tcp.TCP_MAX_DATA_IN_STREAM {
+		if len(priv.Data[dir].data) > tcp.TCPMaxDataInStream {
 			debugf("Stream data too large, dropping TCP stream")
 			priv.Data[dir] = nil
 			return priv
@@ -224,20 +224,20 @@ func (amqp *Amqp) Parse(pkt *protos.Packet, tcptuple *common.TcpTuple,
 	return priv
 }
 
-func (amqp *Amqp) GapInStream(tcptuple *common.TcpTuple, dir uint8,
+func (amqp *Amqp) GapInStream(tcptuple *common.TCPTuple, dir uint8,
 	nbytes int, private protos.ProtocolData) (priv protos.ProtocolData, drop bool) {
 	detailedf("GapInStream called")
 	return private, true
 }
 
-func (amqp *Amqp) ReceivedFin(tcptuple *common.TcpTuple, dir uint8,
+func (amqp *Amqp) ReceivedFin(tcptuple *common.TCPTuple, dir uint8,
 	private protos.ProtocolData) protos.ProtocolData {
 	return private
 }
 
 func (amqp *Amqp) handleAmqpRequest(msg *AmqpMessage) {
 	// Add it to the HT
-	tuple := msg.TcpTuple
+	tuple := msg.TCPTuple
 
 	trans := amqp.getTransaction(tuple.Hashable())
 	if trans != nil {
@@ -251,19 +251,19 @@ func (amqp *Amqp) handleAmqpRequest(msg *AmqpMessage) {
 	}
 
 	trans.ts = msg.Ts
-	trans.Ts = int64(trans.ts.UnixNano() / 1000)
+	trans.Ts = trans.ts.UnixNano() / 1000
 	trans.JsTs = msg.Ts
 	trans.Src = common.Endpoint{
-		Ip:   msg.TcpTuple.Src_ip.String(),
-		Port: msg.TcpTuple.Src_port,
+		IP:   msg.TCPTuple.SrcIP.String(),
+		Port: msg.TCPTuple.SrcPort,
 		Proc: string(msg.CmdlineTuple.Src),
 	}
 	trans.Dst = common.Endpoint{
-		Ip:   msg.TcpTuple.Dst_ip.String(),
-		Port: msg.TcpTuple.Dst_port,
+		IP:   msg.TCPTuple.DstIP.String(),
+		Port: msg.TCPTuple.DstPort,
 		Proc: string(msg.CmdlineTuple.Dst),
 	}
-	if msg.Direction == tcp.TcpDirectionReverse {
+	if msg.Direction == tcp.TCPDirectionReverse {
 		trans.Src, trans.Dst = trans.Dst, trans.Src
 	}
 
@@ -275,7 +275,7 @@ func (amqp *Amqp) handleAmqpRequest(msg *AmqpMessage) {
 		trans.Request = msg.Method
 	}
 	//length = message + 4 bytes header + frame end octet
-	trans.BytesIn = msg.Body_size + 12
+	trans.BytesIn = msg.BodySize + 12
 	if msg.Fields != nil {
 		trans.Amqp = msg.Fields
 	} else {
@@ -299,7 +299,7 @@ func (amqp *Amqp) handleAmqpRequest(msg *AmqpMessage) {
 }
 
 func (amqp *Amqp) handleAmqpResponse(msg *AmqpMessage) {
-	tuple := msg.TcpTuple
+	tuple := msg.TCPTuple
 	trans := amqp.getTransaction(tuple.Hashable())
 	if trans == nil || trans.Amqp == nil {
 		debugf("Response from unknown transaction. Ignoring.")
@@ -308,7 +308,7 @@ func (amqp *Amqp) handleAmqpResponse(msg *AmqpMessage) {
 	}
 
 	//length = message + 4 bytes class/method + frame end octet + header
-	trans.BytesOut = msg.Body_size + 12
+	trans.BytesOut = msg.BodySize + 12
 	//merge the both fields from request and response
 	trans.Amqp.Update(msg.Fields)
 	trans.Response = common.OK_STATUS
@@ -348,34 +348,34 @@ func (amqp *Amqp) expireTransaction(trans *AmqpTransaction) {
 //process, the method, header and body frames are regrouped in one transaction
 func (amqp *Amqp) handlePublishing(client *AmqpMessage) {
 
-	tuple := client.TcpTuple
+	tuple := client.TCPTuple
 	trans := amqp.getTransaction(tuple.Hashable())
 
 	if trans == nil {
 		trans = &AmqpTransaction{Type: "amqp", tuple: tuple}
-		amqp.transactions.Put(client.TcpTuple.Hashable(), trans)
+		amqp.transactions.Put(client.TCPTuple.Hashable(), trans)
 	}
 
 	trans.ts = client.Ts
-	trans.Ts = int64(client.Ts.UnixNano() / 1000)
+	trans.Ts = client.Ts.UnixNano() / 1000
 	trans.JsTs = client.Ts
 	trans.Src = common.Endpoint{
-		Ip:   client.TcpTuple.Src_ip.String(),
-		Port: client.TcpTuple.Src_port,
+		IP:   client.TCPTuple.SrcIP.String(),
+		Port: client.TCPTuple.SrcPort,
 		Proc: string(client.CmdlineTuple.Src),
 	}
 	trans.Dst = common.Endpoint{
-		Ip:   client.TcpTuple.Dst_ip.String(),
-		Port: client.TcpTuple.Dst_port,
+		IP:   client.TCPTuple.DstIP.String(),
+		Port: client.TCPTuple.DstPort,
 		Proc: string(client.CmdlineTuple.Dst),
 	}
 
 	trans.Method = client.Method
 	//for publishing and delivering, bytes in and out represent the length of the
 	//message itself
-	trans.BytesIn = client.Body_size
+	trans.BytesIn = client.BodySize
 
-	if client.Body_size > uint64(amqp.MaxBodyLength) {
+	if client.BodySize > uint64(amqp.MaxBodyLength) {
 		trans.Body = client.Body[:amqp.MaxBodyLength]
 	} else {
 		trans.Body = client.Body
@@ -395,33 +395,33 @@ func (amqp *Amqp) handlePublishing(client *AmqpMessage) {
 //body frames are regrouped in one transaction
 func (amqp *Amqp) handleDelivering(server *AmqpMessage) {
 
-	tuple := server.TcpTuple
+	tuple := server.TCPTuple
 	trans := amqp.getTransaction(tuple.Hashable())
 
 	if trans == nil {
 		trans = &AmqpTransaction{Type: "amqp", tuple: tuple}
-		amqp.transactions.Put(server.TcpTuple.Hashable(), trans)
+		amqp.transactions.Put(server.TCPTuple.Hashable(), trans)
 	}
 
 	trans.ts = server.Ts
-	trans.Ts = int64(server.Ts.UnixNano() / 1000)
+	trans.Ts = server.Ts.UnixNano() / 1000
 	trans.JsTs = server.Ts
 	trans.Src = common.Endpoint{
-		Ip:   server.TcpTuple.Src_ip.String(),
-		Port: server.TcpTuple.Src_port,
+		IP:   server.TCPTuple.SrcIP.String(),
+		Port: server.TCPTuple.SrcPort,
 		Proc: string(server.CmdlineTuple.Src),
 	}
 	trans.Dst = common.Endpoint{
-		Ip:   server.TcpTuple.Dst_ip.String(),
-		Port: server.TcpTuple.Dst_port,
+		IP:   server.TCPTuple.DstIP.String(),
+		Port: server.TCPTuple.DstPort,
 		Proc: string(server.CmdlineTuple.Dst),
 	}
 
 	//for publishing and delivering, bytes in and out represent the length of the
 	//message itself
-	trans.BytesOut = server.Body_size
+	trans.BytesOut = server.BodySize
 
-	if server.Body_size > uint64(amqp.MaxBodyLength) {
+	if server.BodySize > uint64(amqp.MaxBodyLength) {
 		trans.Body = server.Body[:amqp.MaxBodyLength]
 	} else {
 		trans.Body = server.Body
@@ -514,17 +514,16 @@ func (amqp *Amqp) publishTransaction(t *AmqpTransaction) {
 func isAsynchronous(trans *AmqpTransaction) bool {
 	if val, ok := trans.Amqp["no-wait"]; ok && val == true {
 		return true
-	} else {
-		return trans.Method == "basic.reject" ||
-			trans.Method == "basic.ack" ||
-			trans.Method == "basic.nack"
 	}
+
+	return trans.Method == "basic.reject" ||
+		trans.Method == "basic.ack" ||
+		trans.Method == "basic.nack"
 }
 
 //function to convert a body slice into a readable format
 func bodyToString(data []byte) string {
-	var ret []string = make([]string, len(data))
-
+	ret := make([]string, len(data))
 	for i, c := range data {
 		ret[i] = strconv.Itoa(int(c))
 	}
@@ -546,7 +545,7 @@ func isStringable(m *AmqpMessage) bool {
 	return stringable
 }
 
-func (amqp *Amqp) getTransaction(k common.HashableTcpTuple) *AmqpTransaction {
+func (amqp *Amqp) getTransaction(k common.HashableTCPTuple) *AmqpTransaction {
 	v := amqp.transactions.Get(k)
 	if v != nil {
 		return v.(*AmqpTransaction)
@@ -565,10 +564,6 @@ func isCloseError(t *AmqpTransaction) bool {
 }
 
 func getReplyCode(m common.MapStr) uint16 {
-	code, ok := m["reply-code"].(uint16)
-	if !ok {
-		return 0
-	} else {
-		return code
-	}
+	code, _ := m["reply-code"].(uint16)
+	return code
 }

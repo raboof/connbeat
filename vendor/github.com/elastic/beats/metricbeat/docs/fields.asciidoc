@@ -15,6 +15,7 @@ grouped in the following categories:
 * <<exported-fields-apache>>
 * <<exported-fields-beat>>
 * <<exported-fields-beats>>
+* <<exported-fields-cloud>>
 * <<exported-fields-common>>
 * <<exported-fields-docker>>
 * <<exported-fields-haproxy>>
@@ -375,6 +376,12 @@ The hostname as returned by the operating system on which the Beat is running.
 
 
 [float]
+=== beat.version
+
+The version of the beat that generated this event.
+
+
+[float]
 === @timestamp
 
 type: date
@@ -655,6 +662,57 @@ Log files related stastics.
 type: long
 
 Total number of events published
+
+
+[[exported-fields-cloud]]
+== Cloud Provider Metadata Fields
+
+Metadata from cloud providers added by the add_cloud_metadata processor.
+
+
+
+[float]
+=== meta.cloud.provider
+
+example: ec2
+
+Name of the cloud provider. Possible values are ec2, gce, or digitalocean.
+
+
+[float]
+=== meta.cloud.instance_id
+
+Instance ID of the host machine.
+
+
+[float]
+=== meta.cloud.machine_type
+
+example: t2.medium
+
+Machine type of the host machine.
+
+
+[float]
+=== meta.cloud.availability_zone
+
+example: us-east-1c
+
+Availability zone in which this host is running.
+
+
+[float]
+=== meta.cloud.project_id
+
+example: project-x
+
+Name of the project in Google Cloud.
+
+
+[float]
+=== meta.cloud.region
+
+Region in which this host is running.
 
 
 [[exported-fields-common]]
@@ -947,6 +1005,8 @@ Fail counter.
 
 type: long
 
+format: bytes
+
 Memory limit.
 
 
@@ -961,6 +1021,8 @@ Rss memory stats.
 === docker.memory.rss.total
 
 type: long
+
+format: bytes
 
 Total memory resident set size.
 
@@ -985,6 +1047,8 @@ Usage memory stats.
 
 type: long
 
+format: bytes
+
 Max memory usage.
 
 
@@ -1000,6 +1064,8 @@ Memory usage percentage.
 === docker.memory.usage.total
 
 type: long
+
+format: bytes
 
 Total memory usage.
 
@@ -1030,6 +1096,8 @@ Incoming network stats.
 === docker.network.in.bytes
 
 type: long
+
+format: bytes
 
 Total number of incoming bytes.
 
@@ -1069,6 +1137,8 @@ Outgoing network stats.
 === docker.network.out.bytes
 
 type: long
+
+format: bytes
 
 Total number of outgoing bytes.
 
@@ -3449,7 +3519,7 @@ User CPU consumed by the background processes.
 [float]
 == memory Fields
 
-Redis CPU stats.
+Redis memory stats.
 
 
 
@@ -3458,13 +3528,16 @@ Redis CPU stats.
 
 type: long
 
-Used memory.
+format: bytes Used memory.
+
 
 
 [float]
 === redis.info.memory.used.rss
 
 type: long
+
+format: bytes
 
 Used memory rss.
 
@@ -3474,6 +3547,8 @@ Used memory rss.
 
 type: long
 
+format: bytes
+
 Used memory peak.
 
 
@@ -3481,6 +3556,8 @@ Used memory peak.
 === redis.info.memory.used.lua
 
 type: long
+
+format: bytes
 
 Used memory lua.
 
@@ -4464,7 +4541,7 @@ The percentage of used disk space.
 [float]
 == fsstat Fields
 
-`system.fsstat` contains filesystem metrics aggregated from all mounted filesystems.
+`system.fsstat` contains filesystem metrics aggregated from all mounted filesystems, similar with what `df -a` prints out.
 
 
 
@@ -4644,7 +4721,7 @@ type: long
 
 format: bytes
 
-Actual free memory in bytes. It is calculated based on the OS. On Linux it consists of the free memory plus caches and buffers. On OSX it is a sum of free memory and the inactive memory. On Windows, it is the  amount of unreserved and uncommitted memory currently in the user-mode portion of the virtual address space of the calling process.
+Actual free memory in bytes. It is calculated based on the OS. On Linux it consists of the free memory plus caches and buffers. On OSX it is a sum of free memory and the inactive memory. On Windows, it is equal to `system.memory.free`.
 
 
 [float]

@@ -99,7 +99,7 @@ func TestMySQLParser_OKResponse(t *testing.T) {
 	if stream.message.AffectedRows != 1 {
 		t.Errorf("Failed to parse affected rows")
 	}
-	if stream.message.InsertId != 4 {
+	if stream.message.InsertID != 4 {
 		t.Errorf("Failed to parse last INSERT id")
 	}
 	if stream.message.Size != 11 {
@@ -330,20 +330,20 @@ func TestParseMySQL_simpleUpdateResponse(t *testing.T) {
 		Payload: data,
 		Ts:      ts,
 	}
-	var tuple common.TcpTuple
+	var tuple common.TCPTuple
 	var private mysqlPrivateData
 
-	var count_handleMysql = 0
+	var countHandleMysql = 0
 
-	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcp *common.TcpTuple,
+	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcp *common.TCPTuple,
 		dir uint8, raw_msg []byte) {
 
-		count_handleMysql += 1
+		countHandleMysql++
 	}
 
 	mysql.Parse(&pkt, &tuple, 1, private)
 
-	if count_handleMysql != 1 {
+	if countHandleMysql != 1 {
 		t.Errorf("handleMysql not called")
 	}
 }
@@ -373,20 +373,20 @@ func TestParseMySQL_threeResponses(t *testing.T) {
 		Payload: data,
 		Ts:      ts,
 	}
-	var tuple common.TcpTuple
+	var tuple common.TCPTuple
 	var private mysqlPrivateData
 
-	var count_handleMysql = 0
+	var countHandleMysql = 0
 
-	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcptuple *common.TcpTuple,
+	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcptuple *common.TCPTuple,
 		dir uint8, raw_msg []byte) {
 
-		count_handleMysql += 1
+		countHandleMysql++
 	}
 
 	mysql.Parse(&pkt, &tuple, 1, private)
 
-	if count_handleMysql != 3 {
+	if countHandleMysql != 3 {
 		t.Errorf("handleMysql not called three times")
 	}
 }
@@ -417,19 +417,19 @@ func TestParseMySQL_splitResponse(t *testing.T) {
 		Payload: data,
 		Ts:      ts,
 	}
-	var tuple common.TcpTuple
+	var tuple common.TCPTuple
 	var private mysqlPrivateData
 
-	var count_handleMysql = 0
+	var countHandleMysql = 0
 
-	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcptuple *common.TcpTuple,
+	mysql.handleMysql = func(mysql *Mysql, m *MysqlMessage, tcptuple *common.TCPTuple,
 		dir uint8, raw_msg []byte) {
 
-		count_handleMysql += 1
+		countHandleMysql++
 	}
 
 	private = mysql.Parse(&pkt, &tuple, 1, private).(mysqlPrivateData)
-	if count_handleMysql != 0 {
+	if countHandleMysql != 0 {
 		t.Errorf("handleMysql called on first run")
 	}
 
@@ -443,6 +443,9 @@ func TestParseMySQL_splitResponse(t *testing.T) {
 			"2a00000a013309416e6f6e796d6f75730454657374047465737413323031332d30372d32322031383a33323a3130" +
 			"2a00000b013409416e6f6e796d6f75730474657374047465737413323031332d30372d32322031383a34343a3137" +
 			"0500000cfe00002100")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pkt = protos.Packet{
 		Payload: data,
@@ -450,16 +453,16 @@ func TestParseMySQL_splitResponse(t *testing.T) {
 	}
 
 	mysql.Parse(&pkt, &tuple, 1, private)
-	if count_handleMysql != 1 {
+	if countHandleMysql != 1 {
 		t.Errorf("handleMysql not called on the second run")
 	}
 }
 
-func testTcpTuple() *common.TcpTuple {
-	t := &common.TcpTuple{
-		Ip_length: 4,
-		Src_ip:    net.IPv4(192, 168, 0, 1), Dst_ip: net.IPv4(192, 168, 0, 2),
-		Src_port: 6512, Dst_port: 3306,
+func testTCPTuple() *common.TCPTuple {
+	t := &common.TCPTuple{
+		IPLength: 4,
+		SrcIP:    net.IPv4(192, 168, 0, 1), DstIP: net.IPv4(192, 168, 0, 2),
+		SrcPort: 6512, DstPort: 3306,
 	}
 	t.ComputeHashebles()
 	return t
@@ -488,11 +491,11 @@ func Test_gap_in_response(t *testing.T) {
 
 	// request and response from tests/pcaps/mysql_result_long.pcap
 	// select * from test
-	req_data, err := hex.DecodeString(
+	reqData, err := hex.DecodeString(
 		"130000000373656c656374202a20" +
 			"66726f6d2074657374")
 	assert.Nil(t, err)
-	resp_data, err := hex.DecodeString(
+	respData, err := hex.DecodeString(
 		"0100000103240000020364656604" +
 			"74657374047465737404746573740161" +
 			"01610c3f000b00000003000000000024" +
@@ -511,9 +514,9 @@ func Test_gap_in_response(t *testing.T) {
 			"696e6475737472792e204c6f72656d20")
 	assert.Nil(t, err)
 
-	tcptuple := testTcpTuple()
-	req := protos.Packet{Payload: req_data}
-	resp := protos.Packet{Payload: resp_data}
+	tcptuple := testTCPTuple()
+	req := protos.Packet{Payload: reqData}
+	resp := protos.Packet{Payload: respData}
 
 	private := protos.ProtocolData(new(mysqlPrivateData))
 
@@ -522,7 +525,7 @@ func Test_gap_in_response(t *testing.T) {
 
 	logp.Debug("mysql", "Now sending gap..")
 
-	private, drop := mysql.GapInStream(tcptuple, 1, 10, private)
+	_, drop := mysql.GapInStream(tcptuple, 1, 10, private)
 	assert.Equal(t, true, drop)
 
 	trans := expectTransaction(t, mysql)
@@ -541,12 +544,12 @@ func Test_gap_in_eat_message(t *testing.T) {
 
 	// request from tests/pcaps/mysql_result_long.pcap
 	// "select * from test". Last byte missing.
-	req_data, err := hex.DecodeString(
+	reqData, err := hex.DecodeString(
 		"130000000373656c656374202a20" +
 			"66726f6d20746573")
 	assert.Nil(t, err)
 
-	stream := &MysqlStream{data: req_data, message: new(MysqlMessage)}
+	stream := &MysqlStream{data: reqData, message: new(MysqlMessage)}
 	ok, complete := mysqlMessageParser(stream)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, false, complete)
@@ -563,13 +566,13 @@ func Test_read_length(t *testing.T) {
 	var err error
 	var length int
 
-	_, err = read_length([]byte{}, 0)
+	_, err = readLength([]byte{}, 0)
 	assert.NotNil(t, err)
 
-	_, err = read_length([]byte{0x00, 0x00}, 0)
+	_, err = readLength([]byte{0x00, 0x00}, 0)
 	assert.NotNil(t, err)
 
-	length, err = read_length([]byte{0x01, 0x00, 0x00}, 0)
+	length, err = readLength([]byte{0x01, 0x00, 0x00}, 0)
 	assert.Nil(t, err)
 	assert.Equal(t, length, 1)
 }

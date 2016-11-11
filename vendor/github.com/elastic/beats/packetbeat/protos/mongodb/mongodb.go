@@ -32,7 +32,7 @@ type Mongodb struct {
 }
 
 type transactionKey struct {
-	tcp common.HashableTcpTuple
+	tcp common.HashableTCPTuple
 	id  int
 }
 
@@ -99,7 +99,7 @@ func (mongodb *Mongodb) ConnectionTimeout() time.Duration {
 
 func (mongodb *Mongodb) Parse(
 	pkt *protos.Packet,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 	private protos.ProtocolData,
 ) protos.ProtocolData {
@@ -135,7 +135,7 @@ func ensureMongodbConnection(private protos.ProtocolData) *mongodbConnectionData
 func (mongodb *Mongodb) doParse(
 	conn *mongodbConnectionData,
 	pkt *protos.Packet,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 ) *mongodbConnectionData {
 	st := conn.Streams[dir]
@@ -146,7 +146,7 @@ func (mongodb *Mongodb) doParse(
 	} else {
 		// concatenate bytes
 		st.data = append(st.data, pkt.Payload...)
-		if len(st.data) > tcp.TCP_MAX_DATA_IN_STREAM {
+		if len(st.data) > tcp.TCPMaxDataInStream {
 			debugf("Stream data too large, dropping TCP stream")
 			conn.Streams[dir] = nil
 			return conn
@@ -182,7 +182,7 @@ func (mongodb *Mongodb) doParse(
 	return conn
 }
 
-func newStream(pkt *protos.Packet, tcptuple *common.TcpTuple) *stream {
+func newStream(pkt *protos.Packet, tcptuple *common.TCPTuple) *stream {
 	s := &stream{
 		tcptuple: tcptuple,
 		data:     pkt.Payload,
@@ -194,13 +194,13 @@ func newStream(pkt *protos.Packet, tcptuple *common.TcpTuple) *stream {
 func (mongodb *Mongodb) handleMongodb(
 	conn *mongodbConnectionData,
 	m *mongodbMessage,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 ) {
 
-	m.TcpTuple = *tcptuple
+	m.TCPTuple = *tcptuple
 	m.Direction = dir
-	m.CmdlineTuple = procs.ProcWatcher.FindProcessesTuple(tcptuple.IpPort())
+	m.CmdlineTuple = procs.ProcWatcher.FindProcessesTuple(tcptuple.IPPort())
 
 	if m.IsResponse {
 		debugf("MongoDB response message")
@@ -218,8 +218,8 @@ func (mongodb *Mongodb) onRequest(conn *mongodbConnectionData, msg *mongodbMessa
 		return
 	}
 
-	id := msg.requestId
-	key := transactionKey{tcp: msg.TcpTuple.Hashable(), id: id}
+	id := msg.requestID
+	key := transactionKey{tcp: msg.TCPTuple.Hashable(), id: id}
 
 	// try to find matching response potentially inserted before
 	if v := mongodb.responses.Delete(key); v != nil {
@@ -238,7 +238,7 @@ func (mongodb *Mongodb) onRequest(conn *mongodbConnectionData, msg *mongodbMessa
 
 func (mongodb *Mongodb) onResponse(conn *mongodbConnectionData, msg *mongodbMessage) {
 	id := msg.responseTo
-	key := transactionKey{tcp: msg.TcpTuple.Hashable(), id: id}
+	key := transactionKey{tcp: msg.TCPTuple.Hashable(), id: id}
 
 	// try to find matching request
 	if v := mongodb.requests.Delete(key); v != nil {
@@ -263,7 +263,7 @@ func newTransaction(requ, resp *mongodbMessage) *transaction {
 
 	// fill request
 	if requ != nil {
-		trans.tuple = requ.TcpTuple
+		trans.tuple = requ.TCPTuple
 
 		trans.Mongodb = common.MapStr{}
 		trans.event = requ.event
@@ -274,16 +274,16 @@ func newTransaction(requ, resp *mongodbMessage) *transaction {
 		trans.Ts = int64(trans.ts.UnixNano() / 1000) // transactions have microseconds resolution
 		trans.JsTs = requ.Ts
 		trans.Src = common.Endpoint{
-			Ip:   requ.TcpTuple.Src_ip.String(),
-			Port: requ.TcpTuple.Src_port,
+			IP:   requ.TCPTuple.SrcIP.String(),
+			Port: requ.TCPTuple.SrcPort,
 			Proc: string(requ.CmdlineTuple.Src),
 		}
 		trans.Dst = common.Endpoint{
-			Ip:   requ.TcpTuple.Dst_ip.String(),
-			Port: requ.TcpTuple.Dst_port,
+			IP:   requ.TCPTuple.DstIP.String(),
+			Port: requ.TCPTuple.DstPort,
 			Proc: string(requ.CmdlineTuple.Dst),
 		}
-		if requ.Direction == tcp.TcpDirectionReverse {
+		if requ.Direction == tcp.TCPDirectionReverse {
 			trans.Src, trans.Dst = trans.Dst, trans.Src
 		}
 		trans.params = requ.params
@@ -295,7 +295,7 @@ func newTransaction(requ, resp *mongodbMessage) *transaction {
 	if resp != nil {
 		if requ == nil {
 			// TODO: reverse tuple?
-			trans.tuple = resp.TcpTuple
+			trans.tuple = resp.TCPTuple
 		}
 
 		for k, v := range resp.event {
@@ -313,17 +313,17 @@ func newTransaction(requ, resp *mongodbMessage) *transaction {
 	return trans
 }
 
-func (mongodb *Mongodb) GapInStream(tcptuple *common.TcpTuple, dir uint8,
+func (mongodb *Mongodb) GapInStream(tcptuple *common.TCPTuple, dir uint8,
 	nbytes int, private protos.ProtocolData) (priv protos.ProtocolData, drop bool) {
 	return private, true
 }
 
-func (mongodb *Mongodb) ReceivedFin(tcptuple *common.TcpTuple, dir uint8,
+func (mongodb *Mongodb) ReceivedFin(tcptuple *common.TCPTuple, dir uint8,
 	private protos.ProtocolData) protos.ProtocolData {
 	return private
 }
 
-func copy_map_without_key(d map[string]interface{}, key string) map[string]interface{} {
+func copyMapWithoutKey(d map[string]interface{}, key string) map[string]interface{} {
 	res := map[string]interface{}{}
 	for k, v := range d {
 		if k != key {
@@ -342,11 +342,11 @@ func reconstructQuery(t *transaction, full bool) (query string) {
 			// remove the actual data.
 			// TODO: review if we need to add other commands here
 			if t.method == "insert" {
-				params, err = doc2str(copy_map_without_key(t.params, "documents"))
+				params, err = doc2str(copyMapWithoutKey(t.params, "documents"))
 			} else if t.method == "update" {
-				params, err = doc2str(copy_map_without_key(t.params, "updates"))
+				params, err = doc2str(copyMapWithoutKey(t.params, "updates"))
 			} else if t.method == "findandmodify" {
-				params, err = doc2str(copy_map_without_key(t.params, "update"))
+				params, err = doc2str(copyMapWithoutKey(t.params, "update"))
 			}
 		} else {
 			params, err = doc2str(t.params)

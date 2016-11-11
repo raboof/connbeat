@@ -201,19 +201,19 @@ func TestPgsqlParser_threeResponses(t *testing.T) {
 		Payload: data,
 		Ts:      ts,
 	}
-	var tuple common.TcpTuple
+	var tuple common.TCPTuple
 	var private pgsqlPrivateData
-	var count_handlePgsql = 0
+	var countHandlePgsql = 0
 
-	pgsql.handlePgsql = func(pgsql *Pgsql, m *PgsqlMessage, tcptuple *common.TcpTuple,
+	pgsql.handlePgsql = func(pgsql *Pgsql, m *PgsqlMessage, tcptuple *common.TCPTuple,
 		dir uint8, raw_msg []byte) {
 
-		count_handlePgsql += 1
+		countHandlePgsql++
 	}
 
 	pgsql.Parse(&pkt, &tuple, 1, private)
 
-	if count_handlePgsql != 3 {
+	if countHandlePgsql != 3 {
 		t.Error("handlePgsql not called three times")
 	}
 
@@ -291,11 +291,11 @@ func TestPgsqlParser_invalidMessage(t *testing.T) {
 	}
 }
 
-func testTcpTuple() *common.TcpTuple {
-	t := &common.TcpTuple{
-		Ip_length: 4,
-		Src_ip:    net.IPv4(192, 168, 0, 1), Dst_ip: net.IPv4(192, 168, 0, 2),
-		Src_port: 6512, Dst_port: 5432,
+func testTCPTuple() *common.TCPTuple {
+	t := &common.TCPTuple{
+		IPLength: 4,
+		SrcIP:    net.IPv4(192, 168, 0, 1), DstIP: net.IPv4(192, 168, 0, 2),
+		SrcPort: 6512, DstPort: 5432,
 	}
 	t.ComputeHashebles()
 	return t
@@ -324,13 +324,13 @@ func Test_gap_in_response(t *testing.T) {
 
 	// request and response from tests/pcaps/pgsql_request_response.pcap
 	// select * from test
-	req_data, err := hex.DecodeString(
+	reqData, err := hex.DecodeString(
 		"510000001873656c656374202a20" +
 			"66726f6d20746573743b00")
 	assert.Nil(t, err)
 
 	// response is incomplete
-	resp_data, err := hex.DecodeString(
+	respData, err := hex.DecodeString(
 		"5400000042000361000000410900" +
 			"0100000413ffffffffffff0000620000" +
 			"004009000200000413ffffffffffff00" +
@@ -342,9 +342,9 @@ func Test_gap_in_response(t *testing.T) {
 			"440000001e0003000000046d65613200")
 	assert.Nil(t, err)
 
-	tcptuple := testTcpTuple()
-	req := protos.Packet{Payload: req_data}
-	resp := protos.Packet{Payload: resp_data}
+	tcptuple := testTCPTuple()
+	req := protos.Packet{Payload: reqData}
+	resp := protos.Packet{Payload: respData}
 
 	private := protos.ProtocolData(new(pgsqlPrivateData))
 
@@ -353,7 +353,7 @@ func Test_gap_in_response(t *testing.T) {
 
 	logp.Debug("pgsql", "Now sending gap..")
 
-	private, drop := pgsql.GapInStream(tcptuple, 1, 10, private)
+	_, drop := pgsql.GapInStream(tcptuple, 1, 10, private)
 	assert.Equal(t, true, drop)
 
 	trans := expectTransaction(t, pgsql)

@@ -13,6 +13,8 @@ import json
 import os
 import errno
 
+unique_fields = []
+
 def fields_to_json(section, path, output):
 
     for field in section["fields"]:
@@ -29,6 +31,13 @@ def fields_to_json(section, path, output):
 
 def field_to_json(desc, path, output):
 
+    global unique_fields
+
+    if path in unique_fields:
+        print "ERROR: Field", path, "is duplicated. Please delete it and try again. Fields already are", unique_fields
+    else:
+        unique_fields.append(path)
+
     field = {
         "name": path,
         "count": 0,
@@ -36,6 +45,8 @@ def field_to_json(desc, path, output):
         "indexed": True,
         "analyzed": False,
         "doc_values": True,
+        "searchable": True,
+        "aggregatable": True,
     }
     # find the kibana types based on the field type
     if "type" in desc:
@@ -43,6 +54,8 @@ def field_to_json(desc, path, output):
             field["type"] = "number"
         elif desc["type"] in ["text", "keyword"]:
             field["type"] = "string"
+            if desc["type"] == "text":
+                field["aggregatable"] = False
         elif desc["type"] == "date":
             field["type"] = "date"
     else:
@@ -96,8 +109,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    fields_yml = args.beat + "/etc/fields.generated.yml"
+
+    # Not all beats have a fields.generated.yml. Fall back to fields.yml
+    if not os.path.isfile(fields_yml):
+        fields_yml = args.beat + "/etc/fields.yml"
+
     # generate the index-pattern content
-    with open(args.beat + "/etc/fields.yml", 'r') as f:
+    with open(fields_yml, 'r') as f:
         fields = f.read()
 
         # Prepend beat fields from libbeat

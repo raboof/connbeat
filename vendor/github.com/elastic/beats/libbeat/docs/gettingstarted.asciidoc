@@ -141,8 +141,6 @@ An important advantage to this approach is that you can
 use Logstash to modify the data captured by Beats in any way you like. You can also
 use Logstash's many output plugins to integrate with other systems.
 
-image:./images/beats-logstash.png[Integration with Logstash]
-
 To download and install Logstash, use the commands that work
 with your system:
 
@@ -380,7 +378,8 @@ https://www.elastic.co/downloads/kibana[Kibana downloads page].
 
 ==== Launching the Kibana Web Interface
 
-To launch the Kibana web interface, point your browser to port 5601. For example, `http://127.0.0.1:5601`.
+To launch the Kibana web interface, point your browser to port 5601. For example,
+http://127.0.0.1:5601[http://127.0.0.1:5601].
 
 You can learn more about Kibana in the
 http://www.elastic.co/guide/en/kibana/current/index.html[Kibana User Guide].

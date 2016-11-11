@@ -1,8 +1,12 @@
-beat:
-  build: ${PWD}/.
-  environment: 
-   - TEST_ENVIRONMENT=false
-  working_dir: /go/src/github.com/raboof/connbeat
-  volumes:
-   - ${PWD}/../..:/go/src/github.com
-  command: make
+version: '2'
+services:
+  beat:
+    build: ${PWD}
+    environment:
+     - LIBBEAT_PATH=/go/src/github.com/elastic/beats/libbeat
+     - TEST_ENVIRONMENT=false
+    volumes:
+     - ${PWD}/vendor/github.com/elastic/beats:/go/src/github.com/elastic/beats/
+     - ${PWD}:/go/src/github.com/raboof/connbeat
+    working_dir: /go/src/github.com/raboof/connbeat
+    command: make

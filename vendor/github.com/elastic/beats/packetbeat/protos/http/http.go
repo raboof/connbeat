@@ -37,7 +37,7 @@ var (
 )
 
 type stream struct {
-	tcptuple *common.TcpTuple
+	tcptuple *common.TCPTuple
 
 	data []byte
 
@@ -119,23 +119,23 @@ func (http *HTTP) setFromConfig(config *httpConfig) {
 	http.Ports = config.Ports
 	http.SendRequest = config.SendRequest
 	http.SendResponse = config.SendResponse
-	http.HideKeywords = config.Hide_keywords
-	http.RedactAuthorization = config.Redact_authorization
-	http.SplitCookie = config.Split_cookie
-	http.parserConfig.RealIPHeader = strings.ToLower(config.Real_ip_header)
+	http.HideKeywords = config.HideKeywords
+	http.RedactAuthorization = config.RedactAuthorization
+	http.SplitCookie = config.SplitCookie
+	http.parserConfig.RealIPHeader = strings.ToLower(config.RealIPHeader)
 	http.transactionTimeout = config.TransactionTimeout
-	http.IncludeBodyFor = config.Include_body_for
+	http.IncludeBodyFor = config.IncludeBodyFor
 	http.MaxMessageSize = config.MaxMessageSize
 
-	if config.Send_all_headers {
+	if config.SendAllHeaders {
 		http.parserConfig.SendHeaders = true
 		http.parserConfig.SendAllHeaders = true
 	} else {
-		if len(config.Send_headers) > 0 {
+		if len(config.SendHeaders) > 0 {
 			http.parserConfig.SendHeaders = true
 
 			http.parserConfig.HeadersWhitelist = map[string]bool{}
-			for _, hdr := range config.Send_headers {
+			for _, hdr := range config.SendHeaders {
 				http.parserConfig.HeadersWhitelist[strings.ToLower(hdr)] = true
 			}
 		}
@@ -198,7 +198,7 @@ func (st *stream) PrepareForNewMessage() {
 // of a message.
 func (http *HTTP) messageComplete(
 	conn *httpConnectionData,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 	st *stream,
 ) {
@@ -215,7 +215,7 @@ func (http *HTTP) ConnectionTimeout() time.Duration {
 // Parse function is used to process TCP payloads.
 func (http *HTTP) Parse(
 	pkt *protos.Packet,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 	private protos.ProtocolData,
 ) protos.ProtocolData {
@@ -259,7 +259,7 @@ func getHTTPConnection(private protos.ProtocolData) *httpConnectionData {
 func (http *HTTP) doParse(
 	conn *httpConnectionData,
 	pkt *protos.Packet,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 ) *httpConnectionData {
 
@@ -314,7 +314,7 @@ func (http *HTTP) doParse(
 	return conn
 }
 
-func newStream(pkt *protos.Packet, tcptuple *common.TcpTuple) *stream {
+func newStream(pkt *protos.Packet, tcptuple *common.TCPTuple) *stream {
 	return &stream{
 		tcptuple: tcptuple,
 		data:     pkt.Payload,
@@ -323,7 +323,7 @@ func newStream(pkt *protos.Packet, tcptuple *common.TcpTuple) *stream {
 }
 
 // ReceivedFin will be called when TCP transaction is terminating.
-func (http *HTTP) ReceivedFin(tcptuple *common.TcpTuple, dir uint8,
+func (http *HTTP) ReceivedFin(tcptuple *common.TCPTuple, dir uint8,
 	private protos.ProtocolData) protos.ProtocolData {
 
 	debugf("Received FIN")
@@ -352,7 +352,7 @@ func (http *HTTP) ReceivedFin(tcptuple *common.TcpTuple, dir uint8,
 
 // GapInStream is called when a gap of nbytes bytes is found in the stream (due
 // to packet loss).
-func (http *HTTP) GapInStream(tcptuple *common.TcpTuple, dir uint8,
+func (http *HTTP) GapInStream(tcptuple *common.TCPTuple, dir uint8,
 	nbytes int, private protos.ProtocolData) (priv protos.ProtocolData, drop bool) {
 
 	defer logp.Recover("GapInStream(http) exception")
@@ -390,13 +390,13 @@ func (http *HTTP) GapInStream(tcptuple *common.TcpTuple, dir uint8,
 func (http *HTTP) handleHTTP(
 	conn *httpConnectionData,
 	m *message,
-	tcptuple *common.TcpTuple,
+	tcptuple *common.TCPTuple,
 	dir uint8,
 ) {
 
 	m.TCPTuple = *tcptuple
 	m.Direction = dir
-	m.CmdlineTuple = procs.ProcWatcher.FindProcessesTuple(tcptuple.IpPort())
+	m.CmdlineTuple = procs.ProcWatcher.FindProcessesTuple(tcptuple.IPPort())
 	http.hideHeaders(m)
 
 	if m.IsRequest {
@@ -452,20 +452,20 @@ func (http *HTTP) newTransaction(requ, resp *message) common.MapStr {
 	}
 
 	src := common.Endpoint{
-		Ip:   requ.TCPTuple.Src_ip.String(),
-		Port: requ.TCPTuple.Src_port,
+		IP:   requ.TCPTuple.SrcIP.String(),
+		Port: requ.TCPTuple.SrcPort,
 		Proc: string(requ.CmdlineTuple.Src),
 	}
 	dst := common.Endpoint{
-		Ip:   requ.TCPTuple.Dst_ip.String(),
-		Port: requ.TCPTuple.Dst_port,
+		IP:   requ.TCPTuple.DstIP.String(),
+		Port: requ.TCPTuple.DstPort,
 		Proc: string(requ.CmdlineTuple.Dst),
 	}
-	if requ.Direction == tcp.TcpDirectionReverse {
+	if requ.Direction == tcp.TCPDirectionReverse {
 		src, dst = dst, src
 	}
 
-	http_details := common.MapStr{
+	httpDetails := common.MapStr{
 		"request": common.MapStr{
 			"params":  params,
 			"headers": http.collectHeaders(requ),
@@ -477,8 +477,8 @@ func (http *HTTP) newTransaction(requ, resp *message) common.MapStr {
 		},
 	}
 
-	http.setBody(http_details["request"].(common.MapStr), requ)
-	http.setBody(http_details["response"].(common.MapStr), resp)
+	http.setBody(httpDetails["request"].(common.MapStr), requ)
+	http.setBody(httpDetails["response"].(common.MapStr), resp)
 
 	event := common.MapStr{
 		"@timestamp":   common.Time(requ.Ts),
@@ -488,7 +488,7 @@ func (http *HTTP) newTransaction(requ, resp *message) common.MapStr {
 		"method":       requ.Method,
 		"path":         path,
 		"query":        fmt.Sprintf("%s %s", requ.Method, path),
-		"http":         http_details,
+		"http":         httpDetails,
 		"bytes_out":    resp.Size,
 		"bytes_in":     requ.Size,
 		"src":          &src,

@@ -1,7 +1,7 @@
 
 BUILD_DIR=build
 COVERAGE_DIR=${BUILD_DIR}/coverage
-BEATS=packetbeat filebeat winlogbeat metricbeat
+BEATS=packetbeat filebeat winlogbeat metricbeat heartbeat
 PROJECTS=libbeat ${BEATS}
 SNAPSHOT?=yes
 
@@ -36,6 +36,7 @@ coverage-report:
 
 .PHONY: update
 update:
+	$(MAKE) -C libbeat collect
 	$(foreach var,$(BEATS),$(MAKE) -C $(var) update || exit 1;)
 
 .PHONY: clean
@@ -53,6 +54,10 @@ clean-vendor:
 .PHONY: check
 check:
 	$(foreach var,$(PROJECTS),$(MAKE) -C $(var) check || exit 1;)
+	# Validate that all updates were commited
+	$(MAKE) update
+	git update-index --refresh
+	git diff-index --exit-code HEAD --
 
 .PHONY: fmt
 fmt:
