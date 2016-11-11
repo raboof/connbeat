@@ -28,3 +28,8 @@ copy-vendor:
 # This is called by the beats packer before starts
 .PHONY: build before-build
 before-build:
+
+# Collects all dependencies and then calls update
+.PHONY: collect
+collect:
+
