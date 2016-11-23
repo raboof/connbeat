@@ -4,8 +4,11 @@ package partition
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/elastic/beats/libbeat/common"
@@ -19,8 +22,7 @@ const (
 )
 
 func TestData(t *testing.T) {
-
-	generateKafkaData(t)
+	generateKafkaData(t, "metricbeat-generate-data")
 
 	f := mbtest.NewEventsFetcher(t, getConfig())
 	err := mbtest.WriteEvents(f, t)
@@ -30,9 +32,11 @@ func TestData(t *testing.T) {
 }
 
 func TestTopic(t *testing.T) {
+	id := strconv.Itoa(rand.New(rand.NewSource(int64(time.Now().Nanosecond()))).Int())
+	testTopic := fmt.Sprintf("test-metricbeat-%s", id)
 
 	// Create initial topic
-	generateKafkaData(t)
+	generateKafkaData(t, testTopic)
 
 	f := mbtest.NewEventsFetcher(t, getConfig())
 	dataBefore, err := f.Fetch()
@@ -44,7 +48,7 @@ func TestTopic(t *testing.T) {
 	var i int64 = 0
 	// Create n messages
 	for ; i < n; i++ {
-		generateKafkaData(t)
+		generateKafkaData(t, testTopic)
 	}
 
 	dataAfter, err := f.Fetch()
@@ -55,20 +59,31 @@ func TestTopic(t *testing.T) {
 	// Checks that no new topics / partitions were added
 	assert.True(t, len(dataBefore) == len(dataAfter))
 
-	// Compares offset before and after
-	offsetBefore := dataBefore[0]["offset"].(common.MapStr)["newest"].(int64)
-	offsetAfter := dataAfter[0]["offset"].(common.MapStr)["newest"].(int64)
+	var offsetBefore int64 = 0
+	var offsetAfter int64 = 0
 
+	// Its possible that other topics exists -> select the right data
+	for _, data := range dataBefore {
+		if data["topic"] == testTopic {
+			offsetBefore = data["offset"].(common.MapStr)["newest"].(int64)
+		}
+	}
+
+	for _, data := range dataAfter {
+		if data["topic"] == testTopic {
+			offsetAfter = data["offset"].(common.MapStr)["newest"].(int64)
+		}
+	}
+
+	// Compares offset before and after
 	if offsetBefore+n != offsetAfter {
 		t.Errorf("Offset before: %v", offsetBefore)
 		t.Errorf("Offset after: %v", offsetAfter)
 	}
 	assert.True(t, offsetBefore+n == offsetAfter)
-
 }
 
-func generateKafkaData(t *testing.T) {
-
+func generateKafkaData(t *testing.T, topic string) {
 	config := sarama.NewConfig()
 	client, err := sarama.NewClient([]string{getTestKafkaHost()}, config)
 	if err != nil {
@@ -80,8 +95,6 @@ func generateKafkaData(t *testing.T) {
 		t.Error(err)
 	}
 	defer producer.Close()
-
-	topic := "testtopic"
 
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
