@@ -10,9 +10,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
-	"github.com/elastic/beats/packetbeat/procs"
+	"github.com/elastic/beats/libbeat/logp"
 )
 
 type Processes struct {
@@ -62,11 +64,45 @@ func (p *UnixProcess) Pid() int {
 	return p.pid
 }
 
+func findSocketsOfPid(prefix string, pid int) (inodes []uint64, err error) {
+
+	dirname := filepath.Join(prefix, "/proc", strconv.Itoa(pid), "fd")
+	procfs, err := os.Open(dirname)
+	if err != nil {
+		return []uint64{}, fmt.Errorf("Open: %s", err)
+	}
+	defer procfs.Close()
+	names, err := procfs.Readdirnames(0)
+	if err != nil {
+		return []uint64{}, fmt.Errorf("Readdirnames: %s", err)
+	}
+
+	for _, name := range names {
+		link, err := os.Readlink(filepath.Join(dirname, name))
+		if err != nil {
+			logp.Debug("procs", "Readlink %s: %s", name, err)
+			continue
+		}
+
+		if strings.HasPrefix(link, "socket:[") {
+			inode, err := strconv.ParseInt(link[8:len(link)-1], 10, 64)
+			if err != nil {
+				logp.Debug("procs", "ParseInt: %s:", err)
+				continue
+			}
+
+			inodes = append(inodes, uint64(inode))
+		}
+	}
+
+	return inodes, nil
+}
+
 // Refresh reloads all the data associated with this process.
 func (p *UnixProcess) Refresh(exposeCmdline, exposeEnviron bool) error {
 	prefix := ""
 
-	inodes, err := procs.FindSocketsOfPid(prefix, p.pid)
+	inodes, err := findSocketsOfPid(prefix, p.pid)
 	p.inodes = inodes
 
 	if exposeCmdline {

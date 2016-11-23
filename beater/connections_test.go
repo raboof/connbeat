@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastic/beats/packetbeat/procs"
+	"github.com/raboof/connbeat/sockets"
 	"github.com/stvp/assert"
 )
 
@@ -26,8 +26,8 @@ func randIP() net.IP {
 	}
 }
 
-func listeningConnection(port uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{
+func listeningConnection(port uint16) *sockets.SocketInfo {
+	return &sockets.SocketInfo{
 		SrcIP:   randIP(),
 		DstIP:   randIP(),
 		SrcPort: port,
@@ -37,8 +37,8 @@ func listeningConnection(port uint16) *procs.SocketInfo {
 	}
 }
 
-func incomingConnection(localPort uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{
+func incomingConnection(localPort uint16) *sockets.SocketInfo {
+	return &sockets.SocketInfo{
 		SrcIP:   randIP(),
 		DstIP:   randIP(),
 		SrcPort: localPort,
@@ -48,8 +48,8 @@ func incomingConnection(localPort uint16) *procs.SocketInfo {
 	}
 }
 
-func outgoingConnection(remoteIP net.IP, remotePort uint16) *procs.SocketInfo {
-	return &procs.SocketInfo{
+func outgoingConnection(remoteIP net.IP, remotePort uint16) *sockets.SocketInfo {
+	return &sockets.SocketInfo{
 		SrcIP:   randIP(),
 		DstIP:   remoteIP,
 		SrcPort: uint16(rand.Int()),
@@ -60,7 +60,7 @@ func outgoingConnection(remoteIP net.IP, remotePort uint16) *procs.SocketInfo {
 }
 
 func TestDeduplicateListeningSockets(t *testing.T) {
-	input := make(chan *procs.SocketInfo, 0)
+	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
@@ -83,7 +83,7 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 }
 
 func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
-	input := make(chan *procs.SocketInfo, 0)
+	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
@@ -106,7 +106,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 }
 
 func TestDedupClientConnections(t *testing.T) {
-	input := make(chan *procs.SocketInfo, 0)
+	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
@@ -130,7 +130,7 @@ func TestDedupClientConnections(t *testing.T) {
 }
 
 func TestRepublishOldClientConnections(t *testing.T) {
-	input := make(chan *procs.SocketInfo, 0)
+	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)

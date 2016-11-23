@@ -2,13 +2,13 @@ package beater
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/elastic/beats/libbeat/logp"
-	"github.com/elastic/beats/packetbeat/procs"
 	"github.com/raboof/connbeat/processes"
-	"github.com/raboof/connbeat/tcp_diag"
+	"github.com/raboof/connbeat/sockets"
+	"github.com/raboof/connbeat/sockets/proc_net_tcp"
+	"github.com/raboof/connbeat/sockets/tcp_diag"
 )
 
 type ServerConnection struct {
@@ -25,47 +25,10 @@ type Connection struct {
 	process    *processes.UnixProcess
 }
 
-func getEnv(key, defaultValue string) string {
-	env := os.Getenv(key)
-	if env != "" {
-		return env
-	}
-	return defaultValue
-}
-
-func pollCurrentConnections(socketInfo chan<- *procs.SocketInfo) error {
-	// TODO add support for darwin
-	// TODO prefer tcp_diag where available
-	err := pollCurrentConnectionsFrom(getEnv("PROC_NET_TCP", "/proc/net/tcp"), false, socketInfo)
-	if err != nil {
-		return err
-	}
-	return pollCurrentConnectionsFrom(getEnv("PROC_NET_TCP6", "/proc/net/tcp6"), true, socketInfo)
-}
-
-func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *procs.SocketInfo) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		logp.Err("Open: %s", err)
-		return err
-	}
-	defer file.Close()
-	socks, err := procs.ParseProcNetTCP(file, ipv6)
-	if err != nil {
-		return err
-	}
-	for _, s := range socks {
-		if s.Inode != 0 {
-			socketInfo <- s
-		}
-	}
-	return nil
-}
-
-func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
 	for {
 		// For now we poll periodically
-		err := pollCurrentConnections(socketInfo)
+		err := proc_net_tcp.PollCurrentConnections(socketInfo)
 		if err != nil {
 			logp.Err("Polling connections: %s", err)
 		}
@@ -73,7 +36,7 @@ func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *procs.
 	}
 }
 
-func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
 	err := tcp_diag.GetSocketInfo(pollInterval, socketInfo)
 
 	if err != nil {
@@ -82,7 +45,7 @@ func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *pro
 	}
 }
 
-func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *procs.SocketInfo) {
+func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
 	if enableTcpDiag {
 		getSocketInfoFromTcpDiag(pollInterval, socketInfo)
 	} else {
@@ -111,7 +74,7 @@ func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *pro
 	}
 }
 
-func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *procs.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
 	listeningOn := make(map[uint16]time.Time)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New(exposeCmdline, exposeEnviron)
@@ -148,7 +111,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 }
 
 func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection) {
-	socketInfo := make(chan *procs.SocketInfo, 20)
+	socketInfo := make(chan *sockets.SocketInfo, 20)
 
 	go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
 
