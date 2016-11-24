@@ -8,13 +8,14 @@
 // Template, add newest changes here
 
 === Beats version HEAD
-https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
+https://github.com/elastic/beats/compare/v5.0.1...master[Check the HEAD diff]
 
 ==== Breaking changes
 
 *Affecting all Beats*
 
 *Metricbeat*
+- Change data structure of experimental haproxy module. {pull}3003[3003]
 
 *Packetbeat*
 
@@ -32,6 +33,7 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 ==== Bugfixes
 
 *Affecting all Beats*
+- Fix empty benign errors logged by processor actions. {pull}3046[3046]
 
 *Metricbeat*
 
@@ -50,6 +52,7 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 
 *Affecting all Beats*
 - Add add_cloud_metadata processor for collecting cloud provider metadata. {pull}2728[2728]
+- Added decode_json_fields processor for decoding fields containing JSON strings. {pull}2605[2605]
 
 *Metricbeat*
 
@@ -61,7 +64,8 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 - Add system core metricset for Windows. {pull}2883[2883]
 - Add a sample Redis Kibana dashboard. {pull}2916[2916]
 - Add support for MongoDB 3.4 and WiredTiger metrics. {pull}2999[2999]
-- Add kafkka module with partition metricset. {pull}2969[2969]
+- Add experimental kafka module with partition metricset. {pull}2969[2969]
+- Add raw config option for mysql/status metricset. {pull}3001[3001]
 
 *Packetbeat*
 
@@ -72,6 +76,7 @@ https://github.com/elastic/beats/compare/v5.0.0...master[Check the HEAD diff]
 - Only load matching states into prospector to improve state handling {pull}2840[2840]
 - Reset all states ttl on startup to make sure it is overwritten by new config {pull}2840[2840]
 - Persist all states for files which fall under ignore_older to have consistent behaviour {pull}2859[2859]
+- Improve shutdown behaviour with large number of files. {pull}3035[3035]
 
 *Winlogbeat*
 
