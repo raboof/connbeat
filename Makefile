@@ -10,6 +10,10 @@ PREFIX?=.
 # Only crosscompile for linux because other OS'es use cgo.
 GOX_OS=linux
 
+# For packaging: for now we know how to package on linux amd64
+TARGETS="linux/amd64 linux/386"
+PACKAGES=connbeat/deb connbeat/rpm connbeat/bin
+
 # Path to the libbeat Makefile
 -include $(ES_BEATS)/libbeat/scripts/Makefile
 

@@ -117,8 +117,16 @@ To run the regular go unit test, run 'make test'.
 
 To also run docker-based system tests, run 'make testsuite'
 
+## Packaging
+
+Preliminary packaging is available, but the resulting packages are not yet
+intended for general consumption.
+
+'make package' should be sufficient to produce a deb, rpm and a binary .tar.gz
+
 ## Contributing
 
 Contributions are welcome! Feel free to [submit issues](https://github.com/raboof/connbeat/issues) to discuss problems and propose solutions, or send a [pull request](https://github.com/raboof/connbeat/pulls).
 
 Pull requests are expected to include tests (which are run on Travis). We strive to merge any reasonable features, though features that might increase the load on the machine will likely have to be behind a feature switch that is off by default.
+>>>>>>> origin/master
