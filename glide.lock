@@ -1,5 +1,5 @@
 hash: 952b4eb04b38c4be2feb921cf51ee8ad1d83d96bd01e3b69a4e1f5f48061cea7
-updated: 2016-11-30T23:01:04.523820084Z
+updated: 2016-12-01T23:01:29.581283524Z
 imports:
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
@@ -16,7 +16,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 8742647b77239651edd90f341ff9dd2601a79601
+  version: bc9fdbf79a1f04adf45b9d9bde36c4d172ec011a
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -99,7 +99,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/Shopify/sarama
-  version: 79f4f3268b75e30e3110a62ea8497fa7b2d20923
+  version: 2091c0107077425080ce59da480912ed2c4be6c8
   repo: https://github.com/urso/sarama
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
