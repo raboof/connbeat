@@ -43,7 +43,7 @@ TEST_ENVIRONMENT?=false
 SYSTEM_TESTS?=false
 GOX_OS?=linux darwin windows solaris freebsd netbsd openbsd
 TESTING_ENVIRONMENT?=snapshot
-DOCKER_COMPOSE?=docker-compose -f ${PWD}/../testing/environments/base.yml -f ${PWD}/../testing/environments/${TESTING_ENVIRONMENT}.yml -f docker-compose.yml
+DOCKER_COMPOSE?=docker-compose -p ${TESTING_ENVIRONMENT} -f ${PWD}/../testing/environments/base.yml -f ${PWD}/../testing/environments/${TESTING_ENVIRONMENT}.yml -f docker-compose.yml
 DOCKER_CACHE?=1 # If set to 0, all docker images are created without cache
 GOPACKAGES_COMMA_SEP=$(subst $(space),$(comma),$(strip ${GOPACKAGES}))
 PYTHON_ENV?=${BUILD_DIR}/python-env
@@ -179,7 +179,7 @@ load-tests:
 # Sets up the virtual python environment
 .PHONY: python-env
 python-env: ${ES_BEATS}/libbeat/tests/system/requirements.txt
-	@test -d ${PYTHON_ENV} || virtualenv ${PYTHON_ENV}
+	@test -d ${PYTHON_ENV} || virtualenv --always-copy ${PYTHON_ENV}
 	@. ${PYTHON_ENV}/bin/activate && pip install -q --upgrade pip ; \
 	if [ -a ./tests/system/requirements.txt ] && [ ! ${ES_BEATS}/libbeat/tests/system/requirements.txt -ef ./tests/system/requirements.txt ] ; then \
 		. ${PYTHON_ENV}/bin/activate && pip install -qUr ${ES_BEATS}/libbeat/tests/system/requirements.txt -Ur ./tests/system/requirements.txt ; \
