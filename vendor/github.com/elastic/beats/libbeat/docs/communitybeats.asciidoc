@@ -7,6 +7,7 @@ out some of them here.
 NOTE: Elastic provides no warranty or support for community-sourced Beats.
 
 [horizontal]
+https://github.com/awormuth/amazonbeat[amazonbeat]:: Reads data from a specified Amazon product.
 https://github.com/radoondas/apachebeat[apachebeat]:: Reads status from Apache HTTPD server-status.
 https://github.com/goomzee/burrowbeat[burrowbeat]:: Monitors Kafka consumer lag using Burrow.
 https://github.com/goomzee/cassandrabeat[cassandrabeat]:: Uses Cassandra's nodetool cfstats utility to monitor Cassandra database nodes and lag.
@@ -27,6 +28,7 @@ https://github.com/radoondas/jmxproxybeat[jmxproxybeat]:: Reads Tomcat JMX metri
 https://github.com/mheese/journalbeat[journalbeat]:: Used for log shipping from systemd/journald based Linux systems.
 https://github.com/eskibars/lmsensorsbeat[lmsensorsbeat]:: Collects data from lm-sensors (such as CPU temperatures, fan speeds, and voltages from i2c and smbus).
 https://github.com/consulthys/logstashbeat[logstashbeat]:: Collects data from Logstash monitoring API (v5 onwards) and indexes them in Elasticsearch.
+https://github.com/scottcrespo/mongobeat[mongobeat]:: Monitors MongoDB instances and can be configured to send multiple document types to Elasticsearch.
 https://github.com/adibendahan/mysqlbeat[mysqlbeat]:: Run any query on MySQL and send results to Elasticsearch.
 https://github.com/PhaedrusTheGreek/nagioscheckbeat[nagioscheckbeat]:: For Nagios checks and performance data.
 https://github.com/mrkschan/nginxbeat[nginxbeat]:: Reads status from Nginx.
