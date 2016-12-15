@@ -81,7 +81,7 @@ func hexToIP(word string, ipv6 bool) (net.IP, error) {
 }
 
 // Parses the /proc/net/tcp file
-func parseProcNetTCP(input io.Reader, ipv6 bool) ([]*sockets.SocketInfo, error) {
+func ParseProcNetTCP(input io.Reader, ipv6 bool) ([]*sockets.SocketInfo, error) {
 	buf := bufio.NewReader(input)
 
 	result := []*sockets.SocketInfo{}
@@ -131,7 +131,7 @@ func pollCurrentConnectionsFrom(filename string, ipv6 bool, socketInfo chan<- *s
 		return err
 	}
 	defer file.Close()
-	socks, err := parseProcNetTCP(file, ipv6)
+	socks, err := ParseProcNetTCP(file, ipv6)
 	if err != nil {
 		return err
 	}

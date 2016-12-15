@@ -7,6 +7,7 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
+	"github.com/raboof/connbeat/sockets/docker"
 	"github.com/raboof/connbeat/sockets/proc_net_tcp"
 	"github.com/raboof/connbeat/sockets/tcp_diag"
 )
@@ -23,6 +24,17 @@ type Connection struct {
 	remoteIp   string
 	remotePort uint16
 	process    *processes.UnixProcess
+}
+
+func getSocketInfoFromDocker(endpoint string, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
+	for {
+		// For now we poll periodically
+		err := docker.PollCurrentConnections(endpoint, socketInfo)
+		if err != nil {
+			logp.Err("Polling connections: %s", err)
+		}
+		time.Sleep(pollInterval)
+	}
 }
 
 func getSocketInfoFromProc(pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
@@ -45,8 +57,10 @@ func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *soc
 	}
 }
 
-func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
-	if enableTcpDiag {
+func getSocketInfo(enableDocker, enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
+	if enableDocker {
+		getSocketInfoFromDocker("unix:///var/run/docker.sock", pollInterval, socketInfo)
+	} else if enableTcpDiag {
 		getSocketInfoFromTcpDiag(pollInterval, socketInfo)
 	} else {
 		getSocketInfoFromProc(pollInterval, socketInfo)
@@ -110,10 +124,10 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 	}
 }
 
-func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection) {
+func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection) {
 	socketInfo := make(chan *sockets.SocketInfo, 20)
 
-	go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
+	go getSocketInfo(enableDocker, enableTcpDiag, pollInterval, socketInfo)
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
