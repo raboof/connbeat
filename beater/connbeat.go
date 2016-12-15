@@ -69,6 +69,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
+		"container_id":  s.containerId,
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -88,6 +89,7 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
+		"container_id":  c.containerId,
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},

@@ -13,17 +13,19 @@ import (
 )
 
 type ServerConnection struct {
-	localIP   string
-	localPort uint16
-	process   *processes.UnixProcess
+	localIP     string
+	localPort   uint16
+	process     *processes.UnixProcess
+	containerId string
 }
 
 type Connection struct {
-	localIP    string
-	localPort  uint16
-	remoteIp   string
-	remotePort uint16
-	process    *processes.UnixProcess
+	localIP     string
+	localPort   uint16
+	remoteIp    string
+	remotePort  uint16
+	process     *processes.UnixProcess
+	containerId string
 }
 
 func getSocketInfoFromDocker(endpoint string, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
@@ -101,9 +103,10 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 				if s.DstPort == 0 {
 					listeningOn[s.SrcPort] = now
 					servers <- ServerConnection{
-						localIP:   s.SrcIP.String(),
-						localPort: s.SrcPort,
-						process:   process(ps, exposeProcessInfo, s.Inode),
+						localIP:     s.SrcIP.String(),
+						localPort:   s.SrcPort,
+						process:     process(ps, exposeProcessInfo, s.Inode),
+						containerId: s.ContainerId,
 					}
 				} else {
 					dstIP := s.DstIP.String()
@@ -111,11 +114,12 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
-							localIP:    s.SrcIP.String(),
-							localPort:  s.SrcPort,
-							remoteIp:   dstIP,
-							remotePort: s.DstPort,
-							process:    process(ps, exposeProcessInfo, s.Inode),
+							localIP:     s.SrcIP.String(),
+							localPort:   s.SrcPort,
+							remoteIp:    dstIP,
+							remotePort:  s.DstPort,
+							process:     process(ps, exposeProcessInfo, s.Inode),
+							containerId: s.ContainerId,
 						}
 					}
 				}

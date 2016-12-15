@@ -65,7 +65,7 @@ func pollCurrentConnectionsFor(client *docker.Client, container docker.APIContai
 	if result.ExitCode != 0 {
 		return errors.New("exit code was not 0")
 	}
-	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6)
+	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, container.ID)
 	if err != nil {
 		return err
 	}
