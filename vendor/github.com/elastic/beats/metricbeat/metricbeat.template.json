@@ -1429,6 +1429,10 @@
               "ignore_above": 1024,
               "type": "keyword"
             },
+            "namespace": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
             "rtt": {
               "type": "long"
             }
@@ -2202,6 +2206,38 @@
                       "type": "long"
                     },
                     "rollback": {
+                      "type": "long"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "prometheus": {
+          "properties": {
+            "stats": {
+              "properties": {
+                "notifications": {
+                  "properties": {
+                    "dropped": {
+                      "type": "long"
+                    },
+                    "queue_length": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "processes": {
+                  "properties": {
+                    "open_fds": {
+                      "type": "long"
+                    }
+                  }
+                },
+                "storage": {
+                  "properties": {
+                    "chunks_to_persist": {
                       "type": "long"
                     }
                   }
