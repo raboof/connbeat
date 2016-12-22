@@ -69,6 +69,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
+		"container_id":  s.containerId,
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -88,6 +89,7 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
+		"container_id":  c.containerId,
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -128,7 +130,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
 	connectionListener, serverConnectionListener := Listen(
-		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron, cb.ConnConfig.Connbeat.TcpDiagEnabled,
+		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron,
+		cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
 		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation)
 
 	return cb.Pipe(connectionListener, serverConnectionListener)

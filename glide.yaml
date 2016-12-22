@@ -11,5 +11,8 @@ import:
   - libbeat/publisher
   - packetbeat/procs
 - package: github.com/raboof/beats-output-http
+- package: github.com/docker/docker
+  version: master
+- package: github.com/fsouza/go-dockerclient
 testImport:
 - package: github.com/stvp/assert

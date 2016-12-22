@@ -29,7 +29,7 @@ func TestParse_Proc_Net_Tcp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Opening ../../tests/files/proc_net_tcp.txt: %s", err)
 	}
-	socketInfo, err := parseProcNetTCP(file, false)
+	socketInfo, err := ParseProcNetTCP(file, false, "")
 	if err != nil {
 		t.Fatalf("Parse_Proc_Net_Tcp: %s", err)
 	}
@@ -49,7 +49,7 @@ func TestParse_Proc_Net_Tcp6(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Opening ../../tests/files/proc_net_tcp6.txt: %s", err)
 	}
-	socketInfo, err := parseProcNetTCP(file, true)
+	socketInfo, err := ParseProcNetTCP(file, true, "")
 	if err != nil {
 		t.Fatalf("Parse_Proc_Net_Tcp: %s", err)
 	}

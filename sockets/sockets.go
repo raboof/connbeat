@@ -8,6 +8,7 @@ type SocketInfo struct {
 	SrcIP, DstIP     net.IP
 	SrcPort, DstPort uint16
 
-	UID   uint32
-	Inode uint64
+	ContainerId string
+	UID         uint32
+	Inode       uint64
 }
