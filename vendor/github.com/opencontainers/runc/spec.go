@@ -48,9 +48,9 @@ In the run command above, "container1" is the name for the instance of the
 container that you are starting. The name you provide for the container instance
 must be unique on your host.
 
-An alternative for generating a customized spec config is to use "ocitools", the
-sub-command "ocitools generate" has lots of options that can be used to do any
-customizations as you want, see [ocitools](https://github.com/opencontainers/ocitools)
+An alternative for generating a customized spec config is to use "oci-runtime-tool", the
+sub-command "oci-runtime-tool generate" has lots of options that can be used to do any
+customizations as you want, see [runtime-tools](https://github.com/opencontainers/runtime-tools)
 to get more information.
 
 When starting a container through runc, runc needs root privilege. If not
@@ -92,7 +92,7 @@ container on your host.`,
 					"CAP_KILL",
 					"CAP_NET_BIND_SERVICE",
 				},
-				Rlimits: []specs.Rlimit{
+				Rlimits: []specs.LinuxRlimit{
 					{
 						Type: "RLIMIT_NOFILE",
 						Hard: uint64(1024),
@@ -162,15 +162,15 @@ container on your host.`,
 					"/proc/sys",
 					"/proc/sysrq-trigger",
 				},
-				Resources: &specs.Resources{
-					Devices: []specs.DeviceCgroup{
+				Resources: &specs.LinuxResources{
+					Devices: []specs.LinuxDeviceCgroup{
 						{
 							Allow:  false,
 							Access: sPtr("rwm"),
 						},
 					},
 				},
-				Namespaces: []specs.Namespace{
+				Namespaces: []specs.LinuxNamespace{
 					{
 						Type: "pid",
 					},
@@ -246,7 +246,7 @@ func loadSpec(cPath string) (spec *specs.Spec, err error) {
 	return spec, validateProcessSpec(&spec.Process)
 }
 
-func createLibContainerRlimit(rlimit specs.Rlimit) (configs.Rlimit, error) {
+func createLibContainerRlimit(rlimit specs.LinuxRlimit) (configs.Rlimit, error) {
 	rl, err := strToRlimit(rlimit.Type)
 	if err != nil {
 		return configs.Rlimit{}, err

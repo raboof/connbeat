@@ -150,8 +150,13 @@ func (daemon *Daemon) restore() error {
 			}
 			container.RWLayer = rwlayer
 			if err := daemon.Mount(container); err != nil {
-				logrus.Errorf("Failed to mount container %v: %v", id, err)
-				continue
+				// The mount is unlikely to fail. However, in case mount fails
+				// the container should be allowed to restore here. Some functionalities
+				// (like docker exec -u user) might be missing but container is able to be
+				// stopped/restarted/removed.
+				// See #29365 for related information.
+				// The error is only logged here.
+				logrus.Warnf("Failed to mount container %v: %v", id, err)
 			}
 			logrus.Debugf("Loaded container %v", container.ID)
 
@@ -337,7 +342,7 @@ func (daemon *Daemon) restore() error {
 		// if the container has restart policy, do not
 		// prepare the mountpoints since it has been done on restarting.
 		// This is to speed up the daemon start when a restart container
-		// has a volume and the volume dirver is not available.
+		// has a volume and the volume driver is not available.
 		if _, ok := restartContainers[c]; ok {
 			continue
 		} else if _, ok := removeContainers[c.ID]; ok {
@@ -792,6 +797,12 @@ func (daemon *Daemon) Shutdown() error {
 			}
 			logrus.Debugf("container stopped %s", c.ID)
 		})
+	}
+
+	if daemon.volumes != nil {
+		if err := daemon.volumes.Shutdown(); err != nil {
+			logrus.Errorf("Error shutting down volume store: %v", err)
+		}
 	}
 
 	if daemon.layerStore != nil {

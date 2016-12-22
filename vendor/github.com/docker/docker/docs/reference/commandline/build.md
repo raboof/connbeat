@@ -262,7 +262,7 @@ Successfully built 377c409b35e4
 This sends the URL `http://server/ctx.tar.gz` to the Docker daemon, which
 downloads and extracts the referenced tarball. The `-f ctx/Dockerfile`
 parameter specifies a path inside `ctx.tar.gz` to the `Dockerfile` that is used
-to build the image. Any `ADD` commands in that `Dockerfile` that refer to local
+to build the image. Any `ADD` commands in that `Dockerfile` that refers to local
 paths must be relative to the root of the contents inside `ctx.tar.gz`. In the
 example above, the tarball contains a directory `ctx/`, so the `ADD
 ctx/container.cfg /` operation works as expected.
@@ -438,7 +438,7 @@ Specifying the `--isolation` flag without a value is the same as setting `--isol
 
 Once the image is built, squash the new layers into a new image with a single
 new layer. Squashing does not destroy any existing image, rather it creates a new
-image with the content of the squshed layers. This effectively makes it look
+image with the content of the squashed layers. This effectively makes it look
 like all `Dockerfile` commands were created with a single layer. The build
 cache is preserved with this method.
 

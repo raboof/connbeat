@@ -12,9 +12,9 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/cli"
 	"github.com/docker/docker/cli/command"
+	"github.com/docker/docker/cli/debug"
 	"github.com/docker/docker/pkg/ioutils"
-	"github.com/docker/docker/utils"
-	"github.com/docker/docker/utils/templates"
+	"github.com/docker/docker/pkg/templates"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
 )
@@ -206,7 +206,7 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 	ioutils.FprintfIfNotEmpty(dockerCli.Out(), "Name: %s\n", info.Name)
 	ioutils.FprintfIfNotEmpty(dockerCli.Out(), "ID: %s\n", info.ID)
 	fmt.Fprintf(dockerCli.Out(), "Docker Root Dir: %s\n", info.DockerRootDir)
-	fmt.Fprintf(dockerCli.Out(), "Debug Mode (client): %v\n", utils.IsDebugEnabled())
+	fmt.Fprintf(dockerCli.Out(), "Debug Mode (client): %v\n", debug.IsEnabled())
 	fmt.Fprintf(dockerCli.Out(), "Debug Mode (server): %v\n", info.Debug)
 
 	if info.Debug {
@@ -277,7 +277,7 @@ func prettyPrintInfo(dockerCli *command.DockerCli, info types.Info) error {
 		for _, label := range info.Labels {
 			stringSlice := strings.SplitN(label, "=", 2)
 			if len(stringSlice) > 1 {
-				// If there is a conflict we will throw out an warning
+				// If there is a conflict we will throw out a warning
 				if v, ok := labelMap[stringSlice[0]]; ok && v != stringSlice[1] {
 					fmt.Fprintln(dockerCli.Err(), "WARNING: labels with duplicate keys and conflicting values have been deprecated")
 					break

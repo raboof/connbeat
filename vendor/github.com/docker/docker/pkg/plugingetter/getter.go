@@ -11,7 +11,7 @@ const (
 	RELEASE = -1
 )
 
-// CompatPlugin is a abstraction to handle both v2(new) and v1(legacy) plugins.
+// CompatPlugin is an abstraction to handle both v2(new) and v1(legacy) plugins.
 type CompatPlugin interface {
 	Client() *plugins.Client
 	Name() string
@@ -30,5 +30,6 @@ type CountedPlugin interface {
 type PluginGetter interface {
 	Get(name, capability string, mode int) (CompatPlugin, error)
 	GetAllByCap(capability string) ([]CompatPlugin, error)
+	GetAllManagedPluginsByCap(capability string) []CompatPlugin
 	Handle(capability string, callback func(string, *plugins.Client))
 }
