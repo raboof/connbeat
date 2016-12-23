@@ -1,0 +1,25 @@
+connbeat:
+  expose_process_info: false
+  expose_cmdline: false
+  expose_environ: false
+  aggregation: 10s
+  poll_interval: 2s
+  enable_tcp_diag: false
+  enable_docker: true
+
+output:
+  http:
+    hosts: ["${CONNBEAT_URL}"]
+
+  #kafka:
+  #  hosts: ["localhost:9092"]
+  #  topic: connbeat
+
+  #elasticsearch:
+  #  hosts: ["localhost:9200"]
+    #template:
+    #  name: "connbeat"
+    #  path: "connbeat.template.json"
+
+  console:
+    pretty: true
