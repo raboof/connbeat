@@ -18,7 +18,7 @@ keywords: "swarm, leave"
 ```markdown
 Usage:	docker swarm leave [OPTIONS]
 
-Leave the swarm (workers only)
+Leave the swarm
 
 Options:
   -f, --force   Force this node to leave the swarm, ignoring warnings
@@ -55,4 +55,7 @@ To remove an inactive node, use the [`node rm`](node_rm.md) command instead.
 * [node rm](node_rm.md)
 * [swarm init](swarm_init.md)
 * [swarm join](swarm_join.md)
+* [swarm join-token](swarm_join_token.md)
+* [swarm unlock](swarm_unlock.md)
+* [swarm unlock-key](swarm_unlock_key.md)
 * [swarm update](swarm_update.md)

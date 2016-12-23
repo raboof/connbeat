@@ -1189,7 +1189,7 @@ func (s *DockerDaemonSuite) TestDaemonLoggingDriverNoneLogsError(c *check.C) {
 
 	out, err = s.d.Cmd("logs", "test")
 	c.Assert(err, check.NotNil, check.Commentf("Logs should fail with 'none' driver"))
-	expected := `"logs" command is supported only for "json-file" and "journald" logging drivers (got: none)`
+	expected := `configured logging driver does not support reading`
 	c.Assert(out, checker.Contains, expected)
 }
 
@@ -1263,7 +1263,7 @@ func (s *DockerDaemonSuite) TestDaemonWithWrongkey(c *check.C) {
 	c.Assert(err, checker.IsNil)
 
 	if !strings.Contains(string(content), "Public Key ID does not match") {
-		c.Fatal("Missing KeyID message from daemon logs")
+		c.Fatalf("Missing KeyID message from daemon logs: %s", string(content))
 	}
 }
 

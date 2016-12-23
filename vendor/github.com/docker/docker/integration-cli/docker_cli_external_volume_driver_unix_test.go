@@ -103,10 +103,8 @@ func newVolumePlugin(c *check.C, name string) *volumePlugin {
 	read := func(b io.ReadCloser) (pluginRequest, error) {
 		defer b.Close()
 		var pr pluginRequest
-		if err := json.NewDecoder(b).Decode(&pr); err != nil {
-			return pr, err
-		}
-		return pr, nil
+		err := json.NewDecoder(b).Decode(&pr)
+		return pr, err
 	}
 
 	send := func(w http.ResponseWriter, data interface{}) {
@@ -282,6 +280,22 @@ func (s *DockerExternalVolumeSuite) TearDownSuite(c *check.C) {
 
 	err := os.RemoveAll("/etc/docker/plugins")
 	c.Assert(err, checker.IsNil)
+}
+
+func (s *DockerExternalVolumeSuite) TestVolumeCLICreateOptionConflict(c *check.C) {
+	dockerCmd(c, "volume", "create", "test")
+
+	out, _, err := dockerCmdWithError("volume", "create", "test", "--driver", volumePluginName)
+	c.Assert(err, check.NotNil, check.Commentf("volume create exception name already in use with another driver"))
+	c.Assert(out, checker.Contains, "A volume named test already exists")
+
+	out, _ = dockerCmd(c, "volume", "inspect", "--format={{ .Driver }}", "test")
+	_, _, err = dockerCmdWithError("volume", "create", "test", "--driver", strings.TrimSpace(out))
+	c.Assert(err, check.IsNil)
+
+	// make sure hidden --name option conflicts with positional arg name
+	out, _, err = dockerCmdWithError("volume", "create", "--name", "test2", "test2")
+	c.Assert(err, check.NotNil, check.Commentf("Conflicting options: either specify --name or provide positional arg, not both"))
 }
 
 func (s *DockerExternalVolumeSuite) TestExternalVolumeDriverNamed(c *check.C) {

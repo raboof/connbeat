@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/go-check/check"
+	"github.com/pkg/errors"
 )
 
 // Swarm is a test daemon with helpers for participating in a swarm.
@@ -96,6 +97,18 @@ func (d *Swarm) SwarmInfo() (swarm.Info, error) {
 	return info.Swarm, nil
 }
 
+// Unlock tries to unlock a locked swarm
+func (d *Swarm) Unlock(req swarm.UnlockRequest) error {
+	status, out, err := d.SockRequest("POST", "/swarm/unlock", req)
+	if status != http.StatusOK {
+		return fmt.Errorf("unlocking swarm: invalid statuscode %v, %q", status, out)
+	}
+	if err != nil {
+		err = errors.Wrap(err, "unlocking swarm")
+	}
+	return err
+}
+
 // ServiceConstructor defines a swarm service constructor function
 type ServiceConstructor func(*swarm.Service)
 
@@ -148,18 +161,26 @@ func (d *Swarm) GetServiceTasks(c *check.C, service string) []swarm.Task {
 	return tasks
 }
 
-// CheckServiceRunningTasks returns the number of running tasks for the specified service
-func (d *Swarm) CheckServiceRunningTasks(service string) func(*check.C) (interface{}, check.CommentInterface) {
+// CheckServiceTasksInState returns the number of tasks with a matching state,
+// and optional message substring.
+func (d *Swarm) CheckServiceTasksInState(service string, state swarm.TaskState, message string) func(*check.C) (interface{}, check.CommentInterface) {
 	return func(c *check.C) (interface{}, check.CommentInterface) {
 		tasks := d.GetServiceTasks(c, service)
-		var runningCount int
+		var count int
 		for _, task := range tasks {
-			if task.Status.State == swarm.TaskStateRunning {
-				runningCount++
+			if task.Status.State == state {
+				if message == "" || strings.Contains(task.Status.Message, message) {
+					count++
+				}
 			}
 		}
-		return runningCount, nil
+		return count, nil
 	}
+}
+
+// CheckServiceRunningTasks returns the number of running tasks for the specified service
+func (d *Swarm) CheckServiceRunningTasks(service string) func(*check.C) (interface{}, check.CommentInterface) {
+	return d.CheckServiceTasksInState(service, swarm.TaskStateRunning, "")
 }
 
 // CheckServiceUpdateState returns the current update state for the specified service
