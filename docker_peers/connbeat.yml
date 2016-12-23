@@ -21,5 +21,5 @@ output:
     #  name: "connbeat"
     #  path: "connbeat.template.json"
 
-  console:
-    pretty: true
+  #console:
+  #  pretty: true
