@@ -129,10 +129,14 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener := Listen(
+	connectionListener, serverConnectionListener, err := Listen(
 		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron,
 		cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
 		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation)
+
+	if err != nil {
+		return err
+	}
 
 	return cb.Pipe(connectionListener, serverConnectionListener)
 }

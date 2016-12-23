@@ -28,10 +28,10 @@ type Connection struct {
 	containerId string
 }
 
-func getSocketInfoFromDocker(endpoint string, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
+func getSocketInfoFromDocker(poller *docker.Poller, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
 	for {
 		// For now we poll periodically
-		err := docker.PollCurrentConnections(endpoint, socketInfo)
+		err := poller.PollCurrentConnections(socketInfo)
 		if err != nil {
 			logp.Err("Polling connections: %s", err)
 		}
@@ -59,10 +59,8 @@ func getSocketInfoFromTcpDiag(pollInterval time.Duration, socketInfo chan<- *soc
 	}
 }
 
-func getSocketInfo(enableDocker, enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
-	if enableDocker {
-		getSocketInfoFromDocker("unix:///var/run/docker.sock", pollInterval, socketInfo)
-	} else if enableTcpDiag {
+func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
+	if enableTcpDiag {
 		getSocketInfoFromTcpDiag(pollInterval, socketInfo)
 	} else {
 		getSocketInfoFromProc(pollInterval, socketInfo)
@@ -128,14 +126,22 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 	}
 }
 
-func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection) {
+func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection, error) {
 	socketInfo := make(chan *sockets.SocketInfo, 20)
 
-	go getSocketInfo(enableDocker, enableTcpDiag, pollInterval, socketInfo)
+	if enableDocker {
+		poller, err := docker.New()
+		if err != nil {
+			return nil, nil, err
+		}
+		go getSocketInfoFromDocker(poller, pollInterval, socketInfo)
+	} else {
+		go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
+	}
 
 	connections := make(chan Connection, 20)
 	servers := make(chan ServerConnection, 20)
 	go filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
 
-	return connections, servers
+	return connections, servers, nil
 }

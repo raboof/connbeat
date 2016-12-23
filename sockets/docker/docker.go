@@ -9,33 +9,47 @@ import (
 	"github.com/raboof/connbeat/sockets/proc_net_tcp"
 )
 
-func PollCurrentConnections(endpoint string, socketInfo chan<- *sockets.SocketInfo) error {
-	client, err := docker.NewClient(endpoint)
+type Poller struct {
+	client *docker.Client
+}
+
+func New() (*Poller, error) {
+	client, err := docker.NewClientFromEnv()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
+	if err = client.Ping(); err != nil {
+		return nil, err
+	}
+
+	return &Poller{
+		client: client,
+	}, nil
+}
+
+func (p *Poller) PollCurrentConnections(socketInfo chan<- *sockets.SocketInfo) error {
+	containers, err := p.client.ListContainers(docker.ListContainersOptions{All: false})
 	if err != nil {
 		return err
 	}
 	for _, container := range containers {
-		if err = pollCurrentConnections(client, container, socketInfo); err != nil {
+		if err = p.pollCurrentConnections(container, socketInfo); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func pollCurrentConnections(client *docker.Client, container docker.APIContainers, socketInfo chan<- *sockets.SocketInfo) error {
-	err := pollCurrentConnectionsFor(client, container, "/proc/net/tcp", false, socketInfo)
+func (p *Poller) pollCurrentConnections(container docker.APIContainers, socketInfo chan<- *sockets.SocketInfo) error {
+	err := p.pollCurrentConnectionsFor(container, "/proc/net/tcp", false, socketInfo)
 	if err != nil {
 		return err
 	}
-	return pollCurrentConnectionsFor(client, container, "/proc/net/tcp6", true, socketInfo)
+	return p.pollCurrentConnectionsFor(container, "/proc/net/tcp6", true, socketInfo)
 }
 
-func pollCurrentConnectionsFor(client *docker.Client, container docker.APIContainers, file string, ipv6 bool, socketInfo chan<- *sockets.SocketInfo) error {
-	exec, err := client.CreateExec(docker.CreateExecOptions{
+func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file string, ipv6 bool, socketInfo chan<- *sockets.SocketInfo) error {
+	exec, err := p.client.CreateExec(docker.CreateExecOptions{
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -48,14 +62,14 @@ func pollCurrentConnectionsFor(client *docker.Client, container docker.APIContai
 		panic(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if err = client.StartExec(exec.ID, docker.StartExecOptions{
+	if err = p.client.StartExec(exec.ID, docker.StartExecOptions{
 		OutputStream: &stdout,
 		ErrorStream:  &stderr,
 		RawTerminal:  false,
 	}); err != nil {
 		return err
 	}
-	result, err := client.InspectExec(exec.ID)
+	result, err := p.client.InspectExec(exec.ID)
 	if err != nil {
 		return err
 	}
