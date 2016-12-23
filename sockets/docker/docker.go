@@ -15,14 +15,14 @@ type Poller struct {
 
 func New() (*Poller, error) {
 	client, err := docker.NewClientFromEnv()
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	if err = client.Ping(); err != nil {
 		return nil, err
 	}
 
-	return &Poller {
+	return &Poller{
 		client: client,
 	}, nil
 }
@@ -48,7 +48,7 @@ func (p *Poller) pollCurrentConnections(container docker.APIContainers, socketIn
 	return p.pollCurrentConnectionsFor(container, "/proc/net/tcp6", true, socketInfo)
 }
 
-func (p *Poller)  pollCurrentConnectionsFor(container docker.APIContainers, file string, ipv6 bool, socketInfo chan<- *sockets.SocketInfo) error {
+func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file string, ipv6 bool, socketInfo chan<- *sockets.SocketInfo) error {
 	exec, err := p.client.CreateExec(docker.CreateExecOptions{
 		AttachStdin:  false,
 		AttachStdout: true,
