@@ -38,7 +38,7 @@ before-build:
 collect:
 
 .PHONY: docker_peers
-docker_peers: #package
+docker_peers: package
 	@rm -r unpacked || true
 	mkdir unpacked
 	tar xzvf build/upload/connbeat-*-linux-x86.tar.gz -C unpacked
