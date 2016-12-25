@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/go-check/check"
 
@@ -12,7 +14,7 @@ import (
 
 var (
 	pluginProcessName = "sample-volume-plugin"
-	pName             = "tiborvass/sample-volume-plugin"
+	pName             = "tonistiigi/sample-volume-plugin"
 	pTag              = "latest"
 	pNameWithTag      = pName + ":" + pTag
 )
@@ -64,22 +66,17 @@ func (s *DockerSuite) TestPluginForceRemove(c *check.C) {
 
 func (s *DockerSuite) TestPluginActive(c *check.C) {
 	testRequires(c, DaemonIsLinux, IsAmd64, Network)
-	out, _, err := dockerCmdWithError("plugin", "install", "--grant-all-permissions", pNameWithTag)
+	_, _, err := dockerCmdWithError("plugin", "install", "--grant-all-permissions", pNameWithTag)
 	c.Assert(err, checker.IsNil)
 
-	out, _, err = dockerCmdWithError("volume", "create", "-d", pNameWithTag)
+	_, _, err = dockerCmdWithError("volume", "create", "-d", pNameWithTag, "--name", "testvol1")
 	c.Assert(err, checker.IsNil)
 
-	vID := strings.TrimSpace(out)
+	out, _, err := dockerCmdWithError("plugin", "disable", pNameWithTag)
+	c.Assert(out, checker.Contains, "in use")
 
-	out, _, err = dockerCmdWithError("plugin", "remove", pNameWithTag)
-	c.Assert(out, checker.Contains, "is in use")
-
-	_, _, err = dockerCmdWithError("volume", "rm", vID)
+	_, _, err = dockerCmdWithError("volume", "rm", "testvol1")
 	c.Assert(err, checker.IsNil)
-
-	out, _, err = dockerCmdWithError("plugin", "remove", pNameWithTag)
-	c.Assert(out, checker.Contains, "is enabled")
 
 	_, _, err = dockerCmdWithError("plugin", "disable", pNameWithTag)
 	c.Assert(err, checker.IsNil)
@@ -144,11 +141,18 @@ func (s *DockerSuite) TestPluginInstallArgs(c *check.C) {
 	c.Assert(strings.TrimSpace(env), checker.Equals, "[DEBUG=1]")
 }
 
-func (s *DockerSuite) TestPluginInstallImage(c *check.C) {
-	testRequires(c, DaemonIsLinux, IsAmd64, Network)
-	out, _, err := dockerCmdWithError("plugin", "install", "redis")
+func (s *DockerRegistrySuite) TestPluginInstallImage(c *check.C) {
+	testRequires(c, DaemonIsLinux, IsAmd64)
+
+	repoName := fmt.Sprintf("%v/dockercli/busybox", privateRegistryURL)
+	// tag the image to upload it to the private registry
+	dockerCmd(c, "tag", "busybox", repoName)
+	// push the image to the registry
+	dockerCmd(c, "push", repoName)
+
+	out, _, err := dockerCmdWithError("plugin", "install", repoName)
 	c.Assert(err, checker.NotNil)
-	c.Assert(out, checker.Contains, "content is not a plugin")
+	c.Assert(out, checker.Contains, "target is image")
 }
 
 func (s *DockerSuite) TestPluginEnableDisableNegative(c *check.C) {
@@ -182,6 +186,9 @@ func (s *DockerSuite) TestPluginCreate(c *check.C) {
 
 	data := `{"description": "foo plugin"}`
 	err = ioutil.WriteFile(filepath.Join(temp, "config.json"), []byte(data), 0644)
+	c.Assert(err, checker.IsNil)
+
+	err = os.MkdirAll(filepath.Join(temp, "rootfs"), 0700)
 	c.Assert(err, checker.IsNil)
 
 	out, _, err := dockerCmdWithError("plugin", "create", name, temp)
