@@ -96,16 +96,6 @@ func (daemon *Daemon) getLayerInit() func(string) error {
 	return nil
 }
 
-// setupInitLayer populates a directory with mountpoints suitable
-// for bind-mounting dockerinit into the container. The mountpoint is simply an
-// empty file at /.dockerinit
-//
-// This extra layer is used by all containers as the top-most ro layer. It protects
-// the container from unwanted side-effects on the rw layer.
-func setupInitLayer(initLayer string, rootUID, rootGID int) error {
-	return nil
-}
-
 func checkKernel() error {
 	// solaris can rely upon checkSystem() below, we don't skew kernel versions
 	return nil
@@ -311,7 +301,7 @@ func verifyPlatformContainerSettings(daemon *Daemon, hostConfig *containertypes.
 	return warnings, nil
 }
 
-// platformReload update configuration with platform specific options
+// platformReload updates configuration with platform specific options
 func (daemon *Daemon) platformReload(config *Config) map[string]string {
 	return map[string]string{}
 }

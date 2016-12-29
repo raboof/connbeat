@@ -19,6 +19,7 @@ import (
 
 	"github.com/docker/docker/builder/dockerfile/command"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/stringutils"
@@ -2085,7 +2086,7 @@ func (s *DockerSuite) TestBuildContextCleanup(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
-	if err = compareDirectoryEntries(entries, entriesFinal); err != nil {
+	if err = integration.CompareDirectoryEntries(entries, entriesFinal); err != nil {
 		c.Fatalf("context should have been deleted, but wasn't")
 	}
 
@@ -2110,7 +2111,7 @@ func (s *DockerSuite) TestBuildContextCleanupFailedBuild(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to list contents of tmp dir: %s", err)
 	}
-	if err = compareDirectoryEntries(entries, entriesFinal); err != nil {
+	if err = integration.CompareDirectoryEntries(entries, entriesFinal); err != nil {
 		c.Fatalf("context should have been deleted, but wasn't")
 	}
 
@@ -5341,7 +5342,7 @@ func (s *DockerSuite) TestBuildContainerWithCgroupParent(c *check.C) {
 	if err != nil {
 		c.Fatalf("failed to read '/proc/self/cgroup - %v", err)
 	}
-	selfCgroupPaths := parseCgroupPaths(string(data))
+	selfCgroupPaths := integration.ParseCgroupPaths(string(data))
 	_, found := selfCgroupPaths["memory"]
 	if !found {
 		c.Fatalf("unable to find self memory cgroup path. CgroupsPath: %v", selfCgroupPaths)
@@ -6242,11 +6243,10 @@ func (s *DockerSuite) TestBuildMultipleTags(c *check.C) {
 	FROM busybox
 	MAINTAINER test-15780
 	`
-	cmd := exec.Command(dockerBinary, "build", "-t", "tag1", "-t", "tag2:v2",
-		"-t", "tag1:latest", "-t", "tag1", "--no-cache", "-")
-	cmd.Stdin = strings.NewReader(dockerfile)
-	_, err := runCommand(cmd)
-	c.Assert(err, check.IsNil)
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "build", "-t", "tag1", "-t", "tag2:v2", "-t", "tag1:latest", "-t", "tag1", "--no-cache", "-"},
+		Stdin:   strings.NewReader(dockerfile),
+	}).Assert(c, icmd.Success)
 
 	id1, err := getIDByName("tag1")
 	c.Assert(err, check.IsNil)
@@ -7356,4 +7356,44 @@ func (s *DockerSuite) TestBuildWindowsEnvCaseInsensitive(c *check.C) {
 	if res != `["foo=bar"]` { // Should not have FOO=bar in it - takes the last one processed. And only one entry as deduped.
 		c.Fatalf("Case insensitive environment variables on Windows failed. Got %s", res)
 	}
+}
+
+// Test case for 29667
+func (s *DockerSuite) TestBuildWorkdirImageCmd(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+
+	image := "testworkdirimagecmd"
+	dockerfile := `
+FROM busybox
+WORKDIR /foo/bar
+`
+	out, err := buildImage(image, dockerfile, true)
+	c.Assert(err, checker.IsNil, check.Commentf("Output: %s", out))
+
+	out, _ = dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", image)
+	c.Assert(strings.TrimSpace(out), checker.Equals, `["sh"]`)
+
+	image = "testworkdirlabelimagecmd"
+	dockerfile = `
+FROM busybox
+WORKDIR /foo/bar
+LABEL a=b
+`
+	out, err = buildImage(image, dockerfile, true)
+	c.Assert(err, checker.IsNil, check.Commentf("Output: %s", out))
+
+	out, _ = dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", image)
+	c.Assert(strings.TrimSpace(out), checker.Equals, `["sh"]`)
+}
+
+// Test case for 28902/28090
+func (s *DockerSuite) TestBuildWorkdirCmd(c *check.C) {
+	testRequires(c, DaemonIsLinux)
+
+	dockerFile := `
+                FROM golang:1.7-alpine
+                WORKDIR /
+                `
+	_, err := buildImage("testbuildworkdircmd", dockerFile, false)
+	c.Assert(err, checker.IsNil)
 }
