@@ -18,7 +18,7 @@ import (
 	"github.com/docker/docker/api/types"
 	registrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/cli/command"
-	"github.com/docker/docker/cliconfig"
+	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/registry"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/docker/notary"
@@ -37,7 +37,7 @@ var (
 )
 
 func trustDirectory() string {
-	return filepath.Join(cliconfig.ConfigDir(), "trust")
+	return filepath.Join(cliconfig.Dir(), "trust")
 }
 
 // certificateDirectory returns the directory containing
@@ -49,7 +49,7 @@ func certificateDirectory(server string) (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(cliconfig.ConfigDir(), "tls", u.Host), nil
+	return filepath.Join(cliconfig.Dir(), "tls", u.Host), nil
 }
 
 // Server returns the base URL for the trust server.
@@ -147,8 +147,19 @@ func GetNotaryRepository(streams command.Streams, repoInfo *registry.RepositoryI
 		}
 	}
 
+	scope := auth.RepositoryScope{
+		Repository: repoInfo.FullName(),
+		Actions:    actions,
+		Class:      repoInfo.Class,
+	}
 	creds := simpleCredentialStore{auth: authConfig}
-	tokenHandler := auth.NewTokenHandler(authTransport, creds, repoInfo.FullName(), actions...)
+	tokenHandlerOptions := auth.TokenHandlerOptions{
+		Transport:   authTransport,
+		Credentials: creds,
+		Scopes:      []auth.Scope{scope},
+		ClientID:    registry.AuthClientID,
+	}
+	tokenHandler := auth.NewTokenHandlerWithOptions(tokenHandlerOptions)
 	basicHandler := auth.NewBasicHandler(creds)
 	modifiers = append(modifiers, transport.RequestModifier(auth.NewAuthorizer(challengeManager, tokenHandler, basicHandler)))
 	tr := transport.NewTransport(base, modifiers...)

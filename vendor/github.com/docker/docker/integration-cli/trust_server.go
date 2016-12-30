@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/cliconfig"
+	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/pkg/integration/checker"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/go-check/check"
@@ -90,7 +90,7 @@ func newTestNotary(c *check.C) (*testNotary, error) {
 		"skipTLSVerify": true
 	}
 }`
-	if _, err = fmt.Fprintf(clientConfig, template, filepath.Join(cliconfig.ConfigDir(), "trust"), notaryURL); err != nil {
+	if _, err = fmt.Fprintf(clientConfig, template, filepath.Join(cliconfig.Dir(), "trust"), notaryURL); err != nil {
 		os.RemoveAll(tmp)
 		return nil, err
 	}
@@ -206,6 +206,29 @@ func (s *DockerTrustSuite) setupTrustedImage(c *check.C, name string) string {
 
 	if out, status := dockerCmd(c, "rmi", repoName); status != 0 {
 		c.Fatalf("Error removing image %q\n%s", repoName, out)
+	}
+
+	return repoName
+}
+
+func (s *DockerTrustSuite) setupTrustedplugin(c *check.C, source, name string) string {
+	repoName := fmt.Sprintf("%v/dockercli/%s:latest", privateRegistryURL, name)
+	// tag the image and upload it to the private registry
+	dockerCmd(c, "plugin", "install", "--grant-all-permissions", "--alias", repoName, source)
+
+	pushCmd := exec.Command(dockerBinary, "plugin", "push", repoName)
+	s.trustedCmd(pushCmd)
+	out, _, err := runCommandWithOutput(pushCmd)
+
+	if err != nil {
+		c.Fatalf("Error running trusted plugin push: %s\n%s", err, out)
+	}
+	if !strings.Contains(string(out), "Signing and pushing trust metadata") {
+		c.Fatalf("Missing expected output on trusted push:\n%s", out)
+	}
+
+	if out, status := dockerCmd(c, "plugin", "rm", "-f", repoName); status != 0 {
+		c.Fatalf("Error removing plugin %q\n%s", repoName, out)
 	}
 
 	return repoName

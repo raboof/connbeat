@@ -2765,6 +2765,10 @@ _docker_service_update() {
 				_filedir
 				return
 				;;
+			--group)
+				COMPREPLY=( $(compgen -g -- "$cur") )
+				return
+				;;
 			--host)
 				case "$cur" in
 					*:)
@@ -2781,10 +2785,6 @@ _docker_service_update() {
 				__docker_complete_secrets
 				return
 				;;
-			--group)
-			COMPREPLY=( $(compgen -g -- "$cur") )
-			return
-			;;
 		esac
 	fi
 	if [ "$subcommand" = "update" ] ; then
@@ -2810,11 +2810,7 @@ _docker_service_update() {
 		"
 
 		case "$prev" in
-			--group-add)
-				COMPREPLY=( $(compgen -g -- "$cur") )
-				return
-				;;
-			--group-rm)
+			--group-add|--group-rm)
 				COMPREPLY=( $(compgen -g -- "$cur") )
 				return
 				;;
@@ -3266,9 +3262,15 @@ _docker_plugin_inspect() {
 }
 
 _docker_plugin_install() {
+	case "$prev" in
+		--alias)
+			return
+			;;
+	esac
+
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--disable --grant-all-permissions--help" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--alias --disable --grant-all-permissions --help" -- "$cur" ) )
 			;;
 	esac
 }
