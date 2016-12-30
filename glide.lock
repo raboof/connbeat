@@ -1,5 +1,5 @@
 hash: b578526c79a81385b77999e76269d96fc36c48c0cc3f5f7c01619209893335cb
-updated: 2016-12-22T23:02:51.838637031Z
+updated: 2016-12-25T23:02:48.436779534Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
 - name: github.com/docker/docker
-  version: d25186a625ca94ec1d4a814dd8745fd3ca335caa
+  version: e6366743a145a22bdb5c1fbaa31aad0061c61d19
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 3aa60a0c85905c9c2211e34c0dc4b5c47ab795ba
+  version: 67d322e5c4e88a46a5609a0fadeb9581ba0b2c9b
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -133,10 +133,16 @@ imports:
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/opencontainers/runc
-  version: 9a1e53eafc0ebef4712b442a0aa53a1a7016a23d
+  version: cae7979d1fda884a0cd66cc5fb17282569a9792a
   subpackages:
   - libcontainer/system
   - libcontainer/user
+- name: github.com/pierrec/lz4
+  version: 5c9560bfa9ace2bf86080bf40d46b34ae44604df
+- name: github.com/pierrec/xxHash
+  version: 5a004441f897722c627870a981d02b29924215fa
+  subpackages:
+  - xxHash32
 - name: github.com/pkg/errors
   version: 01fa4104b9c248c8945d14d9f128454d5b28d595
 - name: github.com/raboof/beats-output-http
@@ -148,7 +154,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/Shopify/sarama
-  version: 2091c0107077425080ce59da480912ed2c4be6c8
+  version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
   version: 881bee4e20a5d11a6a88a5667c6f292072ac1963
