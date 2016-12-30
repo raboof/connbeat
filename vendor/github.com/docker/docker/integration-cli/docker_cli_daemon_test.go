@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/integration-cli/daemon"
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/docker/pkg/integration/checker"
 	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/mount"
@@ -224,6 +225,16 @@ func (s *DockerDaemonSuite) TestDaemonRestartWithIncreasedBasesize(c *check.C) {
 	s.d.Stop(c)
 }
 
+func convertBasesize(basesizeBytes int64) (int64, error) {
+	basesize := units.HumanSize(float64(basesizeBytes))
+	basesize = strings.Trim(basesize, " ")[:len(basesize)-3]
+	basesizeFloat, err := strconv.ParseFloat(strings.Trim(basesize, " "), 64)
+	if err != nil {
+		return 0, err
+	}
+	return int64(basesizeFloat) * 1024 * 1024 * 1024, nil
+}
+
 // Issue #8444: If docker0 bridge is modified (intentionally or unintentionally) and
 // no longer has an IP associated, we should gracefully handle that case and associate
 // an IP with it rather than fail daemon start
@@ -235,11 +246,7 @@ func (s *DockerDaemonSuite) TestDaemonStartBridgeWithoutIPAssociation(c *check.C
 	s.d.Stop(c)
 
 	// now we will remove the ip from docker0 and then try starting the daemon
-	ipCmd := exec.Command("ip", "addr", "flush", "dev", "docker0")
-	stdout, stderr, _, err := runCommandWithStdoutStderr(ipCmd)
-	if err != nil {
-		c.Fatalf("failed to remove docker0 IP association: %v, stdout: %q, stderr: %q", err, stdout, stderr)
-	}
+	icmd.RunCommand("ip", "addr", "flush", "dev", "docker0").Assert(c, icmd.Success)
 
 	if err := s.d.StartWithError(); err != nil {
 		warning := "**WARNING: Docker bridge network in bad state--delete docker0 bridge interface to fix"
@@ -668,24 +675,16 @@ func (s *DockerDaemonSuite) TestDaemonBridgeIP(c *check.C) {
 	defer d.Restart(c)
 
 	ifconfigSearchString := ip.String()
-	ifconfigCmd := exec.Command("ifconfig", defaultNetworkBridge)
-	out, _, _, err := runCommandWithStdoutStderr(ifconfigCmd)
-	c.Assert(err, check.IsNil)
-
-	c.Assert(strings.Contains(out, ifconfigSearchString), check.Equals, true,
-		check.Commentf("ifconfig output should have contained %q, but was %q",
-			ifconfigSearchString, out))
+	icmd.RunCommand("ifconfig", defaultNetworkBridge).Assert(c, icmd.Expected{
+		Out: ifconfigSearchString,
+	})
 
 	ipTablesSearchString := bridgeIPNet.String()
-	ipTablesCmd := exec.Command("iptables", "-t", "nat", "-nvL")
-	out, _, err = runCommandWithOutput(ipTablesCmd)
-	c.Assert(err, check.IsNil)
+	icmd.RunCommand("iptables", "-t", "nat", "-nvL").Assert(c, icmd.Expected{
+		Out: ipTablesSearchString,
+	})
 
-	c.Assert(strings.Contains(out, ipTablesSearchString), check.Equals, true,
-		check.Commentf("iptables output should have contained %q, but was %q",
-			ipTablesSearchString, out))
-
-	out, err = d.Cmd("run", "-d", "--name", "test", "busybox", "top")
+	_, err := d.Cmd("run", "-d", "--name", "test", "busybox", "top")
 	c.Assert(err, check.IsNil)
 
 	containerIP, err := d.FindContainerIP("test")
@@ -706,24 +705,15 @@ func (s *DockerDaemonSuite) TestDaemonRestartWithBridgeIPChange(c *check.C) {
 	bridgeIP := "192.169.100.1/24"
 	_, bridgeIPNet, _ := net.ParseCIDR(bridgeIP)
 
-	ipCmd := exec.Command("ifconfig", "docker0", bridgeIP)
-	stdout, stderr, _, err := runCommandWithStdoutStderr(ipCmd)
-	if err != nil {
-		c.Fatalf("failed to change docker0's IP association: %v, stdout: %q, stderr: %q", err, stdout, stderr)
-	}
+	icmd.RunCommand("ifconfig", "docker0", bridgeIP).Assert(c, icmd.Success)
 
 	s.d.Start(c, "--bip", bridgeIP)
 
 	//check if the iptables contains new bridgeIP MASQUERADE rule
 	ipTablesSearchString := bridgeIPNet.String()
-	ipTablesCmd := exec.Command("iptables", "-t", "nat", "-nvL")
-	out, _, err := runCommandWithOutput(ipTablesCmd)
-	if err != nil {
-		c.Fatalf("Could not run iptables -nvL: %s, %v", out, err)
-	}
-	if !strings.Contains(out, ipTablesSearchString) {
-		c.Fatalf("iptables output should have contained new MASQUERADE rule with IP %q, but was %q", ipTablesSearchString, out)
-	}
+	icmd.RunCommand("iptables", "-t", "nat", "-nvL").Assert(c, icmd.Expected{
+		Out: ipTablesSearchString,
+	})
 }
 
 func (s *DockerDaemonSuite) TestDaemonBridgeFixedCidr(c *check.C) {
@@ -1908,7 +1898,7 @@ func (s *DockerDaemonSuite) TestDaemonCgroupParent(c *check.C) {
 
 	out, err := s.d.Cmd("run", "--name", name, "busybox", "cat", "/proc/self/cgroup")
 	c.Assert(err, checker.IsNil)
-	cgroupPaths := parseCgroupPaths(string(out))
+	cgroupPaths := integration.ParseCgroupPaths(string(out))
 	c.Assert(len(cgroupPaths), checker.Not(checker.Equals), 0, check.Commentf("unexpected output - %q", string(out)))
 	out, err = s.d.Cmd("inspect", "-f", "{{.Id}}", name)
 	c.Assert(err, checker.IsNil)

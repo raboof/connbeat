@@ -21,11 +21,13 @@ Usage:  docker plugin disable PLUGIN
 Disable a plugin
 
 Options:
-      --help   Print usage
+  -f, --force   Force the disable of an active plugin
+      --help    Print usage
 ```
 
 Disables a plugin. The plugin must be installed before it can be disabled,
-see [`docker plugin install`](plugin_install.md).
+see [`docker plugin install`](plugin_install.md). Without the `-f` option,
+a plugin that has references (eg, volumes, networks) cannot be disabled.
 
 
 The following example shows that the `no-remove` plugin is installed
@@ -34,8 +36,8 @@ and enabled:
 ```bash
 $ docker plugin ls
 
-NAME                  TAG                 DESCRIPTION                ENABLED
-tiborvass/no-remove   latest              A test plugin for Docker   true
+ID                  NAME                  TAG                 DESCRIPTION                ENABLED
+69553ca1d123        tiborvass/no-remove   latest              A test plugin for Docker   true
 ```
 
 To disable the plugin, use the following command:
@@ -47,8 +49,8 @@ tiborvass/no-remove
 
 $ docker plugin ls
 
-NAME                  TAG                 DESCRIPTION                ENABLED
-tiborvass/no-remove   latest              A test plugin for Docker   false
+ID                  NAME                  TAG                 DESCRIPTION                ENABLED
+69553ca1d123        tiborvass/no-remove   latest              A test plugin for Docker   false
 ```
 
 ## Related information
