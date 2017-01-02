@@ -1,5 +1,5 @@
 hash: b578526c79a81385b77999e76269d96fc36c48c0cc3f5f7c01619209893335cb
-updated: 2017-01-01T23:02:36.523141077Z
+updated: 2017-01-02T23:02:37.352121863Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
 - name: github.com/docker/docker
-  version: 314ae902437f9e5a1169aee7436fb099b145ceff
+  version: 173ce768d66534ef0aa00d131d306bdff1c74ff3
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 67d322e5c4e88a46a5609a0fadeb9581ba0b2c9b
+  version: 3ab08d1206a18b5f50d8e267fab9c47763d4230b
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -97,7 +97,7 @@ imports:
   - server/internal
   - server/v2
 - name: github.com/elastic/go-ucfg
-  version: ffb56fb86d691252e34a0971301bd10e01a70703
+  version: 30ac0dc1c9c40d58c338ec641e30d640e1372474
   subpackages:
   - cfgutil
   - flag
