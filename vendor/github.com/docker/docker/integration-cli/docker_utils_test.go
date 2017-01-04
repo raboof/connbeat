@@ -23,13 +23,14 @@ import (
 
 	"github.com/docker/docker/api/types"
 	volumetypes "github.com/docker/docker/api/types/volume"
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
+	"github.com/docker/docker/integration-cli/registry"
 	"github.com/docker/docker/opts"
-	"github.com/docker/docker/pkg/integration"
-	"github.com/docker/docker/pkg/integration/checker"
-	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/ioutils"
 	"github.com/docker/docker/pkg/stringutils"
+	"github.com/docker/docker/pkg/testutil"
+	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/go-check/check"
 )
 
@@ -59,7 +60,7 @@ func sockRequest(method, endpoint string, data interface{}) (int, []byte, error)
 	if err != nil {
 		return -1, nil, err
 	}
-	b, err := integration.ReadBody(body)
+	b, err := testutil.ReadBody(body)
 	return res.StatusCode, b, err
 }
 
@@ -117,8 +118,16 @@ func newRequestClient(method, endpoint string, data io.Reader, ct, daemon string
 	return req, client, nil
 }
 
-func deleteContainer(container ...string) error {
+// FIXME(vdemeester) move this away are remove ignoreNoSuchContainer bool
+func deleteContainer(ignoreNoSuchContainer bool, container ...string) error {
 	result := icmd.RunCommand(dockerBinary, append([]string{"rm", "-fv"}, container...)...)
+	if ignoreNoSuchContainer && result.Error != nil {
+		// If the error is "No such container: ..." this means the container doesn't exists anymore,
+		// we can safely ignore that one.
+		if strings.Contains(result.Error.Error(), "No such container") {
+			return nil
+		}
+	}
 	return result.Compare(icmd.Success)
 }
 
@@ -137,7 +146,7 @@ func deleteAllContainers(c *check.C) {
 	c.Assert(err, checker.IsNil, check.Commentf("containers: %v", containers))
 
 	if containers != "" {
-		err = deleteContainer(strings.Split(strings.TrimSpace(containers), "\n")...)
+		err = deleteContainer(true, strings.Split(strings.TrimSpace(containers), "\n")...)
 		c.Assert(err, checker.IsNil)
 	}
 }
@@ -595,7 +604,7 @@ func (f *remoteFileServer) Close() error {
 	if f.container == "" {
 		return nil
 	}
-	return deleteContainer(f.container)
+	return deleteContainer(false, f.container)
 }
 
 func newRemoteFileServer(ctx *FakeContext) (*remoteFileServer, error) {
@@ -1083,8 +1092,8 @@ func parseEventTime(t time.Time) string {
 	return fmt.Sprintf("%d.%09d", t.Unix(), int64(t.Nanosecond()))
 }
 
-func setupRegistry(c *check.C, schema1 bool, auth, tokenURL string) *testRegistryV2 {
-	reg, err := newTestRegistryV2(c, schema1, auth, tokenURL)
+func setupRegistry(c *check.C, schema1 bool, auth, tokenURL string) *registry.V2 {
+	reg, err := registry.NewV2(schema1, auth, tokenURL, privateRegistryURL)
 	c.Assert(err, check.IsNil)
 
 	// Wait for registry to be ready to serve requests.
