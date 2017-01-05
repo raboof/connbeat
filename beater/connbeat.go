@@ -21,6 +21,12 @@ type Connbeat struct {
 	done chan struct{}
 }
 
+type ContainerInfo struct {
+	id          string
+	localIPs    mapset.Set
+	environment []string
+}
+
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 	rawConnbeatConfig := rawConfig
 	cb := &Connbeat{}
@@ -63,13 +69,24 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
-func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set) error {
+func toMap(containerInfo ContainerInfo) common.MapStr {
+	if containerInfo.id != "" {
+		return common.MapStr{
+			"id":        containerInfo.id,
+			"local_ips": containerInfo.localIPs.ToSlice(),
+			"env":       containerInfo.environment,
+		}
+	}
+	return nil
+}
+
+func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set, containerInfo ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
-		"container_id":  s.containerId,
+		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -80,7 +97,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
+func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -89,7 +106,7 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
-		"container_id":  c.containerId,
+		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -111,7 +128,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			return nil
 		case c := <-connectionListener:
 			localIPs.Add(c.localIP)
-			err = cb.exportConnection(c, localIPs)
+			containerInfo := ContainerInfo{c.container.ID, localIPs, c.container.DockerEnvironment}
+			err = cb.exportConnection(c, localIPs, containerInfo)
 			if err != nil {
 				return err
 			}
@@ -120,7 +138,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				s.localIP != "::" {
 				localIPs.Add(s.localIP)
 			}
-			err = cb.exportServerConnection(s, localIPs)
+			containerInfo := ContainerInfo{s.container.ID, localIPs, s.container.DockerEnvironment}
+			err = cb.exportServerConnection(s, localIPs, containerInfo)
 			if err != nil {
 				return err
 			}
@@ -132,7 +151,8 @@ func (cb *Connbeat) Run(b *beat.Beat) error {
 	connectionListener, serverConnectionListener, err := Listen(
 		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron,
 		cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
-		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation)
+		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation,
+		cb.ConnConfig.Connbeat.DockerEnvironment)
 
 	if err != nil {
 		return err

@@ -11,6 +11,7 @@ type ConnConfig struct {
 	ExposeEnviron         bool          `config:"expose_environ"`
 	ConnectionAggregation time.Duration `config:"aggregation"`
 	DockerEnabled         bool          `config:"enable_docker"`
+	DockerEnvironment     []string      `config:"docker_environment"`
 	TcpDiagEnabled        bool          `config:"enable_tcp_diag"`
 	PollInterval          time.Duration `config:"poll_interval"`
 }
@@ -33,6 +34,7 @@ var (
 		ExposeEnviron:         false,
 		ConnectionAggregation: 30 * time.Second,
 		DockerEnabled:         false,
+		DockerEnvironment:     nil,
 		TcpDiagEnabled:        false,
 		PollInterval:          2 * time.Second,
 	}
