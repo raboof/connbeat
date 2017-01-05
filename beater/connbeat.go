@@ -12,6 +12,7 @@ import (
 	"github.com/elastic/beats/libbeat/publisher"
 
 	"github.com/raboof/connbeat/processes"
+	"github.com/raboof/connbeat/sockets"
 )
 
 type Connbeat struct {
@@ -69,8 +70,8 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
-func toMap(containerInfo ContainerInfo) common.MapStr {
-	if containerInfo.id != "" {
+func toMap(containerInfo *ContainerInfo) common.MapStr {
+	if containerInfo != nil {
 		return common.MapStr{
 			"id":        containerInfo.id,
 			"local_ips": containerInfo.localIPs.ToSlice(),
@@ -80,7 +81,7 @@ func toMap(containerInfo ContainerInfo) common.MapStr {
 	return nil
 }
 
-func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set, containerInfo ContainerInfo) error {
+func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -97,7 +98,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo ContainerInfo) error {
+func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -117,6 +118,14 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containe
 	return nil
 }
 
+func containerInfo(info *sockets.ContainerInfo, localIPs mapset.Set) *ContainerInfo {
+	if info == nil {
+		return nil
+	} else {
+		return &ContainerInfo{info.ID, localIPs, info.DockerEnvironment}
+	}
+}
+
 func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
 	var err error
 
@@ -128,7 +137,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			return nil
 		case c := <-connectionListener:
 			localIPs.Add(c.localIP)
-			containerInfo := ContainerInfo{c.container.ID, localIPs, c.container.DockerEnvironment}
+			containerInfo := containerInfo(c.container, localIPs)
 			err = cb.exportConnection(c, localIPs, containerInfo)
 			if err != nil {
 				return err
@@ -138,8 +147,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				s.localIP != "::" {
 				localIPs.Add(s.localIP)
 			}
-			containerInfo := ContainerInfo{s.container.ID, localIPs, s.container.DockerEnvironment}
-			err = cb.exportServerConnection(s, localIPs, containerInfo)
+			err = cb.exportServerConnection(s, localIPs, containerInfo(s.container, localIPs))
 			if err != nil {
 				return err
 			}
