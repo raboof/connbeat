@@ -68,7 +68,7 @@ func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo ch
 }
 
 type incomingConnectionDedup struct {
-	localIp string
+	localIp   string
 	localPort uint16
 }
 type outgoingConnectionDedup struct {
