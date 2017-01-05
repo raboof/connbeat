@@ -90,7 +90,10 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	if err != nil {
 		return err
 	}
-	containerInfo := &sockets.ContainerInfo{container.ID, environment}
+	containerInfo := &sockets.ContainerInfo{
+		ID:                container.ID,
+		DockerEnvironment: environment,
+	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {
 		return err
