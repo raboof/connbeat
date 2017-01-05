@@ -59,7 +59,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		Privileged:   false,
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	var stdout, stderr bytes.Buffer
 	if err = p.client.StartExec(exec.ID, docker.StartExecOptions{
