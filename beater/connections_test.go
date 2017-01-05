@@ -27,10 +27,14 @@ func randIP() net.IP {
 }
 
 func listeningConnection(port uint16) *sockets.SocketInfo {
+	return listeningConnectionOn(port, randIP())
+}
+
+func listeningConnectionOn(localPort uint16, localIP net.IP) *sockets.SocketInfo {
 	return &sockets.SocketInfo{
-		SrcIP:   randIP(),
+		SrcIP:   localIP,
 		DstIP:   randIP(),
-		SrcPort: port,
+		SrcPort: localPort,
 		DstPort: 0,
 		UID:     uint32(rand.Int()),
 		Inode:   uint64(rand.Int()),
@@ -38,8 +42,12 @@ func listeningConnection(port uint16) *sockets.SocketInfo {
 }
 
 func incomingConnection(localPort uint16) *sockets.SocketInfo {
+	return incomingConnectionTo(localPort, randIP())
+}
+
+func incomingConnectionTo(localPort uint16, localIP net.IP) *sockets.SocketInfo {
 	return &sockets.SocketInfo{
-		SrcIP:   randIP(),
+		SrcIP:   localIP,
 		DstIP:   randIP(),
 		SrcPort: localPort,
 		DstPort: uint16(rand.Int()),
@@ -65,18 +73,48 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
-	input <- listeningConnection(80)
+	ip := randIP()
+
+	input <- listeningConnectionOn(80, ip)
 	_, ok := <-servers
 	assert.Equal(t, ok, true, "a server should be reported")
-	input <- listeningConnection(80)
+	input <- listeningConnectionOn(80, ip)
 
 	time.Sleep(100 * time.Millisecond)
 
 	select {
 	case <-connections:
-		t.Fail()
+		t.Fatal("Saw a spurious connection")
 	case <-servers:
-		t.Fail()
+		t.Fatal("Saw a spurious server connection")
+	default:
+		// Nothing to read: OK!
+	}
+}
+
+func TestFilterIncomingConnectionsPerIP(t *testing.T) {
+	input := make(chan *sockets.SocketInfo, 0)
+	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+
+	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+
+	remoteIP := randIP()
+
+	input <- incomingConnectionTo(80, remoteIP)
+	_, ok := <-connections
+	assert.Equal(t, ok, true, "a server should be reported")
+	input <- incomingConnectionTo(80, randIP())
+	_, ok = <-connections
+	assert.Equal(t, ok, true, "a server with a different local IP should be reported")
+	input <- incomingConnectionTo(80, remoteIP)
+
+	time.Sleep(100 * time.Millisecond)
+
+	select {
+	case <-connections:
+		t.Fatal("a server for which we already saw the local IP should not be reported")
+	case <-servers:
+		t.Fatal("no server connections should be reported")
 	default:
 		// Nothing to read: OK!
 	}
@@ -88,21 +126,36 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
-	input <- listeningConnection(80)
+	localIP := randIP()
+
+	input <- listeningConnectionOn(80, localIP)
 	_, ok := <-servers
 	assert.Equal(t, ok, true, "a server should be reported")
-	input <- incomingConnection(80)
+	input <- incomingConnectionTo(80, localIP)
 
 	time.Sleep(100 * time.Millisecond)
 
 	select {
 	case <-connections:
-		t.Fail()
+		t.Fatal("The incoming connection on the known local IP should not be reported")
 	case <-servers:
-		t.Fail()
+		t.Fatal("No server notification expected")
 	default:
 		// Nothing to read: OK!
 	}
+}
+
+func TestDeduplicateLocalIps(t *testing.T) {
+	input := make(chan *sockets.SocketInfo, 0)
+	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+
+	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+
+	input <- listeningConnection(80)
+	_, ok := <-servers
+	assert.Equal(t, ok, true, "a server should be reported")
+	input <- listeningConnection(80)
+
 }
 
 func TestDedupClientConnections(t *testing.T) {
