@@ -91,13 +91,15 @@ func TestContainerInformation(t *testing.T) {
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                "7786521dc8c9",
 		DockerEnvironment: nil,
-		HostName:          "yinka"}}
+		HostName:          "yinka",
+		HostIP:            nil}}
 	_ = <-client.evs
 
 	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, &sockets.ContainerInfo{
 		ID:                "785073e68b72",
 		DockerEnvironment: nil,
-		HostName:          "yinka"}}
+		HostName:          "yinka",
+		HostIP:            nil}}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {

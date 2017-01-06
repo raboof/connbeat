@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"errors"
+	"net"
 	"strings"
 
 	"github.com/elastic/beats/libbeat/logp"
@@ -15,6 +16,7 @@ type Poller struct {
 	client      *docker.Client
 	environment map[string]struct{}
 	hostName    string
+	hostIP      net.IP
 }
 
 func New(environment []string) (*Poller, error) {
@@ -35,10 +37,16 @@ func New(environment []string) (*Poller, error) {
 		return nil, err
 	}
 
+	ip, err := net.ResolveIPAddr("ip", info.Name)
+	if err != nil {
+		logp.Warn("Could not determine IP address of docker host %s", info.Name)
+	}
+
 	return &Poller{
 		client:      client,
 		environment: env,
 		hostName:    info.Name,
+		hostIP:      ip.IP,
 	}, nil
 }
 
@@ -102,6 +110,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		ID:                container.ID,
 		DockerEnvironment: environment,
 		HostName:          p.hostName,
+		HostIP:            p.hostIP,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {

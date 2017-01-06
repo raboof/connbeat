@@ -8,6 +8,7 @@ type ContainerInfo struct {
 	ID                string
 	DockerEnvironment []string
 	HostName          string
+	HostIP            net.IP
 }
 
 type SocketInfo struct {
