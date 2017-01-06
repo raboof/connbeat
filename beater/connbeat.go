@@ -28,7 +28,7 @@ type ContainerInfo struct {
 	localIPs           mapset.Set
 	environment        []string
 	dockerHostHostname string
-	dockerHostHostIP   net.IP
+	dockerHostIP       net.IP
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -81,7 +81,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
-				"ips":       [1]net.IP{containerInfo.dockerHostHostIP},
+				"ips":      [1]net.IP{containerInfo.dockerHostIP},
 			},
 		}
 	}
