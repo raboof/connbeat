@@ -81,7 +81,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
-				"ip":       containerInfo.dockerHostHostIP,
+				"ips":       [1]net.IP{containerInfo.dockerHostHostIP},
 			},
 		}
 	}
