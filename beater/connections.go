@@ -107,7 +107,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 				listeningOn[localDedupId] = now
 				if s.DstPort == 0 {
 					servers <- ServerConnection{
-						localIP:    localIP,
+						localIP:   localIP,
 						localPort: s.SrcPort,
 						process:   process(ps, exposeProcessInfo, s.Inode),
 						container: s.Container,
