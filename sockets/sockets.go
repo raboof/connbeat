@@ -5,10 +5,10 @@ import (
 )
 
 type ContainerInfo struct {
-	ID                string
-	DockerEnvironment []string
-	HostName          string
-	HostIP            net.IP
+	ID                 string
+	DockerEnvironment  []string
+	DockerhostHostname string
+	DockerhostIP       net.IP
 }
 
 type SocketInfo struct {

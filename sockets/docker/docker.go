@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/elastic/beats/libbeat/logp"
@@ -13,10 +14,35 @@ import (
 )
 
 type Poller struct {
-	client      *docker.Client
-	environment map[string]struct{}
-	hostName    string
-	hostIP      net.IP
+	client             *docker.Client
+	environment        map[string]struct{}
+	dockerhostIP       net.IP
+	dockerhostHostname string
+}
+
+func getDockerhostHostname(client *docker.Client) (string, error) {
+	if name := os.Getenv("DOCKERHOST_HOSTNAME"); name != "" {
+		return name, nil
+	}
+
+	info, err := client.Info()
+	if err != nil {
+		return "", err
+	}
+
+	return info.Name, nil
+}
+
+func getDockerhostIP(name string) (net.IP, error) {
+	if ip := os.Getenv("DOCKERHOST_IP"); ip != "" {
+		return net.ParseIP(ip), nil
+	}
+
+	ip, err := net.ResolveIPAddr("ip", name)
+	if err != nil {
+		return nil, err
+	}
+	return ip.IP, err
 }
 
 func New(environment []string) (*Poller, error) {
@@ -32,21 +58,21 @@ func New(environment []string) (*Poller, error) {
 		env[key] = struct{}{}
 	}
 
-	info, err := client.Info()
+	name, err := getDockerhostHostname(client)
 	if err != nil {
 		return nil, err
 	}
 
-	ip, err := net.ResolveIPAddr("ip", info.Name)
+	ip, err := getDockerhostIP(name)
 	if err != nil {
-		logp.Warn("Could not determine IP address of docker host %s", info.Name)
+		logp.Warn("Could not determine IP address of docker host %s", name)
 	}
 
 	return &Poller{
-		client:      client,
-		environment: env,
-		hostName:    info.Name,
-		hostIP:      ip.IP,
+		client:             client,
+		environment:        env,
+		dockerhostHostname: name,
+		dockerhostIP:       ip,
 	}, nil
 }
 
@@ -107,10 +133,10 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		return err
 	}
 	containerInfo := &sockets.ContainerInfo{
-		ID:                container.ID,
-		DockerEnvironment: environment,
-		HostName:          p.hostName,
-		HostIP:            p.hostIP,
+		ID:                 container.ID,
+		DockerEnvironment:  environment,
+		DockerhostHostname: p.dockerhostHostname,
+		DockerhostIP:       p.dockerhostIP,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {
