@@ -61,7 +61,7 @@ func hexToIpv4(word string) (net.IP, error) {
 func hexToIpv6(word string) (net.IP, error) {
 	p := make(net.IP, net.IPv6len)
 	for i := 0; i < 4; i++ {
-		part, err := strconv.ParseInt(word[i*8:(i+1)*8], 16, 32)
+		part, err := strconv.ParseInt(word[i*8:(i+1)*8], 16, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -105,13 +105,13 @@ func ParseProcNetTCP(input io.Reader, ipv6 bool, containerInfo *sockets.Containe
 
 		sock.SrcIP, sock.SrcPort, err = hexToIPPort(words[1], ipv6)
 		if err != nil {
-			logp.Debug("procs", "Error parsing IP and port: %s", err)
+			logp.Warn("procs", "Error parsing IP and port: %s", err)
 			continue
 		}
 
 		sock.DstIP, sock.DstPort, err = hexToIPPort(words[2], ipv6)
 		if err != nil {
-			logp.Debug("procs", "Error parsing IP and port: %s", err)
+			logp.Warn("procs", "Error parsing IP and port: %s", err)
 			continue
 		}
 

@@ -118,11 +118,21 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containe
 	return nil
 }
 
-func containerInfo(info *sockets.ContainerInfo, localIPs mapset.Set) *ContainerInfo {
-	if info == nil {
+func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.ContainerInfo, ip string) *ContainerInfo {
+	if socketContainerInfo == nil {
 		return nil
+	}
+
+	info, found := infos[socketContainerInfo.ID]
+	if found {
+		info.localIPs.Add(ip)
+		return &info
 	} else {
-		return &ContainerInfo{info.ID, localIPs, info.DockerEnvironment}
+		localIPs := mapset.NewSet()
+		localIPs.Add(ip)
+		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment}
+		infos[socketContainerInfo.ID] = result
+		return &result
 	}
 }
 
@@ -130,6 +140,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 	var err error
 
 	localIPs := mapset.NewSet()
+	containerInfo := make(map[string]ContainerInfo)
 
 	for {
 		select {
@@ -137,8 +148,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			return nil
 		case c := <-connectionListener:
 			localIPs.Add(c.localIP)
-			containerInfo := containerInfo(c.container, localIPs)
-			err = cb.exportConnection(c, localIPs, containerInfo)
+			container := update(containerInfo, c.container, c.localIP)
+			err = cb.exportConnection(c, localIPs, container)
 			if err != nil {
 				return err
 			}
@@ -147,7 +158,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				s.localIP != "::" {
 				localIPs.Add(s.localIP)
 			}
-			err = cb.exportServerConnection(s, localIPs, containerInfo(s.container, localIPs))
+			container := update(containerInfo, s.container, s.localIP)
+			err = cb.exportServerConnection(s, localIPs, container)
 			if err != nil {
 				return err
 			}

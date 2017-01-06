@@ -64,3 +64,27 @@ func TestParse_Proc_Net_Tcp6(t *testing.T) {
 		t.Error("Failed to parse source port 59497, got instead", socketInfo[5].SrcPort)
 	}
 }
+
+/** Reproduction of bug #108 */
+func TestParse_Proc_Net_Tcp6_108(t *testing.T) {
+	file, err := os.Open("../../tests/files/proc_net_tcp6_108.txt")
+	if err != nil {
+		t.Fatalf("Opening ../../tests/files/proc_net_tcp6_108.txt: %s", err)
+	}
+	socketInfo, err := ParseProcNetTCP(file, true, nil)
+	if err != nil {
+		t.Fatalf("Parse_Proc_Net_Tcp: %s", err)
+	}
+	if len(socketInfo) < 2 {
+		t.Fatal("expected socket information on 2 sockets but got", len(socketInfo))
+	}
+	if len(socketInfo) > 2 {
+		t.Error("expected socket information on 2 sockets but got", len(socketInfo))
+	}
+	if socketInfo[0].SrcIP.String() != "::" {
+		t.Error("Failed to parse source IP address ::, got instead", socketInfo[5].SrcIP.String())
+	}
+	if socketInfo[1].SrcPort != 80 {
+		t.Error("Failed to parse source port 80, got instead", socketInfo[5].SrcPort)
+	}
+}

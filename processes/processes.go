@@ -175,6 +175,10 @@ func newUnixProcess(pid int, exposeCmdline, exposeEnviron bool) (*UnixProcess, e
 }
 
 func (ps *Processes) FindProcessByInode(inode uint64) *UnixProcess {
+	if inode == 0 {
+		return nil
+	}
+
 	proc := ps.byInode[inode]
 	if proc == nil {
 		// Refesh and try again

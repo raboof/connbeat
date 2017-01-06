@@ -67,6 +67,10 @@ func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo ch
 	}
 }
 
+type incomingConnectionDedup struct {
+	localIp   string
+	localPort uint16
+}
 type outgoingConnectionDedup struct {
 	remoteIp   string
 	remotePort uint16
@@ -89,7 +93,7 @@ func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *pro
 }
 
 func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
-	listeningOn := make(map[uint16]time.Time)
+	listeningOn := make(map[incomingConnectionDedup]time.Time)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New(exposeCmdline, exposeEnviron)
 
@@ -97,11 +101,13 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 		now := time.Now()
 		select {
 		case s := <-socketInfo:
-			if when, seen := listeningOn[s.SrcPort]; !seen || now.Sub(when) > aggregation {
+			localIP := s.SrcIP.String()
+			localDedupId := incomingConnectionDedup{localIP, s.SrcPort}
+			if when, seen := listeningOn[localDedupId]; !seen || now.Sub(when) > aggregation {
+				listeningOn[localDedupId] = now
 				if s.DstPort == 0 {
-					listeningOn[s.SrcPort] = now
 					servers <- ServerConnection{
-						localIP:   s.SrcIP.String(),
+						localIP:    localIP,
 						localPort: s.SrcPort,
 						process:   process(ps, exposeProcessInfo, s.Inode),
 						container: s.Container,
