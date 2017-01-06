@@ -92,7 +92,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 		},
 	}
 
-	if (containerInfo != nil) {
+	if containerInfo != nil {
 		event["container"] = toMap(containerInfo)
 	}
 
@@ -115,7 +115,7 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containe
 		},
 	}
 
-	if (containerInfo != nil) {
+	if containerInfo != nil {
 		event["container"] = toMap(containerInfo)
 	}
 
