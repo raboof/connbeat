@@ -29,7 +29,7 @@ type ContainerInfo struct {
 	localIPs    mapset.Set
 	environment []string
 	hostName    string
-	ports map[docker.Port][]docker.PortBinding
+	ports       map[docker.Port][]docker.PortBinding
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -78,7 +78,7 @@ func bindingMap(bindings []docker.PortBinding) []common.MapStr {
 	result := make([]common.MapStr, len(bindings))
 	for _, binding := range bindings {
 		result = append(result, common.MapStr{
-			"HostIp": binding.HostIP,
+			"HostIp":   binding.HostIP,
 			"HostPort": binding.HostPort,
 		})
 	}

@@ -103,7 +103,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		ID:                container.ID,
 		DockerEnvironment: environment,
 		HostName:          p.hostName,
-		Ports: inspected.NetworkSettings.Ports,
+		Ports:             inspected.NetworkSettings.Ports,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {

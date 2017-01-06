@@ -10,7 +10,7 @@ type ContainerInfo struct {
 	ID                string
 	DockerEnvironment []string
 	HostName          string
-	Ports map[docker.Port][]docker.PortBinding
+	Ports             map[docker.Port][]docker.PortBinding
 }
 
 type SocketInfo struct {
