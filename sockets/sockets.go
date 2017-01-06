@@ -7,6 +7,7 @@ import (
 type ContainerInfo struct {
 	ID                string
 	DockerEnvironment []string
+	HostName          string
 }
 
 type SocketInfo struct {

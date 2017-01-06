@@ -14,6 +14,7 @@ import (
 type Poller struct {
 	client      *docker.Client
 	environment map[string]struct{}
+	hostName    string
 }
 
 func New(environment []string) (*Poller, error) {
@@ -29,9 +30,15 @@ func New(environment []string) (*Poller, error) {
 		env[key] = struct{}{}
 	}
 
+	info, err := client.Info()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Poller{
 		client:      client,
 		environment: env,
+		hostName:    info.Name,
 	}, nil
 }
 
@@ -94,6 +101,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	containerInfo := &sockets.ContainerInfo{
 		ID:                container.ID,
 		DockerEnvironment: environment,
+		HostName:          p.hostName,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {

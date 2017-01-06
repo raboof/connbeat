@@ -90,12 +90,14 @@ func TestContainerInformation(t *testing.T) {
 	go beater.Pipe(connections, serverConnections)
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                "7786521dc8c9",
-		DockerEnvironment: nil}}
+		DockerEnvironment: nil,
+		HostName:          "yinka"}}
 	_ = <-client.evs
 
 	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, &sockets.ContainerInfo{
 		ID:                "785073e68b72",
-		DockerEnvironment: nil}}
+		DockerEnvironment: nil,
+		HostName:          "yinka"}}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {
