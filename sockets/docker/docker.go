@@ -85,9 +85,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		return err
 	}
 	for _, s := range socks {
-		if s.Inode != 0 {
-			socketInfo <- s
-		}
+		socketInfo <- s
 	}
 	return nil
 }
