@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 
+	"github.com/elastic/beats/libbeat/logp"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/raboof/connbeat/sockets"
 	"github.com/raboof/connbeat/sockets/proc_net_tcp"
@@ -34,7 +35,7 @@ func (p *Poller) PollCurrentConnections(socketInfo chan<- *sockets.SocketInfo) e
 	}
 	for _, container := range containers {
 		if err = p.pollCurrentConnections(container, socketInfo); err != nil {
-			return err
+			logp.Warn("Failed to poll connections for container %s (%s): %s", container.ID, container.Image, err)
 		}
 	}
 	return nil
@@ -59,7 +60,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		Privileged:   false,
 	})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	var stdout, stderr bytes.Buffer
 	if err = p.client.StartExec(exec.ID, docker.StartExecOptions{
