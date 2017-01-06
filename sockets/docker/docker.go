@@ -94,14 +94,16 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	if result.ExitCode != 0 {
 		return errors.New("exit code was not 0")
 	}
-	environment, err := p.getEnvironment(container.ID)
+	inspected, err := p.client.InspectContainer(container.ID)
 	if err != nil {
 		return err
 	}
+	environment := p.getEnvironment(inspected)
 	containerInfo := &sockets.ContainerInfo{
 		ID:                container.ID,
 		DockerEnvironment: environment,
 		HostName:          p.hostName,
+		Ports: inspected.NetworkSettings.Ports,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {
@@ -113,11 +115,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	return nil
 }
 
-func (p *Poller) getEnvironment(containerId string) ([]string, error) {
-	container, err := p.client.InspectContainer(containerId)
-	if err != nil {
-		return nil, err
-	}
+func (p *Poller) getEnvironment(container *docker.Container) []string {
 	result := make([]string, 0, len(p.environment))
 	for _, entry := range container.Config.Env {
 		key := strings.Split(entry, "=")[0]
@@ -125,5 +123,5 @@ func (p *Poller) getEnvironment(containerId string) ([]string, error) {
 			result = append(result, entry)
 		}
 	}
-	return result, nil
+	return result
 }

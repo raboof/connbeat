@@ -11,6 +11,8 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/publisher"
 
+	"github.com/fsouza/go-dockerclient"
+
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
 )
@@ -27,6 +29,7 @@ type ContainerInfo struct {
 	localIPs    mapset.Set
 	environment []string
 	hostName    string
+	ports map[docker.Port][]docker.PortBinding
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -71,6 +74,27 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
+func bindingMap(bindings []docker.PortBinding) []common.MapStr {
+	result := make([]common.MapStr, len(bindings))
+	for _, binding := range bindings {
+		result = append(result, common.MapStr{
+			"HostIp": binding.HostIP,
+			"HostPort": binding.HostPort,
+		})
+	}
+	return result
+}
+
+func portsMap(ports map[docker.Port][]docker.PortBinding) []common.MapStr {
+	result := make([]common.MapStr, len(ports))
+	for port, binding := range ports {
+		result = append(result, common.MapStr{
+			port.Port(): bindingMap(binding),
+		})
+	}
+	return result
+}
+
 func toMap(containerInfo *ContainerInfo) common.MapStr {
 	if containerInfo != nil {
 		return common.MapStr{
@@ -80,6 +104,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"docker_host": common.MapStr{
 				"name": containerInfo.hostName,
 			},
+			"ports": portsMap(containerInfo.ports),
 		}
 	}
 	return nil
@@ -134,7 +159,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	} else {
 		localIPs := mapset.NewSet()
 		localIPs.Add(ip)
-		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.HostName}
+		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.HostName, socketContainerInfo.Ports}
 		infos[socketContainerInfo.ID] = result
 		return &result
 	}
