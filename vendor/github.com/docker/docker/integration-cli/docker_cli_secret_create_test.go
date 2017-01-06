@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/docker/docker/pkg/integration/checker"
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/go-check/check"
 )
 
@@ -55,7 +55,7 @@ func (s *DockerSwarmSuite) TestSecretCreateWithLabels(c *check.C) {
 func (s *DockerSwarmSuite) TestSecretCreateResolve(c *check.C) {
 	d := s.AddDaemon(c, true, true)
 
-	name := "foo"
+	name := "test_secret"
 	id := d.CreateSecret(c, swarm.SecretSpec{
 		swarm.Annotations{
 			Name: name,
