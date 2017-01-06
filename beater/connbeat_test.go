@@ -63,6 +63,50 @@ func TestLocalIps(t *testing.T) {
 	expectElements(t, ips.([]interface{}), []string{"12.34.6.2", "43.12.1.32"})
 }
 
+func TestContainerInformation(t *testing.T) {
+	beater := &Connbeat{}
+
+	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
+
+	client := TestClient{
+		evs: make(chan common.MapStr),
+	}
+
+	beater.events = client
+	beater.done = make(chan struct{})
+
+	httpd := processes.UnixProcess{
+		Binary:  "httpd",
+		Cmdline: "/bin/httpd",
+		Environ: "",
+	}
+	curl := processes.UnixProcess{
+		Binary:  "curl",
+		Cmdline: "/usr/bin/curl http://www.nu.nl",
+		Environ: "",
+	}
+
+	go beater.Pipe(connections, serverConnections)
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, "7786521dc8c9"}
+	_ = <-client.evs
+
+	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, "785073e68b72"}
+	evt := <-client.evs
+	ips, err := evt.GetValue("beat.local_ips")
+	if err != nil {
+		fmt.Println(evt)
+		t.FailNow()
+	}
+
+	expectElements(t, ips.([]interface{}), []string{"12.34.6.2", "43.12.1.32"})
+
+	containerIps, err := evt.GetValue("container.local_ips")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectElements(t, containerIps.([]interface{}), []string{"43.12.1.32"})
+}
+
 func expectElements(t *testing.T, actual []interface{}, expected []string) {
 	for _, expectation := range expected {
 		expectElement(t, actual, expectation)

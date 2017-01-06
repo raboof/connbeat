@@ -21,6 +21,11 @@ type Connbeat struct {
 	done chan struct{}
 }
 
+type ContainerInfo struct {
+	id       string
+	localIPs mapset.Set
+}
+
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 	rawConnbeatConfig := rawConfig
 	cb := &Connbeat{}
@@ -63,13 +68,23 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
-func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set) error {
+func toMap(containerInfo ContainerInfo) common.MapStr {
+	if containerInfo.id != "" {
+		return common.MapStr{
+			"id":        containerInfo.id,
+			"local_ips": containerInfo.localIPs.ToSlice(),
+		}
+	}
+	return nil
+}
+
+func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set, containerInfo ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
-		"container_id":  s.containerId,
+		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -80,7 +95,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
+func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -89,7 +104,7 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
-		"container_id":  c.containerId,
+		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -100,10 +115,22 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set) error {
 	return nil
 }
 
+func update(containerInfo map[string]ContainerInfo, id string, ip string) {
+	info, found := containerInfo[id]
+	if found {
+		info.localIPs.Add(ip)
+	} else {
+		localIPs := mapset.NewSet()
+		localIPs.Add(ip)
+		containerInfo[id] = ContainerInfo{id, localIPs}
+	}
+}
+
 func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
 	var err error
 
 	localIPs := mapset.NewSet()
+	containerInfo := make(map[string]ContainerInfo)
 
 	for {
 		select {
@@ -111,7 +138,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			return nil
 		case c := <-connectionListener:
 			localIPs.Add(c.localIP)
-			err = cb.exportConnection(c, localIPs)
+			update(containerInfo, c.containerId, c.localIP)
+			err = cb.exportConnection(c, localIPs, containerInfo[c.containerId])
 			if err != nil {
 				return err
 			}
@@ -119,8 +147,9 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			if s.localIP != "0.0.0.0" &&
 				s.localIP != "::" {
 				localIPs.Add(s.localIP)
+				update(containerInfo, s.containerId, s.localIP)
 			}
-			err = cb.exportServerConnection(s, localIPs)
+			err = cb.exportServerConnection(s, localIPs, containerInfo[s.containerId])
 			if err != nil {
 				return err
 			}
