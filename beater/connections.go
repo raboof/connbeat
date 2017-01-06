@@ -13,19 +13,19 @@ import (
 )
 
 type ServerConnection struct {
-	localIP     string
-	localPort   uint16
-	process     *processes.UnixProcess
-	containerId string
+	localIP   string
+	localPort uint16
+	process   *processes.UnixProcess
+	container *sockets.ContainerInfo
 }
 
 type Connection struct {
-	localIP     string
-	localPort   uint16
-	remoteIp    string
-	remotePort  uint16
-	process     *processes.UnixProcess
-	containerId string
+	localIP    string
+	localPort  uint16
+	remoteIp   string
+	remotePort uint16
+	process    *processes.UnixProcess
+	container  *sockets.ContainerInfo
 }
 
 func getSocketInfoFromDocker(poller *docker.Poller, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
@@ -107,10 +107,10 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 				listeningOn[localDedupId] = now
 				if s.DstPort == 0 {
 					servers <- ServerConnection{
-						localIP:     localIP,
-						localPort:   s.SrcPort,
-						process:     process(ps, exposeProcessInfo, s.Inode),
-						containerId: s.ContainerId,
+						localIP:   localIP,
+						localPort: s.SrcPort,
+						process:   process(ps, exposeProcessInfo, s.Inode),
+						container: s.Container,
 					}
 				} else {
 					dstIP := s.DstIP.String()
@@ -118,12 +118,12 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						outgoingConnectionSeen[dedupId] = now
 						connections <- Connection{
-							localIP:     s.SrcIP.String(),
-							localPort:   s.SrcPort,
-							remoteIp:    dstIP,
-							remotePort:  s.DstPort,
-							process:     process(ps, exposeProcessInfo, s.Inode),
-							containerId: s.ContainerId,
+							localIP:    s.SrcIP.String(),
+							localPort:  s.SrcPort,
+							remoteIp:   dstIP,
+							remotePort: s.DstPort,
+							process:    process(ps, exposeProcessInfo, s.Inode),
+							container:  s.Container,
 						}
 					}
 				}
@@ -132,11 +132,13 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 	}
 }
 
-func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool, pollInterval, aggregation time.Duration) (chan Connection, chan ServerConnection, error) {
+func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool,
+	pollInterval, aggregation time.Duration,
+	dockerEnvironment []string) (chan Connection, chan ServerConnection, error) {
 	socketInfo := make(chan *sockets.SocketInfo, 20)
 
 	if enableDocker {
-		poller, err := docker.New()
+		poller, err := docker.New(dockerEnvironment)
 		if err != nil {
 			return nil, nil, err
 		}

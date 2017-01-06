@@ -4,11 +4,16 @@ import (
 	"net"
 )
 
+type ContainerInfo struct {
+	ID                string
+	DockerEnvironment []string
+}
+
 type SocketInfo struct {
 	SrcIP, DstIP     net.IP
 	SrcPort, DstPort uint16
 
-	ContainerId string
-	UID         uint32
-	Inode       uint64
+	Container *ContainerInfo
+	UID       uint32
+	Inode     uint64
 }

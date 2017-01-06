@@ -8,6 +8,7 @@ import (
 	"github.com/elastic/beats/libbeat/publisher"
 
 	"github.com/raboof/connbeat/processes"
+	"github.com/raboof/connbeat/sockets"
 )
 
 type TestClient struct {
@@ -49,10 +50,10 @@ func TestLocalIps(t *testing.T) {
 	}
 
 	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, ""}
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
 	_ = <-client.evs
 
-	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, ""}
+	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, nil}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {
@@ -87,10 +88,14 @@ func TestContainerInformation(t *testing.T) {
 	}
 
 	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, "7786521dc8c9"}
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
+		ID:                "7786521dc8c9",
+		DockerEnvironment: nil}}
 	_ = <-client.evs
 
-	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, "785073e68b72"}
+	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, &sockets.ContainerInfo{
+		ID:                "785073e68b72",
+		DockerEnvironment: nil}}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {

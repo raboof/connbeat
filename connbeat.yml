@@ -6,6 +6,7 @@ connbeat:
   poll_interval: 2s
   enable_tcp_diag: false
   enable_docker: true
+  docker_environment: ["PATH"]
 
 output:
   #http:

@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"errors"
+	"strings"
 
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/fsouza/go-dockerclient"
@@ -11,10 +12,11 @@ import (
 )
 
 type Poller struct {
-	client *docker.Client
+	client      *docker.Client
+	environment map[string]struct{}
 }
 
-func New() (*Poller, error) {
+func New(environment []string) (*Poller, error) {
 	client, err := docker.NewClientFromEnv()
 	if err != nil {
 		return nil, err
@@ -22,9 +24,14 @@ func New() (*Poller, error) {
 	if err = client.Ping(); err != nil {
 		return nil, err
 	}
+	env := make(map[string]struct{})
+	for _, key := range environment {
+		env[key] = struct{}{}
+	}
 
 	return &Poller{
-		client: client,
+		client:      client,
+		environment: env,
 	}, nil
 }
 
@@ -80,7 +87,15 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	if result.ExitCode != 0 {
 		return errors.New("exit code was not 0")
 	}
-	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, container.ID)
+	environment, err := p.getEnvironment(container.ID)
+	if err != nil {
+		return err
+	}
+	containerInfo := &sockets.ContainerInfo{
+		ID:                container.ID,
+		DockerEnvironment: environment,
+	}
+	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {
 		return err
 	}
@@ -88,4 +103,19 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		socketInfo <- s
 	}
 	return nil
+}
+
+func (p *Poller) getEnvironment(containerId string) ([]string, error) {
+	container, err := p.client.InspectContainer(containerId)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, 0, len(p.environment))
+	for _, entry := range container.Config.Env {
+		key := strings.Split(entry, "=")[0]
+		if _, contains := p.environment[key]; contains {
+			result = append(result, entry)
+		}
+	}
+	return result, nil
 }
