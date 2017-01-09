@@ -23,9 +23,10 @@ type Connbeat struct {
 }
 
 type ContainerInfo struct {
-	id          string
-	localIPs    mapset.Set
-	environment []string
+	id                 string
+	localIPs           mapset.Set
+	environment        []string
+	dockerHostHostname string
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -76,6 +77,9 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"id":        containerInfo.id,
 			"local_ips": containerInfo.localIPs.ToSlice(),
 			"env":       containerInfo.environment,
+			"docker_host": common.MapStr{
+				"hostname": containerInfo.dockerHostHostname,
+			},
 		}
 	}
 	return nil
@@ -136,7 +140,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	} else {
 		localIPs := mapset.NewSet()
 		localIPs.Add(ip)
-		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment}
+		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname}
 		infos[socketContainerInfo.ID] = result
 		return &result
 	}

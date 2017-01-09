@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"errors"
+	"os"
 	"strings"
 
 	"github.com/elastic/beats/libbeat/logp"
@@ -12,8 +13,9 @@ import (
 )
 
 type Poller struct {
-	client      *docker.Client
-	environment map[string]struct{}
+	client             *docker.Client
+	environment        map[string]struct{}
+	dockerhostHostname string
 }
 
 func New(environment []string) (*Poller, error) {
@@ -29,9 +31,20 @@ func New(environment []string) (*Poller, error) {
 		env[key] = struct{}{}
 	}
 
+	info, err := client.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	name := info.Name
+	if envName := os.Getenv("DOCKERHOST_HOSTNAME"); envName != "" {
+		name = envName
+	}
+
 	return &Poller{
-		client:      client,
-		environment: env,
+		client:             client,
+		environment:        env,
+		dockerhostHostname: name,
 	}, nil
 }
 
@@ -92,8 +105,9 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		return err
 	}
 	containerInfo := &sockets.ContainerInfo{
-		ID:                container.ID,
-		DockerEnvironment: environment,
+		ID:                 container.ID,
+		DockerEnvironment:  environment,
+		DockerhostHostname: p.dockerhostHostname,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {
