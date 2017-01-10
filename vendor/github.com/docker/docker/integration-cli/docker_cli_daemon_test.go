@@ -21,13 +21,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
-	"github.com/docker/docker/pkg/integration"
-	"github.com/docker/docker/pkg/integration/checker"
-	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/pkg/stringid"
-	"github.com/docker/go-units"
+	"github.com/docker/docker/pkg/testutil"
+	icmd "github.com/docker/docker/pkg/testutil/cmd"
+	units "github.com/docker/go-units"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libtrust"
 	"github.com/go-check/check"
@@ -1899,7 +1899,7 @@ func (s *DockerDaemonSuite) TestDaemonCgroupParent(c *check.C) {
 
 	out, err := s.d.Cmd("run", "--name", name, "busybox", "cat", "/proc/self/cgroup")
 	c.Assert(err, checker.IsNil)
-	cgroupPaths := integration.ParseCgroupPaths(string(out))
+	cgroupPaths := testutil.ParseCgroupPaths(string(out))
 	c.Assert(len(cgroupPaths), checker.Not(checker.Equals), 0, check.Commentf("unexpected output - %q", string(out)))
 	out, err = s.d.Cmd("inspect", "-f", "{{.Id}}", name)
 	c.Assert(err, checker.IsNil)
@@ -2165,6 +2165,9 @@ func (s *DockerDaemonSuite) TestDaemonStartWithoutColors(c *check.C) {
 
 	infoLog := "\x1b[34mINFO\x1b"
 
+	b := bytes.NewBuffer(nil)
+	done := make(chan bool)
+
 	p, tty, err := pty.Open()
 	c.Assert(err, checker.IsNil)
 	defer func() {
@@ -2172,19 +2175,38 @@ func (s *DockerDaemonSuite) TestDaemonStartWithoutColors(c *check.C) {
 		p.Close()
 	}()
 
-	b := bytes.NewBuffer(nil)
-	go io.Copy(b, p)
+	go func() {
+		io.Copy(b, p)
+		done <- true
+	}()
 
 	// Enable coloring explicitly
 	s.d.StartWithLogFile(tty, "--raw-logs=false")
 	s.d.Stop(c)
+	// Wait for io.Copy() before checking output
+	<-done
 	c.Assert(b.String(), checker.Contains, infoLog)
 
 	b.Reset()
 
+	// "tty" is already closed in prev s.d.Stop(),
+	// we have to close the other side "p" and open another pair of
+	// pty for the next test.
+	p.Close()
+	p, tty, err = pty.Open()
+	c.Assert(err, checker.IsNil)
+
+	go func() {
+		io.Copy(b, p)
+		done <- true
+	}()
+
 	// Disable coloring explicitly
 	s.d.StartWithLogFile(tty, "--raw-logs=true")
 	s.d.Stop(c)
+	// Wait for io.Copy() before checking output
+	<-done
+	c.Assert(b.String(), check.Not(check.Equals), "")
 	c.Assert(b.String(), check.Not(checker.Contains), infoLog)
 }
 
@@ -2870,5 +2892,62 @@ func (s *DockerDaemonSuite) TestRemoveContainerAfterLiveRestore(c *check.C) {
 
 	out, err = s.d.Cmd("rm", "top")
 	c.Assert(err, check.IsNil, check.Commentf("Output: %s", out))
+}
 
+// #29598
+func (s *DockerDaemonSuite) TestRestartPolicyWithLiveRestore(c *check.C) {
+	testRequires(c, DaemonIsLinux, SameHostDaemon)
+	s.d.StartWithBusybox(c, "--live-restore")
+
+	out, err := s.d.Cmd("run", "-d", "--restart", "always", "busybox", "top")
+	c.Assert(err, check.IsNil, check.Commentf("output: %s", out))
+	id := strings.TrimSpace(out)
+
+	type state struct {
+		Running   bool
+		StartedAt time.Time
+	}
+	out, err = s.d.Cmd("inspect", "-f", "{{json .State}}", id)
+	c.Assert(err, checker.IsNil, check.Commentf("output: %s", out))
+
+	var origState state
+	err = json.Unmarshal([]byte(strings.TrimSpace(out)), &origState)
+	c.Assert(err, checker.IsNil)
+
+	s.d.Restart(c, "--live-restore")
+
+	pid, err := s.d.Cmd("inspect", "-f", "{{.State.Pid}}", id)
+	c.Assert(err, check.IsNil)
+	pidint, err := strconv.Atoi(strings.TrimSpace(pid))
+	c.Assert(err, check.IsNil)
+	c.Assert(pidint, checker.GreaterThan, 0)
+	c.Assert(syscall.Kill(pidint, syscall.SIGKILL), check.IsNil)
+
+	ticker := time.NewTicker(50 * time.Millisecond)
+	timeout := time.After(10 * time.Second)
+
+	for range ticker.C {
+		select {
+		case <-timeout:
+			c.Fatal("timeout waiting for container restart")
+		default:
+		}
+
+		out, err := s.d.Cmd("inspect", "-f", "{{json .State}}", id)
+		c.Assert(err, checker.IsNil, check.Commentf("output: %s", out))
+
+		var newState state
+		err = json.Unmarshal([]byte(strings.TrimSpace(out)), &newState)
+		c.Assert(err, checker.IsNil)
+
+		if !newState.Running {
+			continue
+		}
+		if newState.StartedAt.After(origState.StartedAt) {
+			break
+		}
+	}
+
+	out, err = s.d.Cmd("stop", id)
+	c.Assert(err, check.IsNil, check.Commentf("output: %s", out))
 }
