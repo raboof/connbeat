@@ -18,10 +18,11 @@ import (
 var execCommand = cli.Command{
 	Name:  "exec",
 	Usage: "execute new process inside the container",
-	ArgsUsage: `<container-id> <container command> [command options]
+	ArgsUsage: `<container-id> <command> [command options]  || -p process.json <container-id>
 
 Where "<container-id>" is the name for the instance of the container and
-"<container command>" is the command to be executed in the container.
+"<command>" is the command to be executed in the container.
+"<command>" can't be empty unless a "-p" flag provided.
 
 EXAMPLE:
 For example, if the container is configured to run the linux ps command the
@@ -86,7 +87,7 @@ following will output a list of processes running in the container:
 		},
 	},
 	Action: func(context *cli.Context) error {
-		if err := checkArgs(context, 2, minArgs); err != nil {
+		if err := checkArgs(context, 1, minArgs); err != nil {
 			return err
 		}
 		if os.Geteuid() != 0 {
@@ -178,9 +179,8 @@ func getProcess(context *cli.Context, bundle string) (*specs.Process, error) {
 		p.Capabilities = caps
 	}
 	// append the passed env variables
-	for _, e := range context.StringSlice("env") {
-		p.Env = append(p.Env, e)
-	}
+	p.Env = append(p.Env, context.StringSlice("env")...)
+
 	// set the tty
 	if context.IsSet("tty") {
 		p.Terminal = context.Bool("tty")
