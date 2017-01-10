@@ -1,5 +1,5 @@
 hash: b578526c79a81385b77999e76269d96fc36c48c0cc3f5f7c01619209893335cb
-updated: 2017-01-01T23:02:36.523141077Z
+updated: 2017-01-07T23:02:40.422827628Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
 - name: github.com/docker/docker
-  version: 314ae902437f9e5a1169aee7436fb099b145ceff
+  version: 7c62f58b27f98140ff3d39de166bf2e107e84a65
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 67d322e5c4e88a46a5609a0fadeb9581ba0b2c9b
+  version: d1fe6ef5cc68b811eddb9e6e2a6dfb2512873737
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -97,7 +97,7 @@ imports:
   - server/internal
   - server/v2
 - name: github.com/elastic/go-ucfg
-  version: ffb56fb86d691252e34a0971301bd10e01a70703
+  version: 1ad4bc170f6a22cf67454688711a4cad151fee52
   subpackages:
   - cfgutil
   - flag
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 4a934a8fd3ec3d4f84d9dcd8b47e7b277918c366
+  version: fbeb72ccd29aa2596f364a5a85af622c651c3e16
 - name: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
@@ -133,7 +133,7 @@ imports:
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/opencontainers/runc
-  version: db25629d4630459929ba08ea663dccf562b8ff70
+  version: 1a9dd2678d2d6ad574f05cb7b9ae46ce65586725
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -157,7 +157,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 881bee4e20a5d11a6a88a5667c6f292072ac1963
+  version: 9b48ece7fc373043054858f8c0d362665e866004
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:

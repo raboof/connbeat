@@ -22,7 +22,6 @@ import (
 	"github.com/docker/swarmkit/log"
 	"github.com/docker/swarmkit/manager"
 	"github.com/docker/swarmkit/manager/encryption"
-	"github.com/docker/swarmkit/manager/state/raft"
 	"github.com/docker/swarmkit/remotes"
 	"github.com/docker/swarmkit/xnet"
 	"github.com/pkg/errors"
@@ -249,17 +248,12 @@ func (n *Node) run(ctx context.Context) (err error) {
 				// If we got a role change, renew
 				lastRole := n.role
 				role := ca.WorkerRole
-				if node.Spec.Role == api.NodeRoleManager {
+				if node.Role == api.NodeRoleManager {
 					role = ca.ManagerRole
 				}
 				if lastRole == role {
 					n.Unlock()
 					continue
-				}
-				// switch role to agent immediately to shutdown manager early
-				if role == ca.WorkerRole {
-					n.role = role
-					n.roleCond.Broadcast()
 				}
 				n.Unlock()
 				renewCert()
@@ -295,7 +289,7 @@ func (n *Node) run(ctx context.Context) (err error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
-		managerErr = n.runManager(ctx, securityConfig, managerReady) // store err and loop
+		managerErr = n.superviseManager(ctx, securityConfig, managerReady) // store err and loop
 		wg.Done()
 		cancel()
 	}()
@@ -308,7 +302,18 @@ func (n *Node) run(ctx context.Context) (err error) {
 	go func() {
 		<-agentReady
 		if role == ca.ManagerRole {
-			<-managerReady
+			workerRole := make(chan struct{})
+			waitRoleCtx, waitRoleCancel := context.WithCancel(ctx)
+			go func() {
+				if n.waitRole(waitRoleCtx, ca.WorkerRole) == nil {
+					close(workerRole)
+				}
+			}()
+			select {
+			case <-managerReady:
+			case <-workerRole:
+			}
+			waitRoleCancel()
 		}
 		close(n.ready)
 	}()
@@ -330,6 +335,14 @@ func (n *Node) Stop(ctx context.Context) error {
 	default:
 		return errNodeNotStarted
 	}
+	// ask agent to clean up assignments
+	n.Lock()
+	if n.agent != nil {
+		if err := n.agent.Leave(ctx); err != nil {
+			log.G(ctx).WithError(err).Error("agent failed to clean up assignments")
+		}
+	}
+	n.Unlock()
 
 	n.stopOnce.Do(func() {
 		close(n.stopped)
@@ -616,9 +629,7 @@ func (n *Node) waitRole(ctx context.Context, role string) error {
 		n.roleCond.Wait()
 		select {
 		case <-ctx.Done():
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
+			return ctx.Err()
 		default:
 		}
 	}
@@ -626,101 +637,125 @@ func (n *Node) waitRole(ctx context.Context, role string) error {
 	return nil
 }
 
-func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}) error {
+func (n *Node) runManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}, workerRole <-chan struct{}) error {
+	remoteAddr, _ := n.remotes.Select(n.NodeID())
+	m, err := manager.New(&manager.Config{
+		ForceNewCluster: n.config.ForceNewCluster,
+		RemoteAPI: manager.RemoteAddrs{
+			ListenAddr:    n.config.ListenRemoteAPI,
+			AdvertiseAddr: n.config.AdvertiseRemoteAPI,
+		},
+		ControlAPI:       n.config.ListenControlAPI,
+		SecurityConfig:   securityConfig,
+		ExternalCAs:      n.config.ExternalCAs,
+		JoinRaft:         remoteAddr.Addr,
+		StateDir:         n.config.StateDir,
+		HeartbeatTick:    n.config.HeartbeatTick,
+		ElectionTick:     n.config.ElectionTick,
+		AutoLockManagers: n.config.AutoLockManagers,
+		UnlockKey:        n.unlockKey,
+		Availability:     n.config.Availability,
+	})
+	if err != nil {
+		return err
+	}
+	done := make(chan struct{})
+	var runErr error
+	go func() {
+		if err := m.Run(context.Background()); err != nil {
+			runErr = err
+		}
+		close(done)
+	}()
+
+	var clearData bool
+	defer func() {
+		n.Lock()
+		n.manager = nil
+		n.Unlock()
+		m.Stop(ctx, clearData)
+		<-done
+		n.setControlSocket(nil)
+	}()
+
+	n.Lock()
+	n.manager = m
+	n.Unlock()
+
+	connCtx, connCancel := context.WithCancel(ctx)
+	defer connCancel()
+
+	go n.initManagerConnection(connCtx, ready)
+
+	// this happens only on initial start
+	if ready != nil {
+		go func(ready chan struct{}) {
+			select {
+			case <-ready:
+				addr, err := n.RemoteAPIAddr()
+				if err != nil {
+					log.G(ctx).WithError(err).Errorf("get remote api addr")
+				} else {
+					n.remotes.Observe(api.Peer{NodeID: n.NodeID(), Addr: addr}, remotes.DefaultObservationWeight)
+				}
+			case <-connCtx.Done():
+			}
+		}(ready)
+	}
+
+	// wait for manager stop or for role change
+	select {
+	case <-done:
+		return runErr
+	case <-workerRole:
+		log.G(ctx).Info("role changed to worker, stopping manager")
+		clearData = true
+	case <-m.RemovedFromRaft():
+		log.G(ctx).Info("manager removed from raft cluster, stopping manager")
+		clearData = true
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	return nil
+}
+
+func (n *Node) superviseManager(ctx context.Context, securityConfig *ca.SecurityConfig, ready chan struct{}) error {
 	for {
 		if err := n.waitRole(ctx, ca.ManagerRole); err != nil {
 			return err
 		}
 
-		remoteAddr, _ := n.remotes.Select(n.NodeID())
-		m, err := manager.New(&manager.Config{
-			ForceNewCluster: n.config.ForceNewCluster,
-			RemoteAPI: manager.RemoteAddrs{
-				ListenAddr:    n.config.ListenRemoteAPI,
-				AdvertiseAddr: n.config.AdvertiseRemoteAPI,
-			},
-			ControlAPI:       n.config.ListenControlAPI,
-			SecurityConfig:   securityConfig,
-			ExternalCAs:      n.config.ExternalCAs,
-			JoinRaft:         remoteAddr.Addr,
-			StateDir:         n.config.StateDir,
-			HeartbeatTick:    n.config.HeartbeatTick,
-			ElectionTick:     n.config.ElectionTick,
-			AutoLockManagers: n.config.AutoLockManagers,
-			UnlockKey:        n.unlockKey,
-			Availability:     n.config.Availability,
-		})
-		if err != nil {
-			return err
-		}
-		done := make(chan struct{})
-		var runErr error
+		workerRole := make(chan struct{})
+		waitRoleCtx, waitRoleCancel := context.WithCancel(ctx)
 		go func() {
-			runErr = m.Run(context.Background())
-			close(done)
-		}()
-
-		n.Lock()
-		n.manager = m
-		n.Unlock()
-
-		connCtx, connCancel := context.WithCancel(ctx)
-		go n.initManagerConnection(connCtx, ready)
-
-		// this happens only on initial start
-		if ready != nil {
-			go func(ready chan struct{}) {
-				select {
-				case <-ready:
-					addr, err := n.RemoteAPIAddr()
-					if err != nil {
-						log.G(ctx).WithError(err).Errorf("get remote api addr")
-					} else {
-						n.remotes.Observe(api.Peer{NodeID: n.NodeID(), Addr: addr}, remotes.DefaultObservationWeight)
-					}
-				case <-connCtx.Done():
-				}
-			}(ready)
-			ready = nil
-		}
-
-		roleChanged := make(chan error)
-		waitCtx, waitCancel := context.WithCancel(ctx)
-		go func() {
-			err := n.waitRole(waitCtx, ca.WorkerRole)
-			roleChanged <- err
-		}()
-
-		select {
-		case <-done:
-			// Fail out if m.Run() returns error, otherwise wait for
-			// role change.
-			if runErr != nil && runErr != raft.ErrMemberRemoved {
-				err = runErr
-			} else {
-				err = <-roleChanged
+			if n.waitRole(waitRoleCtx, ca.WorkerRole) == nil {
+				close(workerRole)
 			}
-		case err = <-roleChanged:
+		}()
+
+		if err := n.runManager(ctx, securityConfig, ready, workerRole); err != nil {
+			waitRoleCancel()
+			return errors.Wrap(err, "manager stopped")
 		}
 
-		n.Lock()
-		n.manager = nil
-		n.Unlock()
-
+		// If the manager stopped running and our role is still
+		// "manager", it's possible that the manager was demoted and
+		// the agent hasn't realized this yet. We should wait for the
+		// role to change instead of restarting the manager immediately.
+		timer := time.NewTimer(16 * time.Second)
 		select {
-		case <-done:
+		case <-timer.C:
+			log.G(ctx).Warn("failed to get worker role after manager stop, restarting manager")
+		case <-workerRole:
 		case <-ctx.Done():
-			err = ctx.Err()
-			m.Stop(context.Background())
-			<-done
+			timer.Stop()
+			waitRoleCancel()
+			return ctx.Err()
 		}
-		connCancel()
-		n.setControlSocket(nil)
-		waitCancel()
+		timer.Stop()
+		waitRoleCancel()
 
-		if err != nil {
-			return err
-		}
+		ready = nil
 	}
 }
 
