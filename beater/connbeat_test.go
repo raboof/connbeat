@@ -9,6 +9,8 @@ import (
 
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
+
+	"github.com/stvp/assert"
 )
 
 type TestClient struct {
@@ -62,6 +64,33 @@ func TestLocalIps(t *testing.T) {
 	}
 
 	expectElements(t, ips.([]interface{}), []string{"12.34.6.2", "43.12.1.32"})
+}
+
+func TestNoContainerInfo(t *testing.T) {
+	beater := &Connbeat{}
+
+	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
+
+	client := TestClient{
+		evs: make(chan common.MapStr),
+	}
+
+	beater.events = client
+	beater.done = make(chan struct{})
+
+	httpd := processes.UnixProcess{
+		Binary:  "httpd",
+		Cmdline: "/bin/httpd",
+		Environ: "",
+	}
+
+	go beater.Pipe(connections, serverConnections)
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
+	evt := <-client.evs
+
+	container, present := evt["container"]
+	assert.False(t, present, "There should be no container field in the event")
+	assert.Nil(t, container, "There should be no container field in the event")
 }
 
 func TestContainerInformation(t *testing.T) {

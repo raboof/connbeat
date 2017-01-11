@@ -94,10 +94,13 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
-		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
+	}
+
+	if containerInfo != nil {
+		event["container"] = toMap(containerInfo)
 	}
 
 	cb.events.PublishEvent(event)
@@ -114,10 +117,13 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containe
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
-		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
+	}
+
+	if containerInfo != nil {
+		event["container"] = toMap(containerInfo)
 	}
 
 	cb.events.PublishEvent(event)
