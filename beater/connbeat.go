@@ -134,16 +134,15 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	}
 
 	info, found := infos[socketContainerInfo.ID]
-	if found {
-		info.localIPs.Add(ip)
-		return &info
-	} else {
+	if !found {
 		localIPs := mapset.NewSet()
-		localIPs.Add(ip)
-		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname}
-		infos[socketContainerInfo.ID] = result
-		return &result
+		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname}
+		infos[socketContainerInfo.ID] = info
 	}
+	if !isWildcard(ip) {
+		info.localIPs.Add(ip)
+	}
+	return &info
 }
 
 func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
@@ -164,8 +163,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if s.localIP != "0.0.0.0" &&
-				s.localIP != "::" {
+			if !isWildcard(s.localIP) {
 				localIPs.Add(s.localIP)
 			}
 			container := update(containerInfo, s.container, s.localIP)
@@ -175,6 +173,10 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 			}
 		}
 	}
+}
+
+func isWildcard(ip string) bool {
+	return ip == "0.0.0.0" || ip == "::"
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
