@@ -15,4 +15,14 @@ the target endpoint as an environment variable:
 Make sure a statically linked version of 'connbeat' is available to include in
 the image, for example from the linux package obtained with 'make package'
 
+Then simply build the docker image with:
+
     make
+
+To do this in one go use 'make docker_peers' in the parent dir
+
+## Deploying
+
+After building, you can:
+
+    docker push raboof/connbeat
