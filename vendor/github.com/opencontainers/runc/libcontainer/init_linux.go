@@ -77,8 +77,9 @@ func newContainerInit(t initType, pipe *os.File, stateDirFD int) (initer, error)
 	switch t {
 	case initSetns:
 		return &linuxSetnsInit{
-			pipe:   pipe,
-			config: config,
+			pipe:       pipe,
+			config:     config,
+			stateDirFD: stateDirFD,
 		}, nil
 	case initStandard:
 		return &linuxStandardInit{
@@ -201,7 +202,7 @@ func setupConsole(pipe *os.File, config *initConfig, mount bool) error {
 		return err
 	}
 
-	// Make sure the other side recieved the fd.
+	// Make sure the other side received the fd.
 	if err := readSync(pipe, procConsoleAck); err != nil {
 		return err
 	}
