@@ -25,7 +25,7 @@ import:
   subpackages:
   - /difflib
 - package: github.com/elastic/gosigar
-  version: 171a3c9e31dde9688c154ba94be6cd5d8a78bf64
+  version: b49e01eb1e5c68c469392a63feaccae9352ceb12
 - package: github.com/elastic/procfs
   version: abf152e5f3e97f2fafac028d2cc06c1feb87ffa5
 - package: github.com/samuel/go-parser
@@ -113,3 +113,5 @@ import:
   version: 5c9560bfa9ace2bf86080bf40d46b34ae44604df
 - package: github.com/pierrec/xxHash
   version: 5a004441f897722c627870a981d02b29924215fa
+- package: github.com/mitchellh/hashstructure
+  version: b098c52ef6beab8cd82bc4a32422cf54b890e8fa
