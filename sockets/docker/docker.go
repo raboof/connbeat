@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"errors"
+	"net"
 	"os"
 	"strings"
 
@@ -15,7 +16,33 @@ import (
 type Poller struct {
 	client             *docker.Client
 	environment        map[string]struct{}
+	dockerhostIP       net.IP
 	dockerhostHostname string
+}
+
+func getDockerhostHostname(client *docker.Client) (string, error) {
+	if name := os.Getenv("DOCKERHOST_HOSTNAME"); name != "" {
+		return name, nil
+	}
+
+	info, err := client.Info()
+	if err != nil {
+		return "", err
+	}
+
+	return info.Name, nil
+}
+
+func getDockerhostIP(name string) (net.IP, error) {
+	if ip := os.Getenv("DOCKERHOST_IP"); ip != "" {
+		return net.ParseIP(ip), nil
+	}
+
+	ip, err := net.ResolveIPAddr("ip", name)
+	if err != nil {
+		return nil, err
+	}
+	return ip.IP, err
 }
 
 func New(environment []string) (*Poller, error) {
@@ -31,20 +58,21 @@ func New(environment []string) (*Poller, error) {
 		env[key] = struct{}{}
 	}
 
-	info, err := client.Info()
+	name, err := getDockerhostHostname(client)
 	if err != nil {
 		return nil, err
 	}
 
-	name := info.Name
-	if envName := os.Getenv("DOCKERHOST_HOSTNAME"); envName != "" {
-		name = envName
+	ip, err := getDockerhostIP(name)
+	if err != nil {
+		logp.Warn("Could not determine IP address of docker host %s", name)
 	}
 
 	return &Poller{
 		client:             client,
 		environment:        env,
 		dockerhostHostname: name,
+		dockerhostIP:       ip,
 	}, nil
 }
 
@@ -108,6 +136,7 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 		ID:                 container.ID,
 		DockerEnvironment:  environment,
 		DockerhostHostname: p.dockerhostHostname,
+		DockerhostIP:       p.dockerhostIP,
 	}
 	socks, err := proc_net_tcp.ParseProcNetTCP(&stdout, ipv6, containerInfo)
 	if err != nil {

@@ -16,10 +16,10 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/versions/v1p20"
+	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/daemon"
-	"github.com/docker/docker/pkg/integration/checker"
-	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/docker/pkg/stringid"
+	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/libnetwork/driverapi"
 	remoteapi "github.com/docker/libnetwork/drivers/remote/api"
@@ -777,7 +777,7 @@ func (s *DockerNetworkSuite) TestDockerPluginV2NetworkDriver(c *check.C) {
 	testRequires(c, DaemonIsLinux, IsAmd64, Network)
 
 	var (
-		npName        = "tonistiigi/test-docker-netplugin"
+		npName        = "tiborvass/test-docker-netplugin"
 		npTag         = "latest"
 		npNameWithTag = npName + ":" + npTag
 	)
@@ -803,15 +803,14 @@ func (s *DockerDaemonSuite) TestDockerNetworkNoDiscoveryDefaultBridgeNetwork(c *
 	hostsFile := "/etc/hosts"
 	bridgeName := "external-bridge"
 	bridgeIP := "192.169.255.254/24"
-	out, err := createInterface(c, "bridge", bridgeName, bridgeIP)
-	c.Assert(err, check.IsNil, check.Commentf(out))
+	createInterface(c, "bridge", bridgeName, bridgeIP)
 	defer deleteInterface(c, bridgeName)
 
 	s.d.StartWithBusybox(c, "--bridge", bridgeName)
 	defer s.d.Restart(c)
 
 	// run two containers and store first container's etc/hosts content
-	out, err = s.d.Cmd("run", "-d", "busybox", "top")
+	out, err := s.d.Cmd("run", "-d", "busybox", "top")
 	c.Assert(err, check.IsNil)
 	cid1 := strings.TrimSpace(out)
 	defer s.d.Cmd("stop", cid1)

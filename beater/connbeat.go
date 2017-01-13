@@ -1,6 +1,7 @@
 package beater
 
 import (
+	"net"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ type ContainerInfo struct {
 	localIPs           mapset.Set
 	environment        []string
 	dockerHostHostname string
+	dockerHostIP       net.IP
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -79,6 +81,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
+				"ips":      [1]net.IP{containerInfo.dockerHostIP},
 			},
 		}
 	}
@@ -136,7 +139,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	info, found := infos[socketContainerInfo.ID]
 	if !found {
 		localIPs := mapset.NewSet()
-		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname}
+		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
 		infos[socketContainerInfo.ID] = info
 	}
 	if !isWildcard(ip) {
