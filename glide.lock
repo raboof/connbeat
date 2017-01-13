@@ -1,5 +1,5 @@
 hash: b578526c79a81385b77999e76269d96fc36c48c0cc3f5f7c01619209893335cb
-updated: 2017-01-11T08:55:35.245222131+01:00
+updated: 2017-01-12T23:02:49.16122524Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
 - name: github.com/docker/docker
-  version: 24e9ac15759cc23caf90383b5ea6de79af4363a0
+  version: f65212d5b96a18349b0f436c35f99e4eed13f7c9
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 47eb5adaa9ce8fd7ee2f512b0e8da4d54e7e741a
+  version: f9279de951d7d81f790d43a1be218d1416a3ac7a
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -66,6 +66,8 @@ imports:
   - libbeat/common/streambuf
   - libbeat/logp
   - libbeat/outputs
+  - libbeat/outputs/codecs/format
+  - libbeat/outputs/codecs/json
   - libbeat/outputs/console
   - libbeat/outputs/elasticsearch
   - libbeat/outputs/fileout
@@ -130,10 +132,12 @@ imports:
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
   version: 24a3e3d3fc7451805e09d11e11e95d9a0a4f205e
+- name: github.com/mitchellh/hashstructure
+  version: b098c52ef6beab8cd82bc4a32422cf54b890e8fa
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/opencontainers/runc
-  version: eedebb8c40ca598ed45f4ea023c1f1f43d442189
+  version: 29008b871d9c0e63551c4c2636d0dfb597ce8d7a
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -157,7 +161,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 26709e2714106fb8ad40b773b711ebce25b78914
+  version: 800b0fc4a6cbf28a01d026ab54d6dec7050282fa
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
@@ -171,6 +175,7 @@ imports:
 - name: golang.org/x/sys
   version: 62bee037599929a6e9146f29d10dd5208c43507d
   subpackages:
+  - unix
   - windows
   - windows/svc
   - windows/svc/debug
