@@ -12,6 +12,8 @@ import (
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/elastic/beats/libbeat/publisher"
 
+	"github.com/fsouza/go-dockerclient"
+
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
 )
@@ -27,6 +29,7 @@ type ContainerInfo struct {
 	id                 string
 	localIPs           mapset.Set
 	environment        []string
+	ports              map[docker.Port][]docker.PortBinding
 	dockerHostHostname string
 	dockerHostIP       net.IP
 }
@@ -73,6 +76,29 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
+func bindingMap(bindings []docker.PortBinding) []common.MapStr {
+	result := make([]common.MapStr, len(bindings))
+	for idx, binding := range bindings {
+		result[idx] = common.MapStr{
+			"HostIp":   binding.HostIP,
+			"HostPort": binding.HostPort,
+		}
+	}
+	return result
+}
+
+func portsMap(ports map[docker.Port][]docker.PortBinding) []common.MapStr {
+	result := make([]common.MapStr, len(ports))
+	i := 0
+	for port, binding := range ports {
+		result[i] = common.MapStr{
+			port.Port(): bindingMap(binding),
+		}
+		i = i + 1
+	}
+	return result
+}
+
 func toMap(containerInfo *ContainerInfo) common.MapStr {
 	if containerInfo != nil {
 		return common.MapStr{
@@ -83,6 +109,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 				"hostname": containerInfo.dockerHostHostname,
 				"ips":      [1]net.IP{containerInfo.dockerHostIP},
 			},
+			"ports": portsMap(containerInfo.ports),
 		}
 	}
 	return nil
@@ -139,7 +166,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	info, found := infos[socketContainerInfo.ID]
 	if !found {
 		localIPs := mapset.NewSet()
-		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
+		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.Ports, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
 		infos[socketContainerInfo.ID] = info
 	}
 	if !isWildcard(ip) {

@@ -2,11 +2,14 @@ package sockets
 
 import (
 	"net"
+
+	"github.com/fsouza/go-dockerclient"
 )
 
 type ContainerInfo struct {
 	ID                 string
 	DockerEnvironment  []string
+	Ports              map[docker.Port][]docker.PortBinding
 	DockerhostHostname string
 	DockerhostIP       net.IP
 }
