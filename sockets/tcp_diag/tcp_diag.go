@@ -47,7 +47,6 @@ func pollConnections(family uint8, socket *netlink.NetlinkSocket, socketInfo cha
 				syscall.Errno(-msgerr.Error).Error()))
 		} else {
 			inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
-			fmt.Printf("Processing netlink response for remote port %d\n", inetDiagMsg.Id.IDiagDPort)
 			socketInfo <- &sockets.SocketInfo{
 				SrcIP:   inetDiagMsg.Id.SrcIP(),
 				DstIP:   inetDiagMsg.Id.DstIP(),
