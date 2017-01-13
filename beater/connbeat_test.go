@@ -96,8 +96,8 @@ func TestNoContainerInfo(t *testing.T) {
 func TestMapContainerInfoWithoutHostIp(t *testing.T) {
 	containerInfo := &ContainerInfo{
 		id:                 "7786521dc8c9",
-		localIPs: mapset.NewSet(),
-		environment: nil,
+		localIPs:           mapset.NewSet(),
+		environment:        nil,
 		dockerHostHostname: "yinka",
 		dockerHostIP:       nil}
 	json := toMap(containerInfo)
@@ -105,15 +105,15 @@ func TestMapContainerInfoWithoutHostIp(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to get docker_host.ips from event", json)
 	} else {
-		assert.Equal(t, 0, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips");
+		assert.Equal(t, 0, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips")
 	}
 }
 
 func TestMapContainerInfoWithHostIp(t *testing.T) {
 	containerInfo := &ContainerInfo{
 		id:                 "7786521dc8c9",
-		localIPs: mapset.NewSet(),
-		environment: nil,
+		localIPs:           mapset.NewSet(),
+		environment:        nil,
 		dockerHostHostname: "yinka",
 		dockerHostIP:       net.IP("127.0.0.1")}
 	json := toMap(containerInfo)
@@ -121,8 +121,8 @@ func TestMapContainerInfoWithHostIp(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to get docker_host.ips from event", json)
 	} else {
-		assert.Equal(t, 1, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips");
-		assert.Equal(t, net.IP("127.0.0.1"), reflect.ValueOf(ips).Index(0).Interface(), "Expected container host ips");
+		assert.Equal(t, 1, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips")
+		assert.Equal(t, net.IP("127.0.0.1"), reflect.ValueOf(ips).Index(0).Interface(), "Expected container host ips")
 	}
 }
 
