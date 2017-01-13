@@ -21,7 +21,6 @@ You need at least golang 1.7.3.
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
-    go get -t $(glide novendor)
     make
 
 ## Running
