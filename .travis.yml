@@ -31,9 +31,6 @@ before_install:
   - if [[ "$TARGETS" == "package" ]]; then ./installDocker.sh; cd ./vendor/github.com/elastic/beats/dev-tools/packer/docker/xgo-image ; ./build.sh ; cd - ; fi
   - go get -v github.com/Masterminds/glide
 
-install:
-  go get -t $(glide novendor)
-
 deploy:
   provider: bintray
   file: descriptor.bintray
