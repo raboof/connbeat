@@ -7,10 +7,11 @@ import (
 )
 
 type ContainerInfo struct {
-	ID                string
-	DockerEnvironment []string
-	HostName          string
-	Ports             map[docker.Port][]docker.PortBinding
+	ID                 string
+	DockerEnvironment  []string
+	Ports              map[docker.Port][]docker.PortBinding
+	DockerhostHostname string
+	DockerhostIP       net.IP
 }
 
 type SocketInfo struct {

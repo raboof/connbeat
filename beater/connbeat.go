@@ -1,6 +1,7 @@
 package beater
 
 import (
+	"net"
 	"strings"
 	"time"
 
@@ -25,11 +26,12 @@ type Connbeat struct {
 }
 
 type ContainerInfo struct {
-	id          string
-	localIPs    mapset.Set
-	environment []string
-	hostName    string
-	ports       map[docker.Port][]docker.PortBinding
+	id                 string
+	localIPs           mapset.Set
+	environment        []string
+	ports              map[docker.Port][]docker.PortBinding
+	dockerHostHostname string
+	dockerHostIP       net.IP
 }
 
 func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
@@ -102,7 +104,8 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"local_ips": containerInfo.localIPs.ToSlice(),
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
-				"name": containerInfo.hostName,
+				"hostname": containerInfo.dockerHostHostname,
+				"ips":      [1]net.IP{containerInfo.dockerHostIP},
 			},
 			"ports": portsMap(containerInfo.ports),
 		}
@@ -116,10 +119,13 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 		"type":          "connbeat",
 		"local_port":    s.localPort,
 		"local_process": processAsMap(s.process),
-		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
+	}
+
+	if containerInfo != nil {
+		event["container"] = toMap(containerInfo)
 	}
 
 	cb.events.PublishEvent(event)
@@ -136,10 +142,13 @@ func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containe
 		"remote_ip":     c.remoteIp,
 		"remote_port":   c.remotePort,
 		"local_process": processAsMap(c.process),
-		"container":     toMap(containerInfo),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
+	}
+
+	if containerInfo != nil {
+		event["container"] = toMap(containerInfo)
 	}
 
 	cb.events.PublishEvent(event)
@@ -159,7 +168,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	} else {
 		localIPs := mapset.NewSet()
 		localIPs.Add(ip)
-		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.HostName, socketContainerInfo.Ports}
+		result := ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.Ports, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
 		infos[socketContainerInfo.ID] = result
 		return &result
 	}
