@@ -78,21 +78,23 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 
 func bindingMap(bindings []docker.PortBinding) []common.MapStr {
 	result := make([]common.MapStr, len(bindings))
-	for _, binding := range bindings {
-		result = append(result, common.MapStr{
+	for idx, binding := range bindings {
+		result[idx] = common.MapStr{
 			"HostIp":   binding.HostIP,
 			"HostPort": binding.HostPort,
-		})
+		}
 	}
 	return result
 }
 
 func portsMap(ports map[docker.Port][]docker.PortBinding) []common.MapStr {
 	result := make([]common.MapStr, len(ports))
+	i := 0
 	for port, binding := range ports {
-		result = append(result, common.MapStr{
+		result[i] = common.MapStr{
 			port.Port(): bindingMap(binding),
-		})
+		}
+		i = i + 1
 	}
 	return result
 }
