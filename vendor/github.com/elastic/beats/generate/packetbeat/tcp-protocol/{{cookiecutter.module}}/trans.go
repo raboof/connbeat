@@ -35,14 +35,14 @@ func (trans *transactions) init(c *transactionConfig, cb transactionHandler) {
 }
 
 func (trans *transactions) onMessage(
-	tuple *common.IPPortTuple,
+	tuple *common.IpPortTuple,
 	dir uint8,
 	msg *message,
 ) error {
 	var err error
 
 	msg.Tuple = *tuple
-	msg.Transport = applayer.TransportTCP
+	msg.Transport = applayer.TransportTcp
 	msg.CmdlineTuple = procs.ProcWatcher.FindProcessesTuple(&msg.Tuple)
 
 	if msg.IsRequest {
@@ -63,7 +63,7 @@ func (trans *transactions) onMessage(
 // onRequest handles request messages, merging with incomplete requests
 // and adding non-merged requests into the correlation list.
 func (trans *transactions) onRequest(
-	tuple *common.IPPortTuple,
+	tuple *common.IpPortTuple,
 	dir uint8,
 	msg *message,
 ) error {
@@ -95,7 +95,7 @@ func (trans *transactions) onRequest(
 // onRequest handles response messages, merging with incomplete requests
 // and adding non-merged responses into the correlation list.
 func (trans *transactions) onResponse(
-	tuple *common.IPPortTuple,
+	tuple *common.IpPortTuple,
 	dir uint8,
 	msg *message,
 ) error {

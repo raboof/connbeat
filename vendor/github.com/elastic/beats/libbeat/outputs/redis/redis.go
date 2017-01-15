@@ -120,15 +120,11 @@ func (r *redisOut) init(cfg *common.Config, expireTopo int) error {
 
 	// configure publisher clients
 	clients, err := modeutil.MakeClients(cfg, func(host string) (mode.ProtocolClient, error) {
-
 		t, err := transport.NewClient(transp, "tcp", host, config.Port)
 		if err != nil {
 			return nil, err
 		}
-
-		writer := outputs.CreateWriter(config.WriterConfig)
-
-		return newClient(t, config.Password, config.Db, key, dataType, writer), nil
+		return newClient(t, config.Password, config.Db, key, dataType), nil
 	})
 	if err != nil {
 		return err

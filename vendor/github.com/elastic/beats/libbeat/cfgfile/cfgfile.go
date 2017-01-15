@@ -74,11 +74,6 @@ func HandleFlags() error {
 	}
 
 	defaults.SetString("path.home", -1, home)
-
-	if len(overwrites.GetFields()) > 0 {
-		overwrites.PrintDebugf("CLI setting overwrites (-E flag):")
-	}
-
 	return nil
 }
 
@@ -103,7 +98,12 @@ func Load(path string) (*common.Config, error) {
 	var config *common.Config
 	var err error
 
-	cfgpath := GetPathConfig()
+	cfgpath := ""
+	if *configPath != "" {
+		cfgpath = *configPath
+	} else if *homePath != "" {
+		cfgpath = *homePath
+	}
 
 	if path == "" {
 		list := []string{}
@@ -125,28 +125,11 @@ func Load(path string) (*common.Config, error) {
 		return nil, err
 	}
 
-	config, err = common.MergeConfigs(
+	return common.MergeConfigs(
 		defaults,
 		config,
 		overwrites,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	config.PrintDebugf("Complete configuration loaded:")
-	return config, nil
-}
-
-// GetPathConfig returns ${path.config}. If ${path.config} is not set, ${path.home} is returned.
-func GetPathConfig() string {
-	if *configPath != "" {
-		return *configPath
-	} else if *homePath != "" {
-		return *homePath
-	}
-	// TODO: Do we need this or should we always return *homePath?
-	return ""
 }
 
 // IsTestConfig returns whether or not this is configuration used for testing

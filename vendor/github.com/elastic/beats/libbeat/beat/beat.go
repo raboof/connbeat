@@ -228,13 +228,9 @@ func (b *Beat) handleFlags() error {
 		return GracefulExit
 	}
 
-	if err := logp.HandleFlags(b.Name); err != nil {
-		return err
-	}
 	if err := cfgfile.HandleFlags(); err != nil {
 		return err
 	}
-
 	return handleFlags(b)
 }
 

@@ -30,13 +30,13 @@ func (pub *transPub) createEvent(requ, resp *message) common.MapStr {
 	responseTime := int32(resp.Ts.Sub(requ.Ts).Nanoseconds() / 1e6)
 
 	src := &common.Endpoint{
-		IP:   requ.Tuple.SrcIP.String(),
-		Port: requ.Tuple.SrcPort,
+		Ip:   requ.Tuple.Src_ip.String(),
+		Port: requ.Tuple.Src_port,
 		Proc: string(requ.CmdlineTuple.Src),
 	}
 	dst := &common.Endpoint{
-		IP:   requ.Tuple.DstIP.String(),
-		Port: requ.Tuple.DstPort,
+		Ip:   requ.Tuple.Dst_ip.String(),
+		Port: requ.Tuple.Dst_port,
 		Proc: string(requ.CmdlineTuple.Dst),
 	}
 

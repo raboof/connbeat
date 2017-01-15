@@ -24,10 +24,9 @@ type redisConfig struct {
 	Db       int    `config:"db"`
 	DataType string `config:"datatype"`
 
-	HostTopology     string               `config:"host_topology"`
-	PasswordTopology string               `config:"password_topology"`
-	DbTopology       int                  `config:"db_topology"`
-	WriterConfig     outputs.WriterConfig `config:"writer"`
+	HostTopology     string `config:"host_topology"`
+	PasswordTopology string `config:"password_topology"`
+	DbTopology       int    `config:"db_topology"`
 }
 
 var (

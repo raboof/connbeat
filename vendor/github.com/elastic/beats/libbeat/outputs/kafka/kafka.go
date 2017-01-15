@@ -161,11 +161,8 @@ func (k *kafka) initMode(guaranteed bool) (mode.ConnectionMode, error) {
 	var clients []mode.AsyncProtocolClient
 	hosts := k.config.Hosts
 	topic := k.topic
-
-	writer := outputs.CreateWriter(k.config.WriterConfig)
-
 	for i := 0; i < worker; i++ {
-		client, err := newKafkaClient(hosts, k.config.Key, topic, writer, libCfg)
+		client, err := newKafkaClient(hosts, k.config.Key, topic, libCfg)
 		if err != nil {
 			logp.Err("Failed to create kafka client: %v", err)
 			return nil, err
