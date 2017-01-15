@@ -4,7 +4,7 @@ BEATNAME?=filebeat
 BEAT_DESCRIPTION?=Filebeat sends log files to Logstash or directly to Elasticsearch.
 SYSTEM_TESTS=true
 TEST_ENVIRONMENT?=true
-GOX_FLAGS=-arch="amd64 386 arm ppc64 ppc64le"
+GOX_FLAGS='-arch=amd64 386 arm ppc64 ppc64le'
 
 include ../libbeat/scripts/Makefile
 
@@ -30,7 +30,10 @@ fields:
 
 # Runs all collection steps and updates afterwards
 .PHONY: collect
-collect: fields kibana
+collect:
+	# dummy implementation to avoid adding the modules until released
+	mkdir -p _meta/
+	cat ${ES_BEATS}/filebeat/_meta/fields.common.yml > _meta/fields.generated.yml
 
 
 # Creates a new fileset. Requires the params MODULE and FILESET

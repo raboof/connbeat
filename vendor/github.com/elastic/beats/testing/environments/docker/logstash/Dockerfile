@@ -23,6 +23,6 @@ COPY pki /etc/pki
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-EXPOSE 5044 5055 9600
+EXPOSE 5044 5055
 
-CMD logstash -f /logstash.conf --log.level=debug --config.debug --http.host=0.0.0.0
+CMD logstash -f /logstash.conf --log.level=debug --config.debug
