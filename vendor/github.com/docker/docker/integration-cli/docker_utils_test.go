@@ -80,7 +80,7 @@ func deleteAllNetworks(c *check.C) {
 		if n.Name == "bridge" || n.Name == "none" || n.Name == "host" {
 			continue
 		}
-		if daemonPlatform == "windows" && strings.ToLower(n.Name) == "nat" {
+		if testEnv.DaemonPlatform() == "windows" && strings.ToLower(n.Name) == "nat" {
 			// nat is a pre-defined network on Windows and cannot be removed
 			continue
 		}
@@ -290,7 +290,7 @@ func dockerCmdInDir(c *check.C, path string, args ...string) (string, int, error
 // validateArgs is a checker to ensure tests are not running commands which are
 // not supported on platforms. Specifically on Windows this is 'busybox top'.
 func validateArgs(args ...string) error {
-	if daemonPlatform != "windows" {
+	if testEnv.DaemonPlatform() != "windows" {
 		return nil
 	}
 	foundBusybox := -1
@@ -303,17 +303,6 @@ func validateArgs(args ...string) error {
 		}
 	}
 	return nil
-}
-
-// find the State.ExitCode in container metadata
-func findContainerExitCode(c *check.C, name string, vargs ...string) string {
-	args := append(vargs, "inspect", "--format='{{ .State.ExitCode }} {{ .State.Error }}'", name)
-	cmd := exec.Command(dockerBinary, args...)
-	out, _, err := runCommandWithOutput(cmd)
-	if err != nil {
-		c.Fatal(err, out)
-	}
-	return out
 }
 
 func findContainerIP(c *check.C, id string, network string) string {
@@ -459,7 +448,7 @@ func fakeStorage(files map[string]string) (FakeStorage, error) {
 
 // fakeStorageWithContext returns either a local or remote (at daemon machine) file server
 func fakeStorageWithContext(ctx *FakeContext) (FakeStorage, error) {
-	if isLocalDaemon {
+	if testEnv.LocalDaemon() {
 		return newLocalFakeStorage(ctx)
 	}
 	return newRemoteFileServer(ctx)
@@ -582,7 +571,7 @@ COPY . /static`); err != nil {
 		ctx:       ctx}, nil
 }
 
-func inspectFieldAndMarshall(c *check.C, name, field string, output interface{}) {
+func inspectFieldAndUnmarshall(c *check.C, name, field string, output interface{}) {
 	str := inspectFieldJSON(c, name, field)
 	err := json.Unmarshal([]byte(str), output)
 	if c != nil {
@@ -592,12 +581,11 @@ func inspectFieldAndMarshall(c *check.C, name, field string, output interface{})
 
 func inspectFilter(name, filter string) (string, error) {
 	format := fmt.Sprintf("{{%s}}", filter)
-	inspectCmd := exec.Command(dockerBinary, "inspect", "-f", format, name)
-	out, exitCode, err := runCommandWithOutput(inspectCmd)
-	if err != nil || exitCode != 0 {
-		return "", fmt.Errorf("failed to inspect %s: %s", name, out)
+	result := icmd.RunCommand(dockerBinary, "inspect", "-f", format, name)
+	if result.Error != nil || result.ExitCode != 0 {
+		return "", fmt.Errorf("failed to inspect %s: %s", name, result.Combined())
 	}
-	return strings.TrimSpace(out), nil
+	return strings.TrimSpace(result.Combined()), nil
 }
 
 func inspectFieldWithError(name, field string) (string, error) {
@@ -687,10 +675,12 @@ func getIDByName(name string) (string, error) {
 	return inspectFieldWithError(name, "Id")
 }
 
+// Deprecated
 func buildImageCmd(name, dockerfile string, useCache bool, buildFlags ...string) *exec.Cmd {
 	return daemon.BuildImageCmdWithHost(dockerBinary, name, dockerfile, "", useCache, buildFlags...)
 }
 
+// Deprecated
 func buildImageWithOut(name, dockerfile string, useCache bool, buildFlags ...string) (string, string, error) {
 	buildCmd := buildImageCmd(name, dockerfile, useCache, buildFlags...)
 	out, exitCode, err := runCommandWithOutput(buildCmd)
@@ -704,6 +694,7 @@ func buildImageWithOut(name, dockerfile string, useCache bool, buildFlags ...str
 	return id, out, nil
 }
 
+// Deprecated
 func buildImageWithStdoutStderr(name, dockerfile string, useCache bool, buildFlags ...string) (string, string, string, error) {
 	buildCmd := buildImageCmd(name, dockerfile, useCache, buildFlags...)
 	result := icmd.RunCmd(transformCmd(buildCmd))
@@ -719,11 +710,99 @@ func buildImageWithStdoutStderr(name, dockerfile string, useCache bool, buildFla
 	return id, result.Stdout(), result.Stderr(), nil
 }
 
+func buildImageSuccessfully(c *check.C, name string, cmdOperators ...func(*icmd.Cmd) func()) {
+	buildImageNew(name, cmdOperators...).Assert(c, icmd.Success)
+}
+
+// FIXME(vdemeester) rename this buildImage once deprecated buildImage is no more
+func buildImageNew(name string, cmdOperators ...func(*icmd.Cmd) func()) *icmd.Result {
+	cmd := icmd.Command(dockerBinary, "build", "-t", name)
+	for _, op := range cmdOperators {
+		deferFn := op(&cmd)
+		if deferFn != nil {
+			defer deferFn()
+		}
+	}
+	return icmd.RunCmd(cmd)
+}
+
+func withBuildContextPath(path string) func(*icmd.Cmd) func() {
+	return func(cmd *icmd.Cmd) func() {
+		cmd.Command = append(cmd.Command, path)
+		return nil
+	}
+}
+
+func withBuildContext(c *check.C, contextOperators ...func(*FakeContext) error) func(*icmd.Cmd) func() {
+	ctx, err := fakeContextFromNewTempDir()
+	if err != nil {
+		c.Fatalf("error creating build context : %v", err)
+	}
+	for _, op := range contextOperators {
+		if err := op(ctx); err != nil {
+			c.Fatal(err)
+		}
+	}
+	return func(cmd *icmd.Cmd) func() {
+		cmd.Dir = ctx.Dir
+		cmd.Command = append(cmd.Command, ".")
+		return closeBuildContext(c, ctx)
+	}
+}
+
+func withBuildFlags(flags ...string) func(*icmd.Cmd) func() {
+	return func(cmd *icmd.Cmd) func() {
+		cmd.Command = append(cmd.Command, flags...)
+		return nil
+	}
+}
+
+func withoutCache(cmd *icmd.Cmd) func() {
+	cmd.Command = append(cmd.Command, "--no-cache")
+	return nil
+}
+
+func withFile(name, content string) func(*FakeContext) error {
+	return func(ctx *FakeContext) error {
+		return ctx.Add(name, content)
+	}
+}
+
+func closeBuildContext(c *check.C, ctx *FakeContext) func() {
+	return func() {
+		if err := ctx.Close(); err != nil {
+			c.Fatal(err)
+		}
+	}
+}
+
+func withDockerfile(dockerfile string) func(*icmd.Cmd) func() {
+	return func(cmd *icmd.Cmd) func() {
+		cmd.Command = append(cmd.Command, "-")
+		cmd.Stdin = strings.NewReader(dockerfile)
+		return nil
+	}
+}
+
+func trustedBuild(cmd *icmd.Cmd) func() {
+	trustedCmd(cmd)
+	return nil
+}
+
+func withEnvironmentVariales(envs ...string) func(cmd *icmd.Cmd) func() {
+	return func(cmd *icmd.Cmd) func() {
+		cmd.Env = envs
+		return nil
+	}
+}
+
+// Deprecated
 func buildImage(name, dockerfile string, useCache bool, buildFlags ...string) (string, error) {
 	id, _, err := buildImageWithOut(name, dockerfile, useCache, buildFlags...)
 	return id, err
 }
 
+// Deprecated
 func buildImageFromContext(name string, ctx *FakeContext, useCache bool, buildFlags ...string) (string, error) {
 	id, _, err := buildImageFromContextWithOut(name, ctx, useCache, buildFlags...)
 	if err != nil {
@@ -732,6 +811,7 @@ func buildImageFromContext(name string, ctx *FakeContext, useCache bool, buildFl
 	return id, nil
 }
 
+// Deprecated
 func buildImageFromContextWithOut(name string, ctx *FakeContext, useCache bool, buildFlags ...string) (string, string, error) {
 	args := []string{"build", "-t", name}
 	if !useCache {
@@ -754,6 +834,7 @@ func buildImageFromContextWithOut(name string, ctx *FakeContext, useCache bool, 
 	return id, out, nil
 }
 
+// Deprecated
 func buildImageFromContextWithStdoutStderr(name string, ctx *FakeContext, useCache bool, buildFlags ...string) (string, string, string, error) {
 	args := []string{"build", "-t", name}
 	if !useCache {
@@ -778,6 +859,7 @@ func buildImageFromContextWithStdoutStderr(name string, ctx *FakeContext, useCac
 	return id, result.Stdout(), result.Stderr(), nil
 }
 
+// Deprecated
 func buildImageFromGitWithStdoutStderr(name string, ctx *fakeGit, useCache bool, buildFlags ...string) (string, string, string, error) {
 	args := []string{"build", "-t", name}
 	if !useCache {
@@ -800,6 +882,7 @@ func buildImageFromGitWithStdoutStderr(name string, ctx *fakeGit, useCache bool,
 	return id, result.Stdout(), result.Stderr(), nil
 }
 
+// Deprecated
 func buildImageFromPath(name, path string, useCache bool, buildFlags ...string) (string, error) {
 	args := []string{"build", "-t", name}
 	if !useCache {
@@ -944,7 +1027,7 @@ func readFile(src string, c *check.C) (content string) {
 }
 
 func containerStorageFile(containerID, basename string) string {
-	return filepath.Join(containerStoragePath, containerID, basename)
+	return filepath.Join(testEnv.ContainerStoragePath(), containerID, basename)
 }
 
 // docker commands that use this function must be run with the '-d' switch.
@@ -985,7 +1068,7 @@ func readContainerFileWithExec(containerID, filename string) ([]byte, error) {
 
 // daemonTime provides the current time on the daemon host
 func daemonTime(c *check.C) time.Time {
-	if isLocalDaemon {
+	if testEnv.LocalDaemon() {
 		return time.Now()
 	}
 
