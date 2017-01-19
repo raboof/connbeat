@@ -5,6 +5,7 @@ connbeat:
   aggregation: 10s
   poll_interval: 2s
   enable_tcp_diag: false
+  enable_local_connections: false
   enable_docker: true
 
 output:

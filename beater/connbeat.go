@@ -55,6 +55,8 @@ func New(b *beat.Beat, rawConfig *common.Config) (beat.Beater, error) {
 	logp.Debug("connbeat", "Connection aggregation: %v", cb.ConnConfig.Connbeat.ConnectionAggregation)
 	logp.Debug("connbeat", "Poll Interval %v", cb.ConnConfig.Connbeat.PollInterval)
 	logp.Debug("connbeat", "Enable tcp_diag %v", cb.ConnConfig.Connbeat.TcpDiagEnabled)
+	logp.Debug("connbeat", "Enable docker", cb.ConnConfig.Connbeat.DockerEnabled)
+	logp.Debug("connbeat", "Enable local connections", cb.ConnConfig.Connbeat.LocalConnectionsEnabled)
 
 	return cb, nil
 }
@@ -220,7 +222,7 @@ func isWildcard(ip string) bool {
 func (cb *Connbeat) Run(b *beat.Beat) error {
 	connectionListener, serverConnectionListener, err := Listen(
 		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron,
-		cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
+		cb.ConnConfig.Connbeat.LocalConnectionsEnabled, cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
 		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation,
 		cb.ConnConfig.Connbeat.DockerEnvironment)
 
