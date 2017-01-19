@@ -76,6 +76,14 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	}
 }
 
+func toIPs(ip net.IP) []net.IP {
+	if ip == nil {
+		return []net.IP{}
+	} else {
+		return []net.IP{ip}
+	}
+}
+
 func bindingMap(bindings []docker.PortBinding) []common.MapStr {
 	result := make([]common.MapStr, len(bindings))
 	for idx, binding := range bindings {
@@ -107,7 +115,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
-				"ips":      [1]net.IP{containerInfo.dockerHostIP},
+				"ips":      toIPs(containerInfo.dockerHostIP),
 			},
 			"ports": portsMap(containerInfo.ports),
 		}

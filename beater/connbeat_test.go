@@ -2,7 +2,11 @@ package beater
 
 import (
 	"fmt"
+	"net"
+	"reflect"
 	"testing"
+
+	"github.com/deckarep/golang-set"
 
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/publisher"
@@ -16,6 +20,19 @@ import (
 type TestClient struct {
 	evs chan common.MapStr
 }
+
+var (
+	httpd = processes.UnixProcess{
+		Binary:  "httpd",
+		Cmdline: "/bin/httpd",
+		Environ: "",
+	}
+	curl = processes.UnixProcess{
+		Binary:  "curl",
+		Cmdline: "/usr/bin/curl http://www.nu.nl",
+		Environ: "",
+	}
+)
 
 func (TestClient) Close() error { return nil }
 func (tc TestClient) PublishEvents(events []common.MapStr, opts ...publisher.ClientOption) bool {
@@ -39,17 +56,6 @@ func TestLocalIps(t *testing.T) {
 
 	beater.events = client
 	beater.done = make(chan struct{})
-
-	httpd := processes.UnixProcess{
-		Binary:  "httpd",
-		Cmdline: "/bin/httpd",
-		Environ: "",
-	}
-	curl := processes.UnixProcess{
-		Binary:  "curl",
-		Cmdline: "/usr/bin/curl http://www.nu.nl",
-		Environ: "",
-	}
 
 	go beater.Pipe(connections, serverConnections)
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
@@ -78,12 +84,6 @@ func TestNoContainerInfo(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
-	httpd := processes.UnixProcess{
-		Binary:  "httpd",
-		Cmdline: "/bin/httpd",
-		Environ: "",
-	}
-
 	go beater.Pipe(connections, serverConnections)
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
 	evt := <-client.evs
@@ -91,6 +91,39 @@ func TestNoContainerInfo(t *testing.T) {
 	container, present := evt["container"]
 	assert.False(t, present, "There should be no container field in the event")
 	assert.Nil(t, container, "There should be no container field in the event")
+}
+
+func TestMapContainerInfoWithoutHostIp(t *testing.T) {
+	containerInfo := &ContainerInfo{
+		id:                 "7786521dc8c9",
+		localIPs:           mapset.NewSet(),
+		environment:        nil,
+		dockerHostHostname: "yinka",
+		dockerHostIP:       nil}
+	json := toMap(containerInfo)
+	ips, err := json.GetValue("docker_host.ips")
+	if err != nil {
+		t.Fatal("Failed to get docker_host.ips from event", json)
+	} else {
+		assert.Equal(t, 0, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips")
+	}
+}
+
+func TestMapContainerInfoWithHostIp(t *testing.T) {
+	containerInfo := &ContainerInfo{
+		id:                 "7786521dc8c9",
+		localIPs:           mapset.NewSet(),
+		environment:        nil,
+		dockerHostHostname: "yinka",
+		dockerHostIP:       net.IP("127.0.0.1")}
+	json := toMap(containerInfo)
+	ips, err := json.GetValue("docker_host.ips")
+	if err != nil {
+		t.Fatal("Failed to get docker_host.ips from event", json)
+	} else {
+		assert.Equal(t, 1, reflect.ValueOf(ips).Len(), "Expected list with one container host ip")
+		assert.Equal(t, net.IP("127.0.0.1"), reflect.ValueOf(ips).Index(0).Interface(), "Expected container host ips")
+	}
 }
 
 func TestContainerInformation(t *testing.T) {
@@ -104,17 +137,6 @@ func TestContainerInformation(t *testing.T) {
 
 	beater.events = client
 	beater.done = make(chan struct{})
-
-	httpd := processes.UnixProcess{
-		Binary:  "httpd",
-		Cmdline: "/bin/httpd",
-		Environ: "",
-	}
-	curl := processes.UnixProcess{
-		Binary:  "curl",
-		Cmdline: "/usr/bin/curl http://www.nu.nl",
-		Environ: "",
-	}
 
 	go beater.Pipe(connections, serverConnections)
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
