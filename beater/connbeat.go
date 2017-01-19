@@ -95,14 +95,10 @@ func bindingMap(bindings []docker.PortBinding) []common.MapStr {
 	return result
 }
 
-func portsMap(ports map[docker.Port][]docker.PortBinding) []common.MapStr {
-	result := make([]common.MapStr, len(ports))
-	i := 0
+func portsMap(ports map[docker.Port][]docker.PortBinding) common.MapStr {
+	result := common.MapStr{}
 	for port, binding := range ports {
-		result[i] = common.MapStr{
-			port.Port(): bindingMap(binding),
-		}
-		i = i + 1
+		result[port.Port()] = bindingMap(binding)
 	}
 	return result
 }
