@@ -121,7 +121,7 @@ func TestMapContainerInfoWithHostIp(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to get docker_host.ips from event", json)
 	} else {
-		assert.Equal(t, 1, reflect.ValueOf(ips).Len(), "Expected empty list of container host ips")
+		assert.Equal(t, 1, reflect.ValueOf(ips).Len(), "Expected list with one container host ip")
 		assert.Equal(t, net.IP("127.0.0.1"), reflect.ValueOf(ips).Index(0).Interface(), "Expected container host ips")
 	}
 }
