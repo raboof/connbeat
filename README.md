@@ -143,3 +143,9 @@ intended for general consumption.
 Contributions are welcome! Feel free to [submit issues](https://github.com/raboof/connbeat/issues) to discuss problems and propose solutions, or send a [pull request](https://github.com/raboof/connbeat/pulls).
 
 Pull requests are expected to include tests (which are run on Travis). We strive to merge any reasonable features, though features that might increase the load on the machine will likely have to be behind a feature switch that is off by default.
+
+## Security
+
+We take great care to ensure connbeat is secure. If despite our efforts you
+have found what looks like a vulnerability, please contact us privately at
+aengelen@xebia.com.
