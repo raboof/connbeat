@@ -148,4 +148,5 @@ Pull requests are expected to include tests (which are run on Travis). We strive
 
 We take great care to ensure connbeat is secure. If despite our efforts you
 have found what looks like a vulnerability, please contact us privately at
-aengelen@xebia.com.
+aengelen@xebia.com. For extra safety the email may be encrypted with the
+public key which can be found at https://keybase.io/raboof
