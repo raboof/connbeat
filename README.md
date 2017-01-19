@@ -16,13 +16,27 @@ The software is functional, but battle-testing and performance tuning is still i
 
 ## Building
 
-You need at least golang 1.7.3.
+### On linux
+
+Connbeat is built with 'make'. You need at least golang 1.7.3.
 
     # Make sure $GOPATH is set
     go get github.com/raboof/connbeat
     cd $GOPATH/src/github.com/raboof/connbeat
-    go get -t $(glide novendor)
     make
+
+### On osx
+
+It's currently not possible to build connbeat on/for osx.
+
+To build a linux binary on OSX you can use docker:
+
+    docker run --rm -v "$PWD":/go/src/github.com/raboof/connbeat -w /go/src/github.com/raboof/connbeat golang:1.7.4 make
+
+This will produce a dynamically linked connbeat executable in the current
+directory.
+
+To create linux packages, use `make package`
 
 ## Running
 

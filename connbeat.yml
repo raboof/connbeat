@@ -1,11 +1,11 @@
 connbeat:
-  expose_process_info: false
+  expose_process_info: true
   expose_cmdline: false
-  expose_environ: false
+  expose_environ: true
   aggregation: 10s
   poll_interval: 2s
-  enable_tcp_diag: false
-  enable_docker: true
+  enable_tcp_diag: true
+  enable_docker: false
   docker_environment: ["PATH"]
 
 output:
