@@ -157,7 +157,7 @@ func TestContainerInformation(t *testing.T) {
 		t.FailNow()
 	}
 
-	expectElements(t, ips.([]interface{}), []string{"12.34.6.2", "43.12.1.32"})
+	expectElements(t, ips.([]interface{}), []string{})
 
 	containerIps, err := evt.GetValue("container.local_ips")
 	if err != nil {
@@ -167,6 +167,7 @@ func TestContainerInformation(t *testing.T) {
 }
 
 func expectElements(t *testing.T, actual []interface{}, expected []string) {
+	assert.Equal(t, len(actual), len(expected), "should have the expected number of elements")
 	for _, expectation := range expected {
 		expectElement(t, actual, expectation)
 	}
