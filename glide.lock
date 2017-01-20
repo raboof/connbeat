@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-01-19T15:17:38.329071598+01:00
+updated: 2017-01-20T23:02:53.811148037Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
 - name: github.com/docker/docker
-  version: a3dff7c3dbb949662be0037de0e51c00cfa68364
+  version: 0a08f7a1d4b3321154c03972bf34ecf603622830
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: da9c4e57f1a62df234fec82c42fe0bb7cd5be1f9
+  version: aba8f7a55013a52b08d07dd99e004d6f83c436b0
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: e085edda407c05214cc6e71e4881de47667e77ec
+  version: 53f04ab33b89eef256c320c36435a10b672d473d
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -139,7 +139,7 @@ imports:
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/opencontainers/runc
-  version: a9610f2c0237d2636d05a031ec8659a70e75ffeb
+  version: 0fefa36f3ac057f579adca3016cc260a0f805d3e
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -163,7 +163,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 26709e2714106fb8ad40b773b711ebce25b78914
+  version: 61e43dc76f7ee59a82bdf3d71033dc12bea4c77d
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
@@ -177,6 +177,7 @@ imports:
 - name: golang.org/x/sys
   version: 62bee037599929a6e9146f29d10dd5208c43507d
   subpackages:
+  - unix
   - windows
   - windows/svc
   - windows/svc/debug
