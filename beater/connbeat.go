@@ -173,7 +173,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.Ports, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
 		infos[socketContainerInfo.ID] = info
 	}
-	if !isWildcard(ip) {
+	if shouldBeRecorded(ip) {
 		info.localIPs.Add(ip)
 	}
 	return &info
@@ -197,7 +197,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if !isWildcard(s.localIP) {
+			if shouldBeRecorded(s.localIP) {
 				localIPs.Add(s.localIP)
 			}
 			container := update(containerInfo, s.container, s.localIP)
@@ -209,8 +209,16 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 	}
 }
 
+func isLocal(ip string) bool {
+	return ip == "127.0.0.1" || ip == "::1"
+}
+
 func isWildcard(ip string) bool {
 	return ip == "0.0.0.0" || ip == "::"
+}
+
+func shouldBeRecorded(ip string) bool {
+	return !isWildcard(ip) && !isLocal(ip)
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
