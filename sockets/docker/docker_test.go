@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	// "golang.org/x/net/context"
-
 	"github.com/fsouza/go-dockerclient"
 	docker_testing "github.com/fsouza/go-dockerclient/testing"
 
