@@ -42,5 +42,5 @@ func TestDockerhostIPFromEnvironment(t *testing.T) {
 	assert.Nil(t, err, "creating client")
 
 	poller, err := new(client, []string{})
-	assert.Equal(t, net.ParseIP("11.11.11.11"), poller.dockerhostIP, "IP address from environment")
+	assert.Equal(t, net.ParseIP("11.11.11.11"), poller.dockerhostIP, "should get IP address from environment")
 }
