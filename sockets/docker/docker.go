@@ -50,7 +50,11 @@ func New(environment []string) (*Poller, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = client.Ping(); err != nil {
+	return new(client, environment)
+}
+
+func new(client *docker.Client, environment []string) (*Poller, error) {
+	if err := client.Ping(); err != nil {
 		return nil, err
 	}
 	env := make(map[string]struct{})
