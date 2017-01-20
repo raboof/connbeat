@@ -27,6 +27,8 @@ type Connbeat struct {
 
 type ContainerInfo struct {
 	id                 string
+	names              []string
+	image              string
 	localIPs           mapset.Set
 	environment        []string
 	ports              map[docker.Port][]docker.PortBinding
@@ -107,6 +109,8 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 	if containerInfo != nil {
 		return common.MapStr{
 			"id":        containerInfo.id,
+			"names":     containerInfo.names,
+			"image":     containerInfo.image,
 			"local_ips": containerInfo.localIPs.ToSlice(),
 			"env":       containerInfo.environment,
 			"docker_host": common.MapStr{
@@ -170,7 +174,15 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	info, found := infos[socketContainerInfo.ID]
 	if !found {
 		localIPs := mapset.NewSet()
-		info = ContainerInfo{socketContainerInfo.ID, localIPs, socketContainerInfo.DockerEnvironment, socketContainerInfo.Ports, socketContainerInfo.DockerhostHostname, socketContainerInfo.DockerhostIP}
+		info = ContainerInfo{
+			socketContainerInfo.ID,
+			socketContainerInfo.Names,
+			socketContainerInfo.Image,
+			localIPs, socketContainerInfo.DockerEnvironment,
+			socketContainerInfo.Ports,
+			socketContainerInfo.DockerhostHostname,
+			socketContainerInfo.DockerhostIP,
+		}
 		infos[socketContainerInfo.ID] = info
 	}
 	if !isWildcard(ip) {
