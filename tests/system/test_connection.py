@@ -23,5 +23,6 @@ class ConnectionTest(connbeat.BaseTest):
 
         evt = output[1]
         self.assertEqual(evt['local_port'], 631)
-        # TODO use a test /proc with an actual non-private local IP
-        # self.assertItemsEqual(evt['beat']['local_ips'], ['127.0.0.1'])
+
+        evt = output[2]
+        self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
