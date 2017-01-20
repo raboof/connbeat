@@ -25,4 +25,5 @@ class ConnectionTest(connbeat.BaseTest):
         self.assertEqual(evt['local_port'], 631)
 
         evt = output[2]
+        self.assertEqual(evt['local_port'], 40074)
         self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
