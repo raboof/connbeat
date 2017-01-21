@@ -184,23 +184,30 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 
 	localIPs := mapset.NewSet()
 	containerInfo := make(map[string]ContainerInfo)
+	container := (*ContainerInfo)(nil)
 
 	for {
 		select {
 		case <-cb.done:
 			return nil
 		case c := <-connectionListener:
-			localIPs.Add(c.localIP)
-			container := update(containerInfo, c.container, c.localIP)
+			if c.container != nil {
+				container = update(containerInfo, c.container, c.localIP)
+			} else if !isWildcard(c.localIP) {
+				localIPs.Add(c.localIP)
+			}
+
 			err = cb.exportConnection(c, localIPs, container)
 			if err != nil {
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if !isWildcard(s.localIP) {
+			if s.container != nil {
+				container = update(containerInfo, s.container, s.localIP)
+			} else if !isWildcard(s.localIP) {
 				localIPs.Add(s.localIP)
 			}
-			container := update(containerInfo, s.container, s.localIP)
+
 			err = cb.exportServerConnection(s, localIPs, container)
 			if err != nil {
 				return err
