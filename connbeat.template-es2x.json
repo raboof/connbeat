@@ -44,6 +44,54 @@
             }
           }
         },
+        "container": {
+          "properties": {
+            "docker_host": {
+              "properties": {
+                "hostname": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                },
+                "ips": {
+                  "ignore_above": 1024,
+                  "index": "not_analyzed",
+                  "type": "string"
+                }
+              }
+            },
+            "env": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "id": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "image": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "local_ips": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "name": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "ports": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            }
+          }
+        },
         "local_port": {
           "type": "long"
         },

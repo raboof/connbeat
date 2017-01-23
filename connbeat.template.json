@@ -38,6 +38,46 @@
             }
           }
         },
+        "container": {
+          "properties": {
+            "docker_host": {
+              "properties": {
+                "hostname": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "ips": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            },
+            "env": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "id": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "image": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "local_ips": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "name": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "ports": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
         "local_port": {
           "type": "long"
         },

@@ -15,6 +15,7 @@ grouped in the following categories:
 * <<exported-fields-beat>>
 * <<exported-fields-cloud>>
 * <<exported-fields-common>>
+* <<exported-fields-container>>
 * <<exported-fields-local>>
 * <<exported-fields-remote>>
 
@@ -133,6 +134,52 @@ Common fields
 === type
 
 Type of beat event (always 'connbeat')
+
+[[exported-fields-container]]
+== Container Fields
+
+Fields related to a connection on a monitored container
+
+
+[float]
+=== container.id
+
+id of this container instance
+
+[float]
+=== container.name
+
+name of this container instance
+
+[float]
+=== container.image
+
+image on which this container instance was based
+
+[float]
+=== container.env
+
+environment variables passed to this container, if configured in the docker_environment configuration whitelist
+
+[float]
+=== container.local_ips
+
+ip's that thusfar have been seen as local to this container instance
+
+[float]
+=== container.ports
+
+port mappings
+
+[float]
+=== container.docker_host.hostname
+
+hostname of the docker host on which this container instance is running, found via 'docker info' or passed in using the DOCKERHOST_HOSTNAME environment variable.
+
+[float]
+=== container.docker_host.ips
+
+IP addresses associated with the docker host on which this containr instance is running, found by resolving the name or passed in using the DOCKERHOST_IP environment variable.
 
 [[exported-fields-local]]
 == Local Fields

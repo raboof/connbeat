@@ -36,3 +36,24 @@
       title: Remote port
       type: integer
       description: Optional, the port of the 'remote side' of this connection
+
+- key: container
+  title: Container
+  description: Fields related to a connection on a monitored container
+  fields:
+  - name: container.id
+    description: id of this container instance
+  - name: container.name
+    description: name of this container instance
+  - name: container.image
+    description: image on which this container instance was based
+  - name: container.env
+    description: environment variables passed to this container, if configured in the docker_environment configuration whitelist
+  - name: container.local_ips
+    description: ip's that thusfar have been seen as local to this container instance
+  - name: container.ports
+    description: port mappings
+  - name: container.docker_host.hostname
+    description: hostname of the docker host on which this container instance is running, found via 'docker info' or passed in using the DOCKERHOST_HOSTNAME environment variable.
+  - name: container.docker_host.ips
+    description: IP addresses associated with the docker host on which this containr instance is running, found by resolving the name or passed in using the DOCKERHOST_IP environment variable.
