@@ -1,0 +1,20 @@
+################### Connbeat Configuration Example #########################
+
+# This file is an example configuration file highlighting only some common options.
+# The heartbeat.full.yml file in the same directory contains all the supported options
+# with detailed comments. You can use it for reference.
+#
+# You can find the full configuration reference here:
+# https://github.com/raboof/connbeat
+
+############################# Connbeat ######################################
+
+connbeat:
+  expose_process_info: true
+  expose_cmdline: false
+  expose_environ: true
+  aggregation: 10s
+  poll_interval: 2s
+  enable_tcp_diag: true
+  enable_docker: false
+  docker_environment: ["PATH"]
