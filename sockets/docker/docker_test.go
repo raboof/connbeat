@@ -38,11 +38,16 @@ func TestContainerMetadata(t *testing.T) {
 
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	assert.Nil(t, err, "listing containers")
-
 	assert.Equal(t, 1, len(containers), "number of containers")
-	assert.Equal(t, containers[0].Names, []string{"/myasdf"}, "should use the name used when creating the container")
-	assert.Equal(t, containers[0].Image, "asdf:latest", "should use the image used when creating the container")
 
+	poller, err := new(client, []string{})
+	assert.Nil(t, err, "creating poller")
+
+	containerInfo, err := poller.getContainerInfo(containers[0])
+	assert.Nil(t, err, "getting containerinfo")
+
+	assert.Equal(t, containerInfo.Name, "myasdf", "should use the name used when creating the container")
+	assert.Equal(t, containerInfo.Image, "asdf:latest", "should use the image used when creating the container")
 }
 
 func TestHostnameFromEnvironment(t *testing.T) {
