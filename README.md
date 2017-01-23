@@ -50,6 +50,11 @@ You can view the events on kafka with something like kafkacat:
 
     kafkacat -C -b localhost -t connbeat
 
+## Docker
+
+You can use connbeat to monitor TCP connections from docker instances - see
+[here](docker#readme) for details.
+
 ## Performance overhead
 
 We tested the overhead of running the connbeat agent using the
