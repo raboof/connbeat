@@ -46,9 +46,7 @@ adds an additional section with container metadata:
   "local_ips": [
     "172.17.0.2"
   ],
-  "names": [
-    "/reverent_sinoussi"
-  ],
+  "name": "reverent_sinoussi",
   "ports": [
     {
       "80": [
