@@ -61,6 +61,9 @@ func TestLocalIps(t *testing.T) {
 	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
 	_ = <-client.evs
 
+	serverConnections <- ServerConnection{"127.0.0.1", 80, &httpd, nil}
+	_ = <-client.evs
+
 	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, nil}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")

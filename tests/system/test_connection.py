@@ -11,6 +11,7 @@ class ConnectionTest(connbeat.BaseTest):
         """
         self.render_config_template()
         os.environ['PROC_NET_TCP'] = '../../tests/files/proc-net-tcp-test-small'
+        os.environ['PROC_NET_TCP6'] = '../../tests/files/proc-net-tcp6-test-empty'
 
         proc = self.start_beat()
         self.wait_until(lambda: self.output_lines() > 0)
@@ -23,4 +24,7 @@ class ConnectionTest(connbeat.BaseTest):
 
         evt = output[1]
         self.assertEqual(evt['local_port'], 631)
-        self.assertItemsEqual(evt['beat']['local_ips'], ['127.0.0.1'])
+
+        evt = output[2]
+        self.assertEqual(evt['local_port'], 40074)
+        self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
