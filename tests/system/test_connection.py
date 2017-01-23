@@ -24,6 +24,10 @@ class ConnectionTest(connbeat.BaseTest):
         proc.check_kill_and_wait()
 
         output = self.read_output_json()
+
+        for line in output:
+            eprint(line)
+
         evt = output[0]
         eprint("Event 0")
         eprint(evt)
