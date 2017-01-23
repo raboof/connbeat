@@ -41,5 +41,5 @@ docker_peers: package
 	@rm -r unpacked || true
 	mkdir unpacked
 	tar xzvf build/upload/connbeat-*-linux-x86.tar.gz -C unpacked
-	cp unpacked/*/connbeat docker_peers
-	$(MAKE) -C docker_peers
+	cp unpacked/*/connbeat docker
+	$(MAKE) -C docker
