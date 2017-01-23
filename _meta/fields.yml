@@ -1,0 +1,38 @@
+- key: common
+  title: Common
+  description: Common fields
+  fields:
+    - name: type
+      title: Type
+      description: Type of beat event (always 'connbeat')
+
+- key: local
+  title: Local
+  description: Fields related to the machine being monitored
+  fields:
+    - name: local_port
+      title: Local port
+      type: integer
+      description: Port on side of the machine being monitored
+    - name: local_process
+      title: Local process
+      description: Metadata about the process associated with this connection (if expose_process_info was enabled)
+      fields:
+        - name: binary
+          title: Binary associated with the connection
+        - name: cmdline
+          title: Command-line with which this process was started (if expose_cmdline was enabled)
+        - name: environ
+          title: Environment variables with which this process was started (if expose_environ was enabled)
+
+- key: remote
+  title: Remote
+  description: Fields related to the remote side of the connection
+  fields:
+    - name: remote_ip
+      title: Remote IP
+      description: Optional, the IP of the 'remote side' of this connection
+    - name: remote_port
+      title: Remote port
+      type: integer
+      description: Optional, the port of the 'remote side' of this connection
