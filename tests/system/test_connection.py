@@ -1,7 +1,13 @@
+from __future__ import print_function
+import sys
+
 import os
 import stat
 import connbeat
 from nose.plugins.attrib import attr
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 class ConnectionTest(connbeat.BaseTest):
     @attr('integration')
@@ -26,6 +32,6 @@ class ConnectionTest(connbeat.BaseTest):
         self.assertEqual(evt['local_port'], 631)
 
         evt = output[2]
-        print(evt)
+        eprint(evt)
         self.assertEqual(evt['local_port'], 40074, "msg here")
         self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
