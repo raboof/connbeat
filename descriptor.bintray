@@ -5,7 +5,7 @@
     "subject": "raboofje"
   },
   "version": {
-    "name": "SNAPSHOT",
+    "name": "0.0.1-SNAPSHOT",
     "gpgSign": false
   },
   "files": [
