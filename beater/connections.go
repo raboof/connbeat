@@ -30,6 +30,7 @@ type Connection struct {
 
 func getSocketInfoFromDocker(poller *docker.Poller, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
 	for {
+		logp.Info("Polling docker")
 		// For now we poll periodically
 		err := poller.PollCurrentConnections(socketInfo)
 		if err != nil {
@@ -109,7 +110,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 					servers <- ServerConnection{
 						localIP:   localIP,
 						localPort: s.SrcPort,
-						process:   process(ps, exposeProcessInfo, s.Inode),
+						process:   process(ps, exposeProcessInfo && s.Container == nil, s.Inode),
 						container: s.Container,
 					}
 				} else {
@@ -122,7 +123,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 							localPort:  s.SrcPort,
 							remoteIp:   dstIP,
 							remotePort: s.DstPort,
-							process:    process(ps, exposeProcessInfo, s.Inode),
+							process:    process(ps, exposeProcessInfo && s.Container == nil, s.Inode),
 							container:  s.Container,
 						}
 					}
@@ -132,7 +133,8 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 	}
 }
 
-func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enableTcpDiag bool,
+func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
+	enableLocalConnections, enableDocker, enableTcpDiag bool,
 	pollInterval, aggregation time.Duration,
 	dockerEnvironment []string) (chan Connection, chan ServerConnection, error) {
 	socketInfo := make(chan *sockets.SocketInfo, 20)
@@ -143,7 +145,8 @@ func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron, enableDocker, enabl
 			return nil, nil, err
 		}
 		go getSocketInfoFromDocker(poller, pollInterval, socketInfo)
-	} else {
+	}
+	if enableLocalConnections {
 		go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
 	}
 
