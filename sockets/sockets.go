@@ -8,7 +8,7 @@ import (
 
 type ContainerInfo struct {
 	ID                 string
-	Names              []string
+	Name               string
 	Image              string
 	DockerEnvironment  []string
 	Ports              map[docker.Port][]docker.PortBinding
