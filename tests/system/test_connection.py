@@ -25,13 +25,18 @@ class ConnectionTest(connbeat.BaseTest):
 
         output = self.read_output_json()
         evt = output[0]
+        eprint("Event 0")
+        eprint(evt)
 
         self.assertEqual(evt['local_port'], 80)
 
         evt = output[1]
+        eprint("Event 1")
+        eprint(evt)
         self.assertEqual(evt['local_port'], 631)
 
         evt = output[2]
+        eprint("Event 2")
         eprint(evt)
         self.assertEqual(evt['local_port'], 40074, "msg here")
         self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
