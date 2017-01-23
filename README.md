@@ -2,8 +2,8 @@
 
 [![Build Status](https://travis-ci.org/raboof/connbeat.svg?branch=master)](https://travis-ci.org/raboof/connbeat)
 
-Connbeat, short for 'Connectionbeat', is an open source agent that monitors connection metadata and
-ships the data to Kafka or Elasticsearch, or a HTTP endpoint.
+Connbeat, short for 'Connectionbeat', is an open source agent that monitors TCP connection metadata and
+ships the data to Kafka or Elasticsearch, or an HTTP endpoint.
 
 The main distinction from [Packetbeat](https://www.elastic.co/products/beats/packetbeat)
 is that Connbeat is intended to be able to monitor all connections on a
@@ -143,3 +143,10 @@ intended for general consumption.
 Contributions are welcome! Feel free to [submit issues](https://github.com/raboof/connbeat/issues) to discuss problems and propose solutions, or send a [pull request](https://github.com/raboof/connbeat/pulls).
 
 Pull requests are expected to include tests (which are run on Travis). We strive to merge any reasonable features, though features that might increase the load on the machine will likely have to be behind a feature switch that is off by default.
+
+## Security
+
+We take great care to ensure connbeat is secure. If despite our efforts you
+have found what looks like a vulnerability, please contact us privately at
+aengelen@xebia.com. For extra safety the email may be encrypted with the
+public key which can be found at https://keybase.io/raboof
