@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -51,7 +52,7 @@ func New(environment []string) (*Poller, error) {
 		return nil, err
 	}
 	if err = client.Ping(); err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprint("Could not connect to docker: ", err))
 	}
 	env := make(map[string]struct{})
 	for _, key := range environment {
