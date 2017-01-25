@@ -145,7 +145,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
+func (cb *Connbeat) exportFullConnection(c FullConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -193,7 +193,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	return &info
 }
 
-func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
+func (cb *Connbeat) Pipe(connectionListener <-chan FullConnection, serverConnectionListener <-chan ServerConnection) error {
 	var err error
 
 	localIPs := mapset.NewSet()
@@ -210,7 +210,7 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				localIPs.Add(c.localIP)
 			}
 
-			err = cb.exportConnection(c, localIPs, container)
+			err = cb.exportFullConnection(c, localIPs, container)
 			if err != nil {
 				return err
 			}
