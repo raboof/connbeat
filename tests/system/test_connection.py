@@ -1,9 +1,21 @@
+from __future__ import print_function
+import sys
+
 import os
 import stat
 import connbeat
 from nose.plugins.attrib import attr
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 class ConnectionTest(connbeat.BaseTest):
+    def should_contain(self, output, check, error):
+        for evt in output:
+            if check(evt):
+                return
+        self.assertFalse(error)
+
     @attr('integration')
     def test_connection(self):
         """
@@ -18,13 +30,17 @@ class ConnectionTest(connbeat.BaseTest):
         proc.check_kill_and_wait()
 
         output = self.read_output_json()
-        evt = output[0]
 
-        self.assertEqual(evt['local_port'], 80)
+        for line in output:
+            eprint(line)
 
-        evt = output[1]
-        self.assertEqual(evt['local_port'], 631)
+        self.should_contain(output, lambda e: e['local_port'] == 80, "process listening on port 80")
 
-        evt = output[2]
-        self.assertEqual(evt['local_port'], 40074)
-        self.assertItemsEqual(evt['beat']['local_ips'], ['192.168.2.243'])
+        self.should_contain(output, lambda e: e['local_port'] == 631, "process listening on port 631")
+
+        self.should_contain(output, lambda e: e['local_port'] == 40074, "process listening on port 40074")
+
+        self.should_contain(
+            output,
+            lambda e: e['beat']['local_ips'] == ['192.168.2.243'],
+            "record 192.168.2.243 as local IP")
