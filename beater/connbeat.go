@@ -205,9 +205,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 		case <-cb.done:
 			return nil
 		case c := <-connectionListener:
-			if c.container != nil {
-				container = update(containerInfo, c.container, c.localIP)
-			} else if shouldBeRecorded(c.localIP) {
+			container = update(containerInfo, c.container, c.localIP)
+			if container == nil && shouldBeRecorded(c.localIP) {
 				localIPs.Add(c.localIP)
 			}
 
@@ -216,9 +215,8 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if s.container != nil {
-				container = update(containerInfo, s.container, s.localIP)
-			} else if shouldBeRecorded(s.localIP) {
+			container = update(containerInfo, s.container, s.localIP)
+			if container == nil && shouldBeRecorded(s.localIP) {
 				localIPs.Add(s.localIP)
 			}
 
