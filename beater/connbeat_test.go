@@ -48,7 +48,7 @@ func (tc TestClient) PublishEvent(event common.MapStr, opts ...publisher.ClientO
 func TestLocalIps(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
+	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -64,7 +64,7 @@ func TestLocalIps(t *testing.T) {
 	serverConnections <- ServerConnection{"127.0.0.1", 80, &httpd, nil}
 	_ = <-client.evs
 
-	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, nil}
+	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {
@@ -78,7 +78,7 @@ func TestLocalIps(t *testing.T) {
 func TestNoContainerInfo(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
+	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -132,7 +132,7 @@ func TestMapContainerInfoWithHostIp(t *testing.T) {
 func TestContainerInformation(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan Connection), make(chan ServerConnection)
+	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -148,11 +148,11 @@ func TestContainerInformation(t *testing.T) {
 		DockerhostIP:       nil}}
 	_ = <-client.evs
 
-	connections <- Connection{"43.12.1.32", 22, "43.23.2.4", 5113, &curl, &sockets.ContainerInfo{
+	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
 		ID:                 "785073e68b72",
 		DockerEnvironment:  nil,
 		DockerhostHostname: "yinka",
-		DockerhostIP:       nil}}
+		DockerhostIP:       nil}}, "43.23.2.4", 5113}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {
@@ -167,6 +167,32 @@ func TestContainerInformation(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectElements(t, containerIps.([]interface{}), []string{"43.12.1.32"})
+}
+
+func TestNoContainerInformationLeakage(t *testing.T) {
+	beater := &Connbeat{}
+
+	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
+
+	client := TestClient{
+		evs: make(chan common.MapStr),
+	}
+
+	beater.events = client
+	beater.done = make(chan struct{})
+
+	go beater.Pipe(connections, serverConnections)
+	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
+		ID:                 "7786521dc8c9",
+		DockerhostHostname: "yinka",
+		DockerhostIP:       nil}}
+	_ = <-client.evs
+
+	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
+	evt := <-client.evs
+
+	container, _ := evt.GetValue("container")
+	assert.Nil(t, container, "Container information should not leak into the second event")
 }
 
 func expectElements(t *testing.T, actual []interface{}, expected []string) {
