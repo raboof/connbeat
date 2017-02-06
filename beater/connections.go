@@ -12,20 +12,27 @@ import (
 	"github.com/raboof/connbeat/sockets/tcp_diag"
 )
 
-type ServerConnection struct {
+/**
+ * The 'local halve' of a connection
+ */
+type LocalConnection struct {
 	localIP   string
 	localPort uint16
+
 	process   *processes.UnixProcess
 	container *sockets.ContainerInfo
 }
 
-type Connection struct {
-	localIP    string
-	localPort  uint16
+/**
+ * When we're listening we only cover the local connection information
+ */
+type ServerConnection LocalConnection
+
+type FullConnection struct {
+	LocalConnection
+
 	remoteIp   string
 	remotePort uint16
-	process    *processes.UnixProcess
-	container  *sockets.ContainerInfo
 }
 
 func getSocketInfoFromDocker(poller *docker.Poller, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
@@ -93,7 +100,7 @@ func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *pro
 	}
 }
 
-func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- Connection, servers chan ServerConnection) {
+func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- FullConnection, servers chan ServerConnection) {
 	listeningOn := make(map[incomingConnectionDedup]time.Time)
 	outgoingConnectionSeen := make(map[outgoingConnectionDedup]time.Time)
 	ps := processes.New(exposeCmdline, exposeEnviron)
@@ -118,13 +125,15 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 					dedupId := outgoingConnectionDedup{dstIP, s.DstPort}
 					if when, seen := outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						outgoingConnectionSeen[dedupId] = now
-						connections <- Connection{
-							localIP:    s.SrcIP.String(),
-							localPort:  s.SrcPort,
-							remoteIp:   dstIP,
-							remotePort: s.DstPort,
-							process:    process(ps, exposeProcessInfo && s.Container == nil, s.Inode),
-							container:  s.Container,
+						connections <- FullConnection{
+							LocalConnection{
+								localIP:   s.SrcIP.String(),
+								localPort: s.SrcPort,
+								process:   process(ps, exposeProcessInfo && s.Container == nil, s.Inode),
+								container: s.Container,
+							},
+							dstIP,
+							s.DstPort,
 						}
 					}
 				}
@@ -136,7 +145,7 @@ func filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron bool, aggr
 func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
 	enableLocalConnections, enableDocker, enableTcpDiag bool,
 	pollInterval, aggregation time.Duration,
-	dockerEnvironment []string) (chan Connection, chan ServerConnection, error) {
+	dockerEnvironment []string) (chan FullConnection, chan ServerConnection, error) {
 	socketInfo := make(chan *sockets.SocketInfo, 20)
 
 	if enableDocker {
@@ -150,7 +159,7 @@ func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
 		go getSocketInfo(enableTcpDiag, pollInterval, socketInfo)
 	}
 
-	connections := make(chan Connection, 20)
+	connections := make(chan FullConnection, 20)
 	servers := make(chan ServerConnection, 20)
 	go filterAndPublish(exposeProcessInfo, exposeCmdline, exposeEnviron, aggregation, socketInfo, connections, servers)
 

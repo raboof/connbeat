@@ -71,7 +71,7 @@ func outgoingConnection(remoteIP net.IP, remotePort uint16) *sockets.SocketInfo 
 
 func TestDeduplicateListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
@@ -96,7 +96,7 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 
 func TestFilterIncomingConnectionsPerIP(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
@@ -124,7 +124,7 @@ func TestFilterIncomingConnectionsPerIP(t *testing.T) {
 
 func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
@@ -149,7 +149,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 
 func TestDedupClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
 
@@ -173,7 +173,7 @@ func TestDedupClientConnections(t *testing.T) {
 
 func TestRepublishOldClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 0), make(chan ServerConnection, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
 

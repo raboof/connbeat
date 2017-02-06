@@ -145,7 +145,7 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportConnection(c Connection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
+func (cb *Connbeat) exportFullConnection(c FullConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
@@ -193,7 +193,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	return &info
 }
 
-func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionListener <-chan ServerConnection) error {
+func (cb *Connbeat) Pipe(connectionListener <-chan FullConnection, serverConnectionListener <-chan ServerConnection) error {
 	var err error
 
 	localIPs := mapset.NewSet()
@@ -205,20 +205,18 @@ func (cb *Connbeat) Pipe(connectionListener <-chan Connection, serverConnectionL
 		case <-cb.done:
 			return nil
 		case c := <-connectionListener:
-			if c.container != nil {
-				container = update(containerInfo, c.container, c.localIP)
-			} else if shouldBeRecorded(c.localIP) {
+			container = update(containerInfo, c.container, c.localIP)
+			if container == nil && shouldBeRecorded(c.localIP) {
 				localIPs.Add(c.localIP)
 			}
 
-			err = cb.exportConnection(c, localIPs, container)
+			err = cb.exportFullConnection(c, localIPs, container)
 			if err != nil {
 				return err
 			}
 		case s := <-serverConnectionListener:
-			if s.container != nil {
-				container = update(containerInfo, s.container, s.localIP)
-			} else if shouldBeRecorded(s.localIP) {
+			container = update(containerInfo, s.container, s.localIP)
+			if container == nil && shouldBeRecorded(s.localIP) {
 				localIPs.Add(s.localIP)
 			}
 
