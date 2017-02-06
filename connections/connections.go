@@ -13,10 +13,10 @@ import (
 )
 
 type LocalConnection struct {
-	LocalIP string
+	LocalIP   string
 	LocalPort uint16
 
-	Process *processes.UnixProcess
+	Process   *processes.UnixProcess
 	Container *sockets.ContainerInfo
 }
 
@@ -30,15 +30,15 @@ type FullConnection struct {
 }
 
 type Connections struct {
-	exposeProcessInfo bool
-	listeningOn map[incomingConnectionDedup]time.Time
+	exposeProcessInfo      bool
+	listeningOn            map[incomingConnectionDedup]time.Time
 	outgoingConnectionSeen map[outgoingConnectionDedup]time.Time
-	ps *processes.Processes
+	ps                     *processes.Processes
 }
 
 func New(exposeCmdline, exposeEnviron bool) *Connections {
-	return &Connections {
-		listeningOn: make(map[incomingConnectionDedup]time.Time),
+	return &Connections{
+		listeningOn:            make(map[incomingConnectionDedup]time.Time),
 		outgoingConnectionSeen: make(map[outgoingConnectionDedup]time.Time),
 		ps: processes.New(exposeCmdline, exposeEnviron),
 	}
@@ -135,10 +135,10 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 						logp.Info("connections", "adding connection %v", s)
 						connections <- FullConnection{
 							LocalConnection{
-								LocalIP:    s.SrcIP.String(),
-								LocalPort:  s.SrcPort,
-								Process:    process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
-								Container:  s.Container,
+								LocalIP:   s.SrcIP.String(),
+								LocalPort: s.SrcPort,
+								Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
+								Container: s.Container,
 							},
 							dstIP,
 							s.DstPort,
