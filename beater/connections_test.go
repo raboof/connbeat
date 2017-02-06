@@ -203,7 +203,10 @@ func expectConnectionOnPort(t *testing.T, connections <-chan Connection, port ui
 		select {
 		case connection := <-connections:
 			if connection.localPort == port {
+				t.Log("Found connection %v", connection)
 				found = true
+			} else {
+				t.Log("Ignored connection %v", connection)
 			}
 		default:
 			if !found {
