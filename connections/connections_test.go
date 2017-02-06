@@ -219,14 +219,14 @@ func expectConnectionOnPort(t *testing.T, connections <-chan FullConnection, por
 		select {
 		case connection := <-connections:
 			if connection.LocalPort == port {
-				t.Log("Found connection %v", connection)
+				t.Log("Found connection", connection)
 				found = true
 			} else {
-				t.Log("Ignored connection %v", connection)
+				t.Log("Ignored connection", connection)
 			}
 		default:
 			if !found {
-				t.Fatal("Did not find connection with local port %d", port)
+				t.Fatal("Did not find connection with local port", port)
 			}
 		}
 	}
