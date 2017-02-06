@@ -85,11 +85,13 @@ func getSocketInfo(enableTcpDiag bool, pollInterval time.Duration, socketInfo ch
 }
 
 type incomingConnectionDedup struct {
-	localIp   string
+	localIP   string
 	localPort uint16
 }
 type outgoingConnectionDedup struct {
-	remoteIp   string
+	localIP    string
+	localPort  uint16
+	remoteIP   string
 	remotePort uint16
 }
 
@@ -127,12 +129,12 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 					}
 				} else {
 					dstIP := s.DstIP.String()
-					dedupId := outgoingConnectionDedup{dstIP, s.DstPort}
+					dedupId := outgoingConnectionDedup{localIP, s.SrcPort, dstIP, s.DstPort}
 					if when, seen := c.outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						c.outgoingConnectionSeen[dedupId] = now
 						connections <- FullConnection{
 							LocalConnection{
-								LocalIP:   s.SrcIP.String(),
+								LocalIP:   localIP,
 								LocalPort: s.SrcPort,
 								Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
 								Container: s.Container,

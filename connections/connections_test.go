@@ -104,10 +104,10 @@ func TestFilterIncomingConnectionsPerIP(t *testing.T) {
 
 	input <- incomingConnectionTo(80, remoteIP)
 	_, ok := <-connections
-	assert.Equal(t, ok, true, "a server should be reported")
+	assert.True(t, ok, "a server should be reported")
 	input <- incomingConnectionTo(80, randIP())
 	_, ok = <-connections
-	assert.Equal(t, ok, true, "a server with a different local IP should be reported")
+	assert.True(t, ok, "a server with a different local IP should be reported")
 	input <- incomingConnectionTo(80, remoteIP)
 
 	time.Sleep(100 * time.Millisecond)
@@ -132,7 +132,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 
 	input <- listeningConnectionOn(80, localIP)
 	_, ok := <-servers
-	assert.Equal(t, ok, true, "a server should be reported")
+	assert.True(t, ok, "a server should be reported")
 	input <- incomingConnectionTo(80, localIP)
 
 	time.Sleep(100 * time.Millisecond)
@@ -147,17 +147,18 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	}
 }
 
-func TestDedupClientConnections(t *testing.T) {
+func TestDedupIdenticalClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
 	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
 
-	remoteIp := randIP()
-	input <- outgoingConnection(remoteIp, 80)
+	remoteIP := randIP()
+	conn := outgoingConnection(remoteIP, 80)
+	input <- conn
 	_, ok := <-connections
-	assert.Equal(t, ok, true, "a client connection should be reported")
-	input <- outgoingConnection(remoteIp, 80)
+	assert.True(t, ok, "a client connection should be reported")
+	input <- conn
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -169,6 +170,21 @@ func TestDedupClientConnections(t *testing.T) {
 	default:
 		// Nothing to read: OK!
 	}
+}
+
+func TestReportDistinctClientConnectionsToTheSameServer(t *testing.T) {
+	input := make(chan *sockets.SocketInfo, 0)
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
+
+	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+
+	remoteIP := randIP()
+	input <- outgoingConnection(remoteIP, 80)
+	_, ok := <-connections
+	assert.True(t, ok, "a client connection should be reported")
+	input <- outgoingConnection(remoteIP, 80)
+	_, ok = <-connections
+	assert.True(t, ok, "another client connection to the same server should be reported")
 }
 
 func TestRepublishOldClientConnections(t *testing.T) {
