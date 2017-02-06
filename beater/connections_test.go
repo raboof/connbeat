@@ -3,10 +3,12 @@ package beater
 import (
 	"math/rand"
 	"net"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/raboof/connbeat/sockets"
+	"github.com/raboof/connbeat/sockets/proc_net_tcp"
 	"github.com/stvp/assert"
 )
 
@@ -182,4 +184,46 @@ func TestRepublishOldClientConnections(t *testing.T) {
 	input <- outgoingConnection(remoteIp, 80)
 	_, ok = <-connections
 	assert.Equal(t, ok, true, "another client connection should be reported")
+}
+
+func Test174(t *testing.T) {
+	input := make(chan *sockets.SocketInfo, 0)
+	connections, servers := make(chan Connection, 100), make(chan ServerConnection, 100)
+
+	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
+
+	insert174data(t, input)
+
+	expectConnectionOnPort(t, connections, 35074)
+}
+
+func expectConnectionOnPort(t *testing.T, connections <-chan Connection, port uint16) {
+	found := false
+	for !found {
+		select {
+		case connection := <-connections:
+			if connection.localPort == port {
+				found = true
+			}
+		default:
+			if !found {
+				t.Fatal("Did not find connection with local port %d", port)
+			}
+		}
+	}
+
+}
+
+func insert174data(t *testing.T, socketInfo chan<- *sockets.SocketInfo) {
+	file, err := os.Open("../tests/files/proc_net_tcp6_174.txt")
+	if err != nil {
+		t.Fatalf("Opening ../../tests/files/proc_net_tcp.txt: %s", err)
+	}
+	sockets, err := proc_net_tcp.ParseProcNetTCP(file, true, nil)
+	if err != nil {
+		t.Fatalf("Opening ../../tests/files/proc_net_tcp6_174.txt: %s", err)
+	}
+	for _, socket := range sockets {
+		socketInfo <- socket
+	}
 }
