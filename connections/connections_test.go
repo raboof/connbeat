@@ -190,7 +190,7 @@ func Test174(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 100), make(chan ServerConnection, 100)
 
-	go New(false, true).filterAndPublish(false, 0*time.Second, input, connections, servers)
+	go New(false, true).filterAndPublish(false, 10*time.Second, input, connections, servers)
 
 	insert174data(t, input)
 
@@ -220,11 +220,11 @@ func expectConnectionOnPort(t *testing.T, connections <-chan FullConnection, por
 func insert174data(t *testing.T, socketInfo chan<- *sockets.SocketInfo) {
 	file, err := os.Open("../tests/files/proc_net_tcp6_174.txt")
 	if err != nil {
-		t.Fatalf("Opening ../../tests/files/proc_net_tcp.txt: %s", err)
+		t.Fatalf("Opening ../../tests/files/proc_net_tcp6_174.txt: %s", err)
 	}
 	sockets, err := proc_net_tcp.ParseProcNetTCP(file, true, nil)
 	if err != nil {
-		t.Fatalf("Opening ../../tests/files/proc_net_tcp6_174.txt: %s", err)
+		t.Fatalf("Parsing ../../tests/files/proc_net_tcp6_174.txt: %s", err)
 	}
 	for _, socket := range sockets {
 		socketInfo <- socket

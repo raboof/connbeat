@@ -116,10 +116,8 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 		case s := <-socketInfo:
 			localIP := s.SrcIP.String()
 			localDedupId := incomingConnectionDedup{localIP, s.SrcPort}
-			logp.Info("connections", "considering connection %v", s)
 			if when, seen := c.listeningOn[localDedupId]; !seen || now.Sub(when) > aggregation {
 				c.listeningOn[localDedupId] = now
-				logp.Info("connections", "really considering connection %v", s)
 				if s.DstPort == 0 {
 					servers <- ServerConnection{
 						LocalIP:   localIP,
@@ -132,7 +130,6 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 					dedupId := outgoingConnectionDedup{dstIP, s.DstPort}
 					if when, seen := c.outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
 						c.outgoingConnectionSeen[dedupId] = now
-						logp.Info("connections", "adding connection %v", s)
 						connections <- FullConnection{
 							LocalConnection{
 								LocalIP:   s.SrcIP.String(),
