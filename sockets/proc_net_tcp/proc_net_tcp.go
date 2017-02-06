@@ -121,6 +121,7 @@ func ParseProcNetTCP(input io.Reader, ipv6 bool, containerInfo *sockets.Containe
 		sock.Inode = uint64(inode)
 
 		result = append(result, &sock)
+		logp.Info("procs", "adding connection %v", sock)
 	}
 	return result, nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/fsouza/go-dockerclient"
 
+	"github.com/raboof/connbeat/connections"
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
 )
@@ -125,12 +126,12 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 	return nil
 }
 
-func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
+func (cb *Connbeat) exportServerConnection(s connections.ServerConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
-		"local_port":    s.localPort,
-		"local_process": processAsMap(s.process),
+		"local_port":    s.LocalPort,
+		"local_process": processAsMap(s.Process),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -145,15 +146,15 @@ func (cb *Connbeat) exportServerConnection(s ServerConnection, localIPs mapset.S
 	return nil
 }
 
-func (cb *Connbeat) exportFullConnection(c FullConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
+func (cb *Connbeat) exportFullConnection(c connections.FullConnection, localIPs mapset.Set, containerInfo *ContainerInfo) error {
 	event := common.MapStr{
 		"@timestamp":    common.Time(time.Now()),
 		"type":          "connbeat",
-		"local_ip":      c.localIP,
-		"local_port":    c.localPort,
-		"remote_ip":     c.remoteIp,
-		"remote_port":   c.remotePort,
-		"local_process": processAsMap(c.process),
+		"local_ip":      c.LocalIP,
+		"local_port":    c.LocalPort,
+		"remote_ip":     c.RemoteIP,
+		"remote_port":   c.RemotePort,
+		"local_process": processAsMap(c.Process),
 		"beat": common.MapStr{
 			"local_ips": localIPs.ToSlice(),
 		},
@@ -193,7 +194,7 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 	return &info
 }
 
-func (cb *Connbeat) Pipe(connectionListener <-chan FullConnection, serverConnectionListener <-chan ServerConnection) error {
+func (cb *Connbeat) Pipe(connectionListener <-chan connections.FullConnection, serverConnectionListener <-chan connections.ServerConnection) error {
 	var err error
 
 	localIPs := mapset.NewSet()
@@ -205,9 +206,9 @@ func (cb *Connbeat) Pipe(connectionListener <-chan FullConnection, serverConnect
 		case <-cb.done:
 			return nil
 		case c := <-connectionListener:
-			container = update(containerInfo, c.container, c.localIP)
-			if container == nil && shouldBeRecorded(c.localIP) {
-				localIPs.Add(c.localIP)
+			container = update(containerInfo, c.Container, c.LocalIP)
+			if container == nil && shouldBeRecorded(c.LocalIP) {
+				localIPs.Add(c.LocalIP)
 			}
 
 			err = cb.exportFullConnection(c, localIPs, container)
@@ -215,9 +216,9 @@ func (cb *Connbeat) Pipe(connectionListener <-chan FullConnection, serverConnect
 				return err
 			}
 		case s := <-serverConnectionListener:
-			container = update(containerInfo, s.container, s.localIP)
-			if container == nil && shouldBeRecorded(s.localIP) {
-				localIPs.Add(s.localIP)
+			container = update(containerInfo, s.Container, s.LocalIP)
+			if container == nil && shouldBeRecorded(s.LocalIP) {
+				localIPs.Add(s.LocalIP)
 			}
 
 			err = cb.exportServerConnection(s, localIPs, container)
@@ -241,7 +242,7 @@ func shouldBeRecorded(ip string) bool {
 }
 
 func (cb *Connbeat) Run(b *beat.Beat) error {
-	connectionListener, serverConnectionListener, err := Listen(
+	connectionListener, serverConnectionListener, err := connections.Listen(
 		cb.ConnConfig.Connbeat.ExposeProcessInfo, cb.ConnConfig.Connbeat.ExposeCmdline, cb.ConnConfig.Connbeat.ExposeEnviron,
 		cb.ConnConfig.Connbeat.LocalConnectionsEnabled, cb.ConnConfig.Connbeat.DockerEnabled, cb.ConnConfig.Connbeat.TcpDiagEnabled,
 		cb.ConnConfig.Connbeat.PollInterval, cb.ConnConfig.Connbeat.ConnectionAggregation,

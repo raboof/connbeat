@@ -1,4 +1,4 @@
-package beater
+package connections
 
 import (
 	"math/rand"
@@ -73,7 +73,7 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
 
 	ip := randIP()
 
@@ -98,7 +98,7 @@ func TestFilterIncomingConnectionsPerIP(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
 
 	remoteIP := randIP()
 
@@ -126,7 +126,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
 
 	localIP := randIP()
 
@@ -151,7 +151,7 @@ func TestDedupClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(true, true, true, 5*time.Second, input, connections, servers)
+	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
 
 	remoteIp := randIP()
 	input <- outgoingConnection(remoteIp, 80)
@@ -175,7 +175,7 @@ func TestRepublishOldClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
+	go New(false, true).filterAndPublish(false, 0*time.Second, input, connections, servers)
 
 	remoteIp := randIP()
 	input <- outgoingConnection(remoteIp, 80)
@@ -188,21 +188,21 @@ func TestRepublishOldClientConnections(t *testing.T) {
 
 func Test174(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
-	connections, servers := make(chan Connection, 100), make(chan ServerConnection, 100)
+	connections, servers := make(chan FullConnection, 100), make(chan ServerConnection, 100)
 
-	go filterAndPublish(false, false, true, 0*time.Second, input, connections, servers)
+	go New(false, true).filterAndPublish(false, 0*time.Second, input, connections, servers)
 
 	insert174data(t, input)
 
 	expectConnectionOnPort(t, connections, 35074)
 }
 
-func expectConnectionOnPort(t *testing.T, connections <-chan Connection, port uint16) {
+func expectConnectionOnPort(t *testing.T, connections <-chan FullConnection, port uint16) {
 	found := false
 	for !found {
 		select {
 		case connection := <-connections:
-			if connection.localPort == port {
+			if connection.LocalPort == port {
 				t.Log("Found connection %v", connection)
 				found = true
 			} else {

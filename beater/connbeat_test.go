@@ -11,6 +11,7 @@ import (
 	"github.com/elastic/beats/libbeat/common"
 	"github.com/elastic/beats/libbeat/publisher"
 
+	"github.com/raboof/connbeat/connections"
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
 
@@ -48,7 +49,7 @@ func (tc TestClient) PublishEvent(event common.MapStr, opts ...publisher.ClientO
 func TestLocalIps(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
+	fullConnections, serverConnections := make(chan connections.FullConnection), make(chan connections.ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -57,14 +58,14 @@ func TestLocalIps(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
-	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
+	go beater.Pipe(fullConnections, serverConnections)
+	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, nil}
 	_ = <-client.evs
 
-	serverConnections <- ServerConnection{"127.0.0.1", 80, &httpd, nil}
+	serverConnections <- connections.ServerConnection{"127.0.0.1", 80, &httpd, nil}
 	_ = <-client.evs
 
-	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
+	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
 	evt := <-client.evs
 	ips, err := evt.GetValue("beat.local_ips")
 	if err != nil {
@@ -78,7 +79,7 @@ func TestLocalIps(t *testing.T) {
 func TestNoContainerInfo(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
+	fullConnections, serverConnections := make(chan connections.FullConnection), make(chan connections.ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -87,8 +88,8 @@ func TestNoContainerInfo(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
-	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, nil}
+	go beater.Pipe(fullConnections, serverConnections)
+	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, nil}
 	evt := <-client.evs
 
 	container, present := evt["container"]
@@ -132,7 +133,7 @@ func TestMapContainerInfoWithHostIp(t *testing.T) {
 func TestContainerInformation(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
+	fullConnections, serverConnections := make(chan connections.FullConnection), make(chan connections.ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -141,14 +142,14 @@ func TestContainerInformation(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
-	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
+	go beater.Pipe(fullConnections, serverConnections)
+	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                 "7786521dc8c9",
 		DockerhostHostname: "yinka",
 		DockerhostIP:       nil}}
 	_ = <-client.evs
 
-	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
+	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
 		ID:                 "785073e68b72",
 		DockerEnvironment:  nil,
 		DockerhostHostname: "yinka",
@@ -172,7 +173,7 @@ func TestContainerInformation(t *testing.T) {
 func TestNoContainerInformationLeakage(t *testing.T) {
 	beater := &Connbeat{}
 
-	connections, serverConnections := make(chan FullConnection), make(chan ServerConnection)
+	fullConnections, serverConnections := make(chan connections.FullConnection), make(chan connections.ServerConnection)
 
 	client := TestClient{
 		evs: make(chan common.MapStr),
@@ -181,14 +182,14 @@ func TestNoContainerInformationLeakage(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
-	go beater.Pipe(connections, serverConnections)
-	serverConnections <- ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
+	go beater.Pipe(fullConnections, serverConnections)
+	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                 "7786521dc8c9",
 		DockerhostHostname: "yinka",
 		DockerhostIP:       nil}}
 	_ = <-client.evs
 
-	connections <- FullConnection{LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
+	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, nil}, "43.23.2.4", 5113}
 	evt := <-client.evs
 
 	container, _ := evt.GetValue("container")
