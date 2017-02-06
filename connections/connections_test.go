@@ -214,23 +214,33 @@ func Test174(t *testing.T) {
 }
 
 func expectConnectionOnPort(t *testing.T, connections <-chan FullConnection, port uint16) {
-	found := false
-	for !found {
+	done := make(chan string, 1)
+
+	go func() {
+		time.Sleep(2 * time.Second)
+		done <- "timeout"
+	}()
+
+	for {
 		select {
 		case connection := <-connections:
 			if connection.LocalPort == port {
 				t.Log("Found connection", connection)
-				found = true
+				done <- "found"
 			} else {
 				t.Log("Ignored connection", connection)
 			}
-		default:
-			if !found {
+		case reason := <-done:
+			if reason == "found" {
+				// OK!
+			} else if reason == "timeout" {
 				t.Fatal("Did not find connection with local port", port)
+			} else {
+				t.Fatal("Unexpected reason", reason)
 			}
+			return
 		}
 	}
-
 }
 
 func insert174data(t *testing.T, socketInfo chan<- *sockets.SocketInfo) {
