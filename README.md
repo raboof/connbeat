@@ -10,9 +10,14 @@ is that Connbeat is intended to be able to monitor all connections on a
 machine (rather than just selected protocols), and does not inspect the
 package/connection contents, only metadata.
 
-## Status
+## Credits
 
-The software is functional, but battle-testing and performance tuning is still in progress.
+Development of connbeat was funded by [StackState](http://www.stackstate.com).
+Collecting connection data is only part of the puzzle: [StackState](http://www.stackstate.com)
+combines it with information from many other sources, presenting it in a way that
+provides actionable insights.
+
+![StackState logo](http://www.stackstate.com/wp-content/uploads/2016/12/Sts_LOGO_RGB_Full_Horizontal.png)
 
 ## Building
 
