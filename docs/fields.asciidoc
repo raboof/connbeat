@@ -1,6 +1,6 @@
 
 ////
-This file is generated! See etc/fields.yml and scripts/generate_field_docs.py
+This file is generated! See _meta/fields.yml and scripts/generate_field_docs.py
 ////
 
 [[exported-fields]]
@@ -13,6 +13,11 @@ This document describes the fields that are exported by Connbeat. They are
 grouped in the following categories:
 
 * <<exported-fields-beat>>
+* <<exported-fields-cloud>>
+* <<exported-fields-common>>
+* <<exported-fields-container>>
+* <<exported-fields-local>>
+* <<exported-fields-remote>>
 
 --
 [[exported-fields-beat]]
@@ -32,6 +37,12 @@ The name of the Beat sending the log messages. If the Beat name is set in the co
 === beat.hostname
 
 The hostname as returned by the operating system on which the Beat is running.
+
+
+[float]
+=== beat.version
+
+The version of the beat that generated this event.
 
 
 [float]
@@ -61,4 +72,148 @@ type: dict
 
 Contains user configurable fields.
 
+
+[[exported-fields-cloud]]
+== Cloud Provider Metadata Fields
+
+Metadata from cloud providers added by the add_cloud_metadata processor.
+
+
+
+[float]
+=== meta.cloud.provider
+
+example: ec2
+
+Name of the cloud provider. Possible values are ec2, gce, or digitalocean.
+
+
+[float]
+=== meta.cloud.instance_id
+
+Instance ID of the host machine.
+
+
+[float]
+=== meta.cloud.machine_type
+
+example: t2.medium
+
+Machine type of the host machine.
+
+
+[float]
+=== meta.cloud.availability_zone
+
+example: us-east-1c
+
+Availability zone in which this host is running.
+
+
+[float]
+=== meta.cloud.project_id
+
+example: project-x
+
+Name of the project in Google Cloud.
+
+
+[float]
+=== meta.cloud.region
+
+Region in which this host is running.
+
+
+[[exported-fields-common]]
+== Common Fields
+
+Common fields
+
+
+[float]
+=== type
+
+Type of beat event (always 'connbeat')
+
+[[exported-fields-container]]
+== Container Fields
+
+Fields related to a connection on a monitored container
+
+
+[float]
+=== container.id
+
+id of this container instance
+
+[float]
+=== container.name
+
+name of this container instance
+
+[float]
+=== container.image
+
+image on which this container instance was based
+
+[float]
+=== container.env
+
+environment variables passed to this container, if configured in the docker_environment configuration whitelist
+
+[float]
+=== container.local_ips
+
+ip's that thusfar have been seen as local to this container instance
+
+[float]
+=== container.ports
+
+port mappings
+
+[float]
+=== container.docker_host.hostname
+
+hostname of the docker host on which this container instance is running, found via 'docker info' or passed in using the DOCKERHOST_HOSTNAME environment variable.
+
+[float]
+=== container.docker_host.ips
+
+IP addresses associated with the docker host on which this containr instance is running, found by resolving the name or passed in using the DOCKERHOST_IP environment variable.
+
+[[exported-fields-local]]
+== Local Fields
+
+Fields related to the machine being monitored
+
+
+[float]
+=== local_port
+
+type: integer
+
+Port on side of the machine being monitored
+
+[float]
+=== local_process
+
+Metadata about the process associated with this connection (if expose_process_info was enabled)
+
+[[exported-fields-remote]]
+== Remote Fields
+
+Fields related to the remote side of the connection
+
+
+[float]
+=== remote_ip
+
+Optional, the IP of the 'remote side' of this connection
+
+[float]
+=== remote_port
+
+type: integer
+
+Optional, the port of the 'remote side' of this connection
 

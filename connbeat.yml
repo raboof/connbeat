@@ -1,26 +1,99 @@
+################### Connbeat Configuration Example #########################
+
+# This file is an example configuration file highlighting only some common options.
+# The connbeat.full.yml file in the same directory contains all the supported options
+# with detailed comments. You can use it for reference.
+#
+# You can find the full configuration reference here:
+# https://github.com/raboof/connbeat
+
+############################# Connbeat ######################################
+
 connbeat:
+  # Expose information about processes associated with connections at all
   expose_process_info: true
+
+  # When exposing information about processes associated with connections,
+  # also include the command-line with which the process was started
   expose_cmdline: false
+
+  # When exposing information about processes associated with connections,
+  # also include the environment variables passed to this process
   expose_environ: true
+
+  # The same connection will not be published again
+  # within the aggregation interval
   aggregation: 10s
+
+  # Connections will be polled on this interval
   poll_interval: 2s
+
+  # Use the netlink tcp_diag kernel interface to retrieve
+  # connections. More performant but less portable.
   enable_tcp_diag: true
+
+  # Use docker to monitor connections from docker containers.
+  # For connections from docker containers process metadata
+  # will never be collected.
   enable_docker: false
+
+  # When publishing a connections from a docker container,
+  # expose these environment variables if passed to that
+  # container.
   docker_environment: ["PATH"]
 
-output:
-  #http:
-  #  hosts: ["pi.bzzt.net:80/foo"]
+#================================ General =====================================
 
-  #kafka:
-  #  hosts: ["localhost:9092"]
-  #  topic: connbeat
+# The name of the shipper that publishes the network data. It can be used to group
+# all the transactions sent by a single shipper in the web interface.
+#name:
 
-  #elasticsearch:
-  #  hosts: ["localhost:9200"]
-    #template:
-    #  name: "connbeat"
-    #  path: "connbeat.template.json"
+# The tags of the shipper are included in their own field with each
+# transaction published.
+#tags: ["service-X", "web-tier"]
 
-  console:
-    pretty: true
+# Optional fields that you can specify to add additional information to the
+# output.
+#fields:
+#  env: staging
+
+#================================ Outputs =====================================
+
+# Configure what outputs to use when sending the data collected by the beat.
+# Multiple outputs may be used.
+
+#-------------------------- Elasticsearch output ------------------------------
+output.elasticsearch:
+  # Array of hosts to connect to.
+  hosts: ["localhost:9200"]
+
+  # Optional protocol and basic auth credentials.
+  #protocol: "https"
+  #username: "elastic"
+  #password: "changeme"
+
+#----------------------------- Logstash output --------------------------------
+#output.logstash:
+  # The Logstash hosts
+  #hosts: ["localhost:5044"]
+
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  #ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+  # Certificate for SSL client authentication
+  #ssl.certificate: "/etc/pki/client/cert.pem"
+
+  # Client Certificate Key
+  #ssl.key: "/etc/pki/client/cert.key"
+
+#================================ Logging =====================================
+
+# Sets log level. The default log level is info.
+# Available log levels are: critical, error, warning, info, debug
+#logging.level: debug
+
+# At debug level, you can selectively enable logging only for some components.
+# To enable all selectors use ["*"]. Examples of other selectors are "beat",
+# "publish", "service".
+#logging.selectors: ["*"]

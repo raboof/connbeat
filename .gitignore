@@ -3,5 +3,6 @@ connbeat
 connbeat.test
 logs
 unpacked
+_meta/kibana/index-pattern
 
 *.pyc
