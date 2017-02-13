@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/versions"
@@ -54,7 +55,7 @@ func newDockerCommand(dockerCli *command.DockerCli) *cobra.Command {
 	cli.SetupRootCommand(cmd)
 
 	cmd.SetHelpFunc(func(ccmd *cobra.Command, args []string) {
-		if dockerCli.Client() == nil { // when using --help, PersistenPreRun is not called, so initialization is needed.
+		if dockerCli.Client() == nil { // when using --help, PersistentPreRun is not called, so initialization is needed.
 			// flags must be the top-level command flags, not cmd.Flags()
 			opts.Common.SetDefaultOptions(flags)
 			dockerPreRun(opts)
@@ -144,7 +145,7 @@ func hideUnsupportedFeatures(cmd *cobra.Command, clientVersion string, hasExperi
 		}
 
 		// hide flags not supported by the server
-		if flagVersion, ok := f.Annotations["version"]; ok && len(flagVersion) == 1 && versions.LessThan(clientVersion, flagVersion[0]) {
+		if !isFlagSupported(f, clientVersion) {
 			f.Hidden = true
 		}
 
@@ -168,13 +169,44 @@ func hideUnsupportedFeatures(cmd *cobra.Command, clientVersion string, hasExperi
 func isSupported(cmd *cobra.Command, clientVersion string, hasExperimental bool) error {
 	if !hasExperimental {
 		if _, ok := cmd.Tags["experimental"]; ok {
-			return errors.New("only supported with experimental daemon")
+			return errors.New("only supported on a Docker daemon with experimental features enabled")
 		}
 	}
 
 	if cmdVersion, ok := cmd.Tags["version"]; ok && versions.LessThan(clientVersion, cmdVersion) {
-		return fmt.Errorf("only supported with daemon version >= %s", cmdVersion)
+		return fmt.Errorf("requires API version %s, but the Docker daemon API version is %s", cmdVersion, clientVersion)
+	}
+
+	errs := []string{}
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Changed {
+			if !isFlagSupported(f, clientVersion) {
+				errs = append(errs, fmt.Sprintf("\"--%s\" requires API version %s, but the Docker daemon API version is %s", f.Name, getFlagVersion(f), clientVersion))
+				return
+			}
+			if _, ok := f.Annotations["experimental"]; ok && !hasExperimental {
+				errs = append(errs, fmt.Sprintf("\"--%s\" is only supported on a Docker daemon with experimental features enabled", f.Name))
+			}
+		}
+	})
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
 	}
 
 	return nil
+}
+
+func getFlagVersion(f *pflag.Flag) string {
+	if flagVersion, ok := f.Annotations["version"]; ok && len(flagVersion) == 1 {
+		return flagVersion[0]
+	}
+	return ""
+}
+
+func isFlagSupported(f *pflag.Flag, clientVersion string) bool {
+	if v := getFlagVersion(f); v != "" {
+		return versions.GreaterThanOrEqualTo(clientVersion, v)
+	}
+	return true
 }

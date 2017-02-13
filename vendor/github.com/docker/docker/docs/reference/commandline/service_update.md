@@ -32,7 +32,7 @@ Options:
       --dns-rm list                      Remove a custom DNS server (default [])
       --dns-search-add list              Add or update a custom DNS search domain (default [])
       --dns-search-rm list               Remove a DNS search domain (default [])
-      --endpoint-mode string             Endpoint mode (vip or dnsrr)
+      --endpoint-mode string             Endpoint mode (vip or dnsrr) (default "vip")
       --env-add list                     Add or update an environment variable (default [])
       --env-rm list                      Remove an environment variable (default [])
       --force                            Force update even if no changes require it
@@ -50,7 +50,7 @@ Options:
       --label-add list                   Add or update a service label (default [])
       --label-rm list                    Remove a label by its key (default [])
       --limit-cpu decimal                Limit CPUs (default 0.000)
-      --limit-memory bytes               Limit Memory (default 0 B)
+      --limit-memory bytes               Limit Memory
       --log-driver string                Logging driver for service
       --log-opt list                     Logging driver options (default [])
       --mount-add mount                  Add or update a mount on a service
@@ -58,9 +58,10 @@ Options:
       --no-healthcheck                   Disable any container-specified HEALTHCHECK
       --publish-add port                 Add or update a published port
       --publish-rm port                  Remove a published port by its target port
+      --read-only                        Mount the container's root filesystem as read only
       --replicas uint                    Number of tasks
       --reserve-cpu decimal              Reserve CPUs (default 0.000)
-      --reserve-memory bytes             Reserve Memory (default 0 B)
+      --reserve-memory bytes             Reserve Memory
       --restart-condition string         Restart when condition is met (none, on-failure, or any)
       --restart-delay duration           Delay between restart attempts (ns|us|ms|s|m|h)
       --restart-max-attempts uint        Maximum number of restarts before giving up
@@ -79,6 +80,8 @@ Options:
       --with-registry-auth               Send registry authentication details to swarm agents
   -w, --workdir string                   Working directory inside the container
 ```
+
+## Description
 
 Updates a service as described by the specified parameters. This command has to be run targeting a manager node.
 The parameters are the same as [`docker service create`](service_create.md). Please look at the description there
@@ -111,7 +114,7 @@ that only one task is replaced at a time (this is the default behavior). The
 `--update-delay 30s` setting introduces a 30 second delay between tasks, so
 that the rolling restart happens gradually.
 
-### Adding and removing mounts
+### Add or remove mounts
 
 Use the `--mount-add` or `--mount-rm` options add or remove a service's bind-mounts
 or volumes.
@@ -151,7 +154,7 @@ $ docker service update --mount-rm /somewhere myservice
 myservice
 ```
 
-### Adding and removing secrets
+### Add or remove secrets
 
 Use the `--secret-add` or `--secret-rm` options add or remove a service's
 secrets.
@@ -170,7 +173,7 @@ $ docker service update \
 Some flags of `service update` support the use of templating.
 See [`service create`](./service_create.md#templating) for the reference.
 
-## Related information
+## Related commands
 
 * [service create](service_create.md)
 * [service inspect](service_inspect.md)

@@ -13,13 +13,23 @@ keywords: "API, Docker, rcli, REST, documentation"
      will be rejected.
 -->
 
+## v1.27 API changes
+
+[Docker Engine API v1.27](https://docs.docker.com/engine/api/v1.27/) documentation
+
+* `GET /containers/(id or name)/attach/ws` now returns WebSocket in binary frame format for API version >= v1.27, and returns WebSocket in text frame format for API version< v1.27, for the purpose of backward-compatibility.
+* `GET /networks` is optimised only to return list of all networks and network specific information. List of all containers attached to a specific network is removed from this API and is only available using the network specific `GET /networks/{network-id}.
+* `GET /containers/json` now supports `publish` and `expose` filters to filter containers that expose or publish certain ports.
+
 ## v1.26 API changes
 
-[Docker Engine API v1.26](v1.26/) documentation
+[Docker Engine API v1.26](https://docs.docker.com/engine/api/v1.26/) documentation
+
+* `POST /plugins/(plugin name)/upgrade` upgrade a plugin.
 
 ## v1.25 API changes
 
-[Docker Engine API v1.25](v1.25.md) documentation
+[Docker Engine API v1.25](https://docs.docker.com/engine/api/v1.25/) documentation
 
 * The API version is now required in all API calls. Instead of just requesting, for example, the URL `/containers/json`, you must now request `/v1.25/containers/json`.
 * `GET /version` now returns `MinAPIVersion`.
@@ -82,6 +92,8 @@ keywords: "API, Docker, rcli, REST, documentation"
 * `GET /secrets/{id}` returns information on the secret `id`.
 * `POST /secrets/{id}/update` updates the secret `id`.
 * `POST /services/(id or name)/update` now accepts service name or prefix of service id as a parameter.
+* `POST /containers/create` added 2 built-in log-opts that work on all logging drivers,
+`mode` (`blocking`|`non-blocking`), and `max-buffer-size` (e.g. `2m`) which enables a non-blocking log buffer.
 
 ## v1.24 API changes
 

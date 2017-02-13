@@ -88,7 +88,7 @@ func (daemon *Daemon) load(id string) (*container.Container, error) {
 }
 
 // Register makes a container object usable by the daemon as <container.ID>
-func (daemon *Daemon) Register(c *container.Container) error {
+func (daemon *Daemon) Register(c *container.Container) {
 	// Attach to stdout and stderr
 	if c.Config.OpenStdin {
 		c.StreamConfig.NewInputPipes()
@@ -98,8 +98,6 @@ func (daemon *Daemon) Register(c *container.Container) error {
 
 	daemon.containers.Add(c.ID, c)
 	daemon.idIndex.Add(c.ID)
-
-	return nil
 }
 
 func (daemon *Daemon) newContainer(name string, config *containertypes.Config, hostConfig *containertypes.HostConfig, imgID image.ID, managed bool) (*container.Container, error) {
@@ -229,6 +227,21 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 		for _, env := range config.Env {
 			if _, err := opts.ValidateEnv(env); err != nil {
 				return nil, err
+			}
+		}
+
+		// Validate the healthcheck params of Config
+		if config.Healthcheck != nil {
+			if config.Healthcheck.Interval != 0 && config.Healthcheck.Interval < time.Second {
+				return nil, fmt.Errorf("Interval in Healthcheck cannot be less than one second")
+			}
+
+			if config.Healthcheck.Timeout != 0 && config.Healthcheck.Timeout < time.Second {
+				return nil, fmt.Errorf("Timeout in Healthcheck cannot be less than one second")
+			}
+
+			if config.Healthcheck.Retries < 0 {
+				return nil, fmt.Errorf("Retries in Healthcheck cannot be negative")
 			}
 		}
 	}
