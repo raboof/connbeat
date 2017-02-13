@@ -10,11 +10,34 @@
 ############################# Connbeat ######################################
 
 connbeat:
+  # Expose information about processes associated with connections at all
   expose_process_info: true
+
+  # When exposing information about processes associated with connections,
+  # also include the command-line with which the process was started
   expose_cmdline: false
+
+  # When exposing information about processes associated with connections,
+  # also include the environment variables passed to this process
   expose_environ: true
+
+  # The same connection will not be published again
+  # within the aggregation interval
   aggregation: 10s
+
+  # Connections will be polled on this interval
   poll_interval: 2s
+
+  # Use the netlink tcp_diag kernel interface to retrieve
+  # connections. More performant but less portable.
   enable_tcp_diag: true
+
+  # Use docker to monitor connections from docker containers.
+  # For connections from docker containers process metadata
+  # will never be collected.
   enable_docker: false
+
+  # When publishing a connections from a docker container,
+  # expose these environment variables if passed to that
+  # container.
   docker_environment: ["PATH"]
