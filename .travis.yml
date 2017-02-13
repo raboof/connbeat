@@ -16,7 +16,7 @@ env:
     - TARGETS="check"
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
-    #- TARGETS="package"
+    - TARGETS="package"
     - TARGETS="docker_peers"
   global:
     - DOCKER_COMPOSE_VERSION: 1.7.0
@@ -29,7 +29,7 @@ before_install:
   - cd $HOME/gopath/src/github.com/raboof/connbeat/
   - make update_version
   - if [[ "$TARGETS" == "testsuite" ]]; then ./installDocker.sh; go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover; fi
-  - if [[ "$TARGETS" == "package" ]]; then ./installDocker.sh; cd ./vendor/github.com/elastic/beats/dev-tools/packer/docker/xgo-image ; ./build.sh ; cd - ; fi
+  - if [[ "$TARGETS" == "package" ]]; then ./installDocker.sh; fi
   - go get -v github.com/Masterminds/glide
 
 deploy:
