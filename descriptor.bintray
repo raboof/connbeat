@@ -5,13 +5,13 @@
     "subject": "raboofje"
   },
   "version": {
-    "name": "0.0.1-SNAPSHOT",
+    "name": "SNAPSHOT",
     "gpgSign": false
   },
   "files": [
     { 
-      "includePattern": "connbeat",
-      "uploadPattern": "connbeat",
+      "includePattern": "build/upload/(.*)",
+      "uploadPattern": "$1",
       "matrixParams": {
         "override": 1
       }
