@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -379,6 +378,10 @@ func (s *DockerSuite) TestBuildCacheAdd(c *check.C) {
 }
 
 func (s *DockerSuite) TestBuildLastModified(c *check.C) {
+	// Temporary fix for #30890. TODO @jhowardmsft figure out what
+	// has changed in the master busybox image.
+	testRequires(c, DaemonIsLinux)
+
 	name := "testbuildlastmodified"
 
 	server := fakeStorage(c, map[string]string{
@@ -1149,10 +1152,7 @@ func (s *DockerSuite) TestBuildWithInaccessibleFilesInContext(c *check.C) {
 }
 
 func (s *DockerSuite) TestBuildForceRm(c *check.C) {
-	containerCountBefore, err := getContainerCount()
-	if err != nil {
-		c.Fatalf("failed to get the container count: %s", err)
-	}
+	containerCountBefore := getContainerCount(c)
 	name := "testbuildforcerm"
 
 	buildImage(name, withBuildFlags("--force-rm"), withBuildContext(c,
@@ -1162,11 +1162,7 @@ func (s *DockerSuite) TestBuildForceRm(c *check.C) {
 		ExitCode: 1,
 	})
 
-	containerCountAfter, err := getContainerCount()
-	if err != nil {
-		c.Fatalf("failed to get the container count: %s", err)
-	}
-
+	containerCountAfter := getContainerCount(c)
 	if containerCountBefore != containerCountAfter {
 		c.Fatalf("--force-rm shouldn't have left containers behind")
 	}
@@ -1196,19 +1192,12 @@ func (s *DockerSuite) TestBuildRm(c *check.C) {
 	}
 
 	for _, tc := range testCases {
-		containerCountBefore, err := getContainerCount()
-		if err != nil {
-			c.Fatalf("failed to get the container count: %s", err)
-		}
+		containerCountBefore := getContainerCount(c)
 
 		buildImageSuccessfully(c, name, withBuildFlags(tc.buildflags...), withDockerfile(`FROM busybox
 	RUN echo hello world`))
 
-		containerCountAfter, err := getContainerCount()
-		if err != nil {
-			c.Fatalf("failed to get the container count: %s", err)
-		}
-
+		containerCountAfter := getContainerCount(c)
 		if tc.shouldLeftContainerBehind {
 			if containerCountBefore == containerCountAfter {
 				c.Fatalf("flags %v should have left containers behind", tc.buildflags)
@@ -2594,7 +2583,7 @@ USER 1042:1043
 RUN [ "$(id -u):$(id -g)/$(id -un):$(id -gn)/$(id -G):$(id -Gn)" = '1042:1043/1042:1043/1043:1043' ]`))
 }
 
-// FIXME(vdemeester) rename this test (and probably "merge" it with the one below TestBuildEnvUsage2)
+// FIXME(vdemeester) rename this test (and probably "merge" it with the one below TestBuildEnvUsage2)
 func (s *DockerSuite) TestBuildEnvUsage(c *check.C) {
 	// /docker/world/hello is not owned by the correct user
 	testRequires(c, NotUserNamespace)
@@ -2625,7 +2614,7 @@ RUN    [ "$ghi" = "def" ]
 	))
 }
 
-// FIXME(vdemeester) rename this test (and probably "merge" it with the one above TestBuildEnvUsage)
+// FIXME(vdemeester) rename this test (and probably "merge" it with the one above TestBuildEnvUsage)
 func (s *DockerSuite) TestBuildEnvUsage2(c *check.C) {
 	// /docker/world/hello is not owned by the correct user
 	testRequires(c, NotUserNamespace)
@@ -2863,13 +2852,10 @@ func (s *DockerSuite) TestBuildAddTarXz(c *check.C) {
 			c.Fatalf("failed to close tar archive: %v", err)
 		}
 
-		xzCompressCmd := exec.Command("xz", "-k", "test.tar")
-		xzCompressCmd.Dir = tmpDir
-		out, _, err := runCommandWithOutput(xzCompressCmd)
-		if err != nil {
-			c.Fatal(err, out)
-		}
-
+		icmd.RunCmd(icmd.Cmd{
+			Command: []string{"xz", "-k", "test.tar"},
+			Dir:     tmpDir,
+		}).Assert(c, icmd.Success)
 		if err := ioutil.WriteFile(filepath.Join(tmpDir, "Dockerfile"), []byte(dockerfile), 0644); err != nil {
 			c.Fatalf("failed to open destination dockerfile: %v", err)
 		}
@@ -2913,20 +2899,15 @@ func (s *DockerSuite) TestBuildAddTarXzGz(c *check.C) {
 			c.Fatalf("failed to close tar archive: %v", err)
 		}
 
-		xzCompressCmd := exec.Command("xz", "-k", "test.tar")
-		xzCompressCmd.Dir = tmpDir
-		out, _, err := runCommandWithOutput(xzCompressCmd)
-		if err != nil {
-			c.Fatal(err, out)
-		}
+		icmd.RunCmd(icmd.Cmd{
+			Command: []string{"xz", "-k", "test.tar"},
+			Dir:     tmpDir,
+		}).Assert(c, icmd.Success)
 
-		gzipCompressCmd := exec.Command("gzip", "test.tar.xz")
-		gzipCompressCmd.Dir = tmpDir
-		out, _, err = runCommandWithOutput(gzipCompressCmd)
-		if err != nil {
-			c.Fatal(err, out)
-		}
-
+		icmd.RunCmd(icmd.Cmd{
+			Command: []string{"gzip", "test.tar.xz"},
+			Dir:     tmpDir,
+		})
 		if err := ioutil.WriteFile(filepath.Join(tmpDir, "Dockerfile"), []byte(dockerfile), 0644); err != nil {
 			c.Fatalf("failed to open destination dockerfile: %v", err)
 		}
@@ -3082,7 +3063,7 @@ func (s *DockerSuite) TestBuildInvalidTag(c *check.C) {
 	name := "abcd:" + stringutils.GenerateRandomAlphaOnlyString(200)
 	buildImage(name, withDockerfile("FROM "+minimalBaseImage()+"\nMAINTAINER quux\n")).Assert(c, icmd.Expected{
 		ExitCode: 125,
-		Err:      "Error parsing reference",
+		Err:      "invalid reference format",
 	})
 }
 
@@ -3571,7 +3552,7 @@ CMD cat /foo/file`),
 
 }
 
-// FIXME(vdemeester) part of this should be unit test, other part should be clearer
+// FIXME(vdemeester) part of this should be unit test, other part should be clearer
 func (s *DockerSuite) TestBuildRenamedDockerfile(c *check.C) {
 	ctx := fakeContext(c, `FROM busybox
 	RUN echo from Dockerfile`,
@@ -5591,8 +5572,7 @@ func (s *DockerSuite) TestBuildSquashParent(c *check.C) {
 	dockerCmd(c, "run", "--rm", id, "/bin/sh", "-c", `[ "$(echo $HELLO)" == "world" ]`)
 
 	// make sure the ID produced is the ID of the tag we specified
-	inspectID, err := inspectImage("test", ".ID")
-	c.Assert(err, checker.IsNil)
+	inspectID := inspectImage(c, "test", ".ID")
 	c.Assert(inspectID, checker.Equals, id)
 
 	origHistory, _ := dockerCmd(c, "history", origID)
@@ -5602,8 +5582,7 @@ func (s *DockerSuite) TestBuildSquashParent(c *check.C) {
 	splitTestHistory := strings.Split(strings.TrimSpace(testHistory), "\n")
 	c.Assert(len(splitTestHistory), checker.Equals, len(splitOrigHistory)+1)
 
-	out, err = inspectImage(id, "len .RootFS.Layers")
-	c.Assert(err, checker.IsNil)
+	out = inspectImage(c, id, "len .RootFS.Layers")
 	c.Assert(strings.TrimSpace(out), checker.Equals, "3")
 }
 

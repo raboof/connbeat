@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	timetypes "github.com/docker/docker/api/types/time"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/directory"
-	"github.com/docker/docker/reference"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/docker/volume"
 	"github.com/docker/libnetwork"
@@ -132,27 +132,32 @@ func (daemon *Daemon) ImagesPrune(pruneFilters filters.Args) (*types.ImagesPrune
 			continue
 		}
 
-		deletedImages := []types.ImageDelete{}
+		deletedImages := []types.ImageDeleteResponseItem{}
 		refs := daemon.referenceStore.References(dgst)
 		if len(refs) > 0 {
-			if danglingOnly {
-				// Not a dangling image
-				continue
+			shouldDelete := !danglingOnly
+			if !shouldDelete {
+				hasTag := false
+				for _, ref := range refs {
+					if _, ok := ref.(reference.NamedTagged); ok {
+						hasTag = true
+						break
+					}
+				}
+
+				// Only delete if it's untagged (i.e. repo:<none>)
+				shouldDelete = !hasTag
 			}
 
-			nrRefs := len(refs)
-			for _, ref := range refs {
-				// If nrRefs == 1, we have an image marked as myreponame:<none>
-				// i.e. the tag content was changed
-				if _, ok := ref.(reference.Canonical); ok && nrRefs > 1 {
-					continue
+			if shouldDelete {
+				for _, ref := range refs {
+					imgDel, err := daemon.ImageDelete(ref.String(), false, true)
+					if err != nil {
+						logrus.Warnf("could not delete reference %s: %v", ref.String(), err)
+						continue
+					}
+					deletedImages = append(deletedImages, imgDel...)
 				}
-				imgDel, err := daemon.ImageDelete(ref.String(), false, true)
-				if err != nil {
-					logrus.Warnf("could not delete reference %s: %v", ref.String(), err)
-					continue
-				}
-				deletedImages = append(deletedImages, imgDel...)
 			}
 		} else {
 			imgDel, err := daemon.ImageDelete(hex, false, true)

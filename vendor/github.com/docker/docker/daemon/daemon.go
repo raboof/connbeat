@@ -26,14 +26,13 @@ import (
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/daemon/events"
 	"github.com/docker/docker/daemon/exec"
-	"github.com/docker/docker/daemon/initlayer"
-	"github.com/docker/docker/dockerversion"
-	"github.com/docker/docker/plugin"
-	"github.com/docker/libnetwork/cluster"
 	// register graph drivers
 	_ "github.com/docker/docker/daemon/graphdriver/register"
+	"github.com/docker/docker/daemon/initlayer"
+	"github.com/docker/docker/daemon/stats"
 	dmetadata "github.com/docker/docker/distribution/metadata"
 	"github.com/docker/docker/distribution/xfer"
+	"github.com/docker/docker/dockerversion"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/libcontainerd"
@@ -46,13 +45,15 @@ import (
 	"github.com/docker/docker/pkg/sysinfo"
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/pkg/truncindex"
-	"github.com/docker/docker/reference"
+	"github.com/docker/docker/plugin"
+	refstore "github.com/docker/docker/reference"
 	"github.com/docker/docker/registry"
 	"github.com/docker/docker/runconfig"
 	volumedrivers "github.com/docker/docker/volume/drivers"
 	"github.com/docker/docker/volume/local"
 	"github.com/docker/docker/volume/store"
 	"github.com/docker/libnetwork"
+	"github.com/docker/libnetwork/cluster"
 	nwconfig "github.com/docker/libnetwork/config"
 	"github.com/docker/libtrust"
 	"github.com/pkg/errors"
@@ -75,14 +76,14 @@ type Daemon struct {
 	repository                string
 	containers                container.Store
 	execCommands              *exec.Store
-	referenceStore            reference.Store
+	referenceStore            refstore.Store
 	downloadManager           *xfer.LayerDownloadManager
 	uploadManager             *xfer.LayerUploadManager
 	distributionMetadataStore dmetadata.Store
 	trustKey                  libtrust.PrivateKey
 	idIndex                   *truncindex.TruncIndex
 	configStore               *Config
-	statsCollector            *statsCollector
+	statsCollector            *stats.Collector
 	defaultLogConfig          containertypes.LogConfig
 	RegistryService           registry.Service
 	EventsService             *events.Events
@@ -91,6 +92,7 @@ type Daemon struct {
 	discoveryWatcher          discoveryReloader
 	root                      string
 	seccompEnabled            bool
+	apparmorEnabled           bool
 	shutdown                  bool
 	uidMaps                   []idtools.IDMap
 	gidMaps                   []idtools.IDMap
@@ -105,6 +107,8 @@ type Daemon struct {
 	defaultIsolation          containertypes.Isolation // Default isolation mode on Windows
 	clusterProvider           cluster.Provider
 	cluster                   Cluster
+
+	machineMemory uint64
 
 	seccompProfile     []byte
 	seccompProfilePath string
@@ -164,11 +168,7 @@ func (daemon *Daemon) restore() error {
 			delete(containers, id)
 			continue
 		}
-		if err := daemon.Register(c); err != nil {
-			logrus.Errorf("Failed to register container %s: %s", c.ID, err)
-			delete(containers, id)
-			continue
-		}
+		daemon.Register(c)
 
 		// verify that all volumes valid and have been migrated from the pre-1.7 layout
 		if err := daemon.verifyVolumesInfo(c); err != nil {
@@ -433,8 +433,22 @@ func (daemon *Daemon) registerLink(parent, child *container.Container, alias str
 	return nil
 }
 
-// SetClusterProvider sets a component for querying the current cluster state.
-func (daemon *Daemon) SetClusterProvider(clusterProvider cluster.Provider) {
+// DaemonJoinsCluster informs the daemon has joined the cluster and provides
+// the handler to query the cluster component
+func (daemon *Daemon) DaemonJoinsCluster(clusterProvider cluster.Provider) {
+	daemon.setClusterProvider(clusterProvider)
+}
+
+// DaemonLeavesCluster informs the daemon has left the cluster
+func (daemon *Daemon) DaemonLeavesCluster() {
+	// Daemon is in charge of removing the attachable networks with
+	// connected containers when the node leaves the swarm
+	daemon.clearAttachableNetworks()
+	daemon.setClusterProvider(nil)
+}
+
+// setClusterProvider sets a component for querying the current cluster state.
+func (daemon *Daemon) setClusterProvider(clusterProvider cluster.Provider) {
 	daemon.clusterProvider = clusterProvider
 	daemon.netController.SetClusterProvider(clusterProvider)
 }
@@ -551,7 +565,7 @@ func NewDaemon(config *Config, registryService registry.Service, containerdRemot
 	// Plugin system initialization should happen before restore. Do not change order.
 	d.pluginManager, err = plugin.NewManager(plugin.ManagerConfig{
 		Root:               filepath.Join(config.Root, "plugins"),
-		ExecRoot:           "/run/docker/plugins", // possibly needs fixing
+		ExecRoot:           getPluginExecRoot(config.Root),
 		Store:              d.PluginStore,
 		Executor:           containerdRemote,
 		RegistryService:    registryService,
@@ -623,7 +637,7 @@ func NewDaemon(config *Config, registryService registry.Service, containerdRemot
 
 	eventsService := events.New()
 
-	referenceStore, err := reference.NewReferenceStore(filepath.Join(imageRoot, "repositories.json"))
+	referenceStore, err := refstore.NewReferenceStore(filepath.Join(imageRoot, "repositories.json"))
 	if err != nil {
 		return nil, fmt.Errorf("Couldn't create Tag store repositories: %s", err)
 	}
@@ -666,6 +680,7 @@ func NewDaemon(config *Config, registryService registry.Service, containerdRemot
 	d.uidMaps = uidMaps
 	d.gidMaps = gidMaps
 	d.seccompEnabled = sysInfo.Seccomp
+	d.apparmorEnabled = sysInfo.AppArmor
 
 	d.nameIndex = registrar.NewRegistrar()
 	d.linkIndex = newLinkIndex()

@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-01-22T23:02:43.10490024Z
+updated: 2017-02-13T09:21:25.223672779Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -10,9 +10,9 @@ imports:
   subpackages:
   - spew
 - name: github.com/deckarep/golang-set
-  version: 52ba7f28f319e9d560acbf47c7fcf9b9ee7aa7d3
+  version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: b319221c21228068c226b51e21ca767b348b423b
+  version: a8f4d82176139babcd818fcb4590eec22860ffc9
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -40,11 +40,11 @@ imports:
   - pkg/term
   - pkg/term/windows
 - name: github.com/docker/go-connections
-  version: eb315e36415380e7c2fdee175262560ff42359da
+  version: 7da10c8c50cad14494ec818dcdfb6506265c0086
   subpackages:
   - nat
 - name: github.com/docker/go-units
-  version: e30f1e79f3cd72542f2026ceec18d3bd67ab859c
+  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
 - name: github.com/eapache/go-resiliency
   version: b86b1ec0dd4209a588dc1285cdd471e73525c0b3
   subpackages:
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: aba8f7a55013a52b08d07dd99e004d6f83c436b0
+  version: 5322f03ce4fb7365e12ac25fb1c9a172b117ce5b
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 53f04ab33b89eef256c320c36435a10b672d473d
+  version: c342fd4c3d69bdc9767083cc61d11756e7323b64
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -122,7 +122,7 @@ imports:
 - name: github.com/gorilla/mux
   version: 392c28fe23e1c45ddba891b0320b3b5df220beea
 - name: github.com/hashicorp/go-cleanhttp
-  version: ad28ea4487f05916463e2423a55166280e8254b5
+  version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -135,11 +135,13 @@ imports:
 - name: github.com/klauspost/crc32
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
-  version: 307e919c663683a9000576fdc855acaf9534c165
+  version: fff283ad5116362ca252298cfc9b95828956d85d
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
+- name: github.com/Nvveen/Gotty
+  version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: 0fefa36f3ac057f579adca3016cc260a0f805d3e
+  version: 4f21aea40d060d0171b1c94861f2f63f4a6029d0
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -163,7 +165,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 61e43dc76f7ee59a82bdf3d71033dc12bea4c77d
+  version: 3f603f494d61c73457fb234161d8982b9f0f0b71
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:

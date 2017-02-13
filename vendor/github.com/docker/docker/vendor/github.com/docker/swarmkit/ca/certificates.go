@@ -151,6 +151,25 @@ func (rca *RootCA) IssueAndSaveNewCertificates(kw KeyWriter, cn, ou, org string)
 	return &tlsKeyPair, nil
 }
 
+// Normally we can just call cert.Verify(opts), but since we actually want more information about
+// whether a certificate is not yet valid or expired, we also need to perform the expiry checks ourselves.
+func verifyCertificate(cert *x509.Certificate, opts x509.VerifyOptions, allowExpired bool) error {
+	_, err := cert.Verify(opts)
+	if invalidErr, ok := err.(x509.CertificateInvalidError); ok && invalidErr.Reason == x509.Expired {
+		now := time.Now().UTC()
+		if now.Before(cert.NotBefore) {
+			return errors.Wrapf(err, "certificate not valid before %s, and it is currently %s",
+				cert.NotBefore.UTC().Format(time.RFC1123), now.Format(time.RFC1123))
+		}
+		if allowExpired {
+			return nil
+		}
+		return errors.Wrapf(err, "certificate expires at %s, and it is currently %s",
+			cert.NotAfter.UTC().Format(time.RFC1123), now.Format(time.RFC1123))
+	}
+	return err
+}
+
 // RequestAndSaveNewCertificates gets new certificates issued, either by signing them locally if a signer is
 // available, or by requesting them from the remote server at remoteAddr.
 func (rca *RootCA) RequestAndSaveNewCertificates(ctx context.Context, kw KeyWriter, config CertificateRequestConfig) (*tls.Certificate, error) {
@@ -199,7 +218,7 @@ func (rca *RootCA) RequestAndSaveNewCertificates(ctx context.Context, kw KeyWrit
 		Roots: rca.Pool,
 	}
 	// Check to see if this certificate was signed by our CA, and isn't expired
-	if _, err := X509Cert.Verify(opts); err != nil {
+	if err := verifyCertificate(X509Cert, opts, false); err != nil {
 		return nil, err
 	}
 
@@ -461,7 +480,7 @@ func getGRPCConnection(creds credentials.TransportCredentials, connBroker *conne
 	return connBroker.Select(dialOpts...)
 }
 
-// GetRemoteCA returns the remote endpoint's CA certificate
+// GetRemoteCA returns the remote endpoint's CA certificate bundle
 func GetRemoteCA(ctx context.Context, d digest.Digest, connBroker *connectionbroker.Broker) (RootCA, error) {
 	// This TLS Config is intentionally using InsecureSkipVerify. We use the
 	// digest instead to check the integrity of the CA certificate.
@@ -482,6 +501,10 @@ func GetRemoteCA(ctx context.Context, d digest.Digest, connBroker *connectionbro
 		return RootCA{}, err
 	}
 
+	// If a bundle of certificates are provided, the digest covers the entire bundle and not just
+	// one of the certificates in the bundle.  Otherwise, a node can be MITMed while joining if
+	// the MITM CA provides a single certificate which matches the digest, and providing arbitrary
+	// other non-verified root certs that the manager certificate actually chains up to.
 	if d != "" {
 		verifier := d.Verifier()
 		if err != nil {
@@ -492,23 +515,12 @@ func GetRemoteCA(ctx context.Context, d digest.Digest, connBroker *connectionbro
 
 		if !verifier.Verified() {
 			return RootCA{}, errors.Errorf("remote CA does not match fingerprint. Expected: %s", d.Hex())
-
 		}
 	}
 
-	// Check the validity of the remote Cert
-	_, err = helpers.ParseCertificatePEM(response.Certificate)
-	if err != nil {
-		return RootCA{}, err
-	}
-
-	// Create a Pool with our RootCACertificate
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM(response.Certificate) {
-		return RootCA{}, errors.New("failed to append certificate to cert pool")
-	}
-
-	return RootCA{Cert: response.Certificate, Digest: digest.FromBytes(response.Certificate), Pool: pool}, nil
+	// NewRootCA will validate that the certificates are otherwise valid and create a RootCA object.
+	// Since there is no key, the certificate expiry does not matter and will not be used.
+	return NewRootCA(response.Certificate, nil, DefaultNodeCertExpiration)
 }
 
 // CreateRootCA creates a Certificate authority for a new Swarm Cluster, potentially
