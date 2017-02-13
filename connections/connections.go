@@ -168,7 +168,7 @@ func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
 
 	connections := make(chan FullConnection, 20)
 	servers := make(chan ServerConnection, 20)
-	go New(exposeProcessInfo, exposeCmdline).filterAndPublish(exposeEnviron, aggregation, socketInfo, connections, servers)
+	go New(exposeCmdline, exposeEnviron).filterAndPublish(exposeProcessInfo, aggregation, socketInfo, connections, servers)
 
 	return connections, servers, nil
 }
