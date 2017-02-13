@@ -36,9 +36,12 @@ before-build:
 .PHONY: collect
 collect:
 
+VERSION=$(shell ./vendor/github.com/elastic/beats/dev-tools/get_version | sed -e s/-.*//)-$(shell git rev-parse --short HEAD)
+
 .PHONY: update_version
 update_version:
-	./vendor/github.com/elastic/beats/dev-tools/set_version `./vendor/github.com/elastic/beats/dev-tools/get_version | sed -e s/-.*//`-`git rev-parse --short HEAD`
+	./vendor/github.com/elastic/beats/dev-tools/set_version ${VERSION}
+	sed -i '/"name": "SNAPSHOT",/c\"name": "${VERSION}",' descriptor.bintray
 
 .PHONY: docker_peers
 docker_peers: package
