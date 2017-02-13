@@ -36,6 +36,10 @@ before-build:
 .PHONY: collect
 collect:
 
+.PHONY: update_version
+update_version:
+	./vendor/github.com/elastic/beats/dev-tools/set_version `./vendor/github.com/elastic/beats/dev-tools/get_version | sed -e s/-.*//`-`git rev-parse --short HEAD`
+
 .PHONY: docker_peers
 docker_peers: package
 	@rm -r unpacked || true
