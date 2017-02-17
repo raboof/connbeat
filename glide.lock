@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-02-17T15:40:07.991054621Z
+updated: 2017-02-17T23:02:32.093176758Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 40532143c2c4cf1359fd8484789b81c1f1f59d98
+  version: 95a2aed95ef9381c9e0740643422edbe7684d5af
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 50724541fde5c77c754caf1d65d3c57e3e91883b
+  version: 3b9b11873c06d9c8d32c51fb2f51a4c3f52fe4a6
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -120,7 +120,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 392c28fe23e1c45ddba891b0320b3b5df220beea
+  version: 94e7d24fd285520f3d12ae998f7fdd6b5393d453
 - name: github.com/hashicorp/go-cleanhttp
   version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/joeshaw/multierror
