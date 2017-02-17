@@ -16,6 +16,18 @@ class DockerTest(connbeat.BaseTest):
                 return
         self.assertFalse(error)
 
+    def done(self):
+        if self.output_lines() > 0:
+            eprint(self.get_log())
+            for line in self.read_output_json():
+                eprint(line)
+            return True
+        else:
+            eprint("Not yet...")
+            eprint(self.get_log())
+            return False
+
+
     @attr('integration')
     def test_docker_connection(self):
         """
@@ -27,13 +39,10 @@ class DockerTest(connbeat.BaseTest):
         )
 
         proc = self.start_beat()
-        self.wait_until(lambda: self.output_lines() > 0, max_timeout = 20)
+        self.wait_until(self.done, max_timeout = 30, poll_interval = 2)
         proc.check_kill_and_wait()
 
         output = self.read_output_json()
-
-        for line in output:
-            eprint(line)
 
         # docker-compose.yml specifies an nginx peer container should be started
         self.should_contain(output, lambda e: e['local_port'] == 80, "process listening on port 80")
