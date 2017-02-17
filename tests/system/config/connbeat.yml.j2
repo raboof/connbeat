@@ -1,6 +1,8 @@
 connbeat:
   expose_cmdline: {{ expose_cmdline|default("true") }}
   expose_environ: {{ expose_cmdline|default("false") }}
+  enable_local_connections: {{ enable_local_connections|default("true") }}
+  enable_docker: {{ enable_docker|default("false") }}
 
 output.file:
   path: {{ output_file_path|default(beat.working_dir + "/output") }}

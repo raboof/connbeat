@@ -9,7 +9,7 @@ from nose.plugins.attrib import attr
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-class ConnectionTest(connbeat.BaseTest):
+class DockerTest(connbeat.BaseTest):
     def should_contain(self, output, check, error):
         for evt in output:
             if check(evt):
@@ -17,13 +17,14 @@ class ConnectionTest(connbeat.BaseTest):
         self.assertFalse(error)
 
     @attr('integration')
-    def test_connection(self):
+    def test_docker_connection(self):
         """
-        Basic connections are published
+        Basic connections from peer docker containers are published
         """
-        self.render_config_template()
-        os.environ['PROC_NET_TCP'] = '../../tests/files/proc-net-tcp-test-small'
-        os.environ['PROC_NET_TCP6'] = '../../tests/files/proc-net-tcp6-test-empty'
+        self.render_config_template(
+            enable_local_connections = False,
+            enable_docker = True
+        )
 
         proc = self.start_beat()
         self.wait_until(lambda: self.output_lines() > 0)
@@ -34,13 +35,5 @@ class ConnectionTest(connbeat.BaseTest):
         # for line in output:
         #     eprint(line)
 
+        # docker-compose.yml specifies an nginx peer container should be started
         self.should_contain(output, lambda e: e['local_port'] == 80, "process listening on port 80")
-
-        self.should_contain(output, lambda e: e['local_port'] == 631, "process listening on port 631")
-
-        self.should_contain(output, lambda e: e['local_port'] == 40074, "process listening on port 40074")
-
-        self.should_contain(
-            output,
-            lambda e: e['beat']['local_ips'] == ['192.168.2.243'],
-            "record 192.168.2.243 as local IP")
