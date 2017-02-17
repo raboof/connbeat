@@ -153,11 +153,13 @@ func (p *Poller) getContainerInfo(container docker.APIContainers) (*sockets.Cont
 		return nil, err
 	}
 	environment := p.getEnvironment(inspected)
+	labels := inspected.Config.Labels
 	return &sockets.ContainerInfo{
 		ID:                 container.ID,
 		Name:               inspected.Name,
 		Image:              container.Image,
 		DockerEnvironment:  environment,
+		DockerLabels:	    labels,
 		Ports:              inspected.NetworkSettings.Ports,
 		DockerhostHostname: p.dockerhostHostname,
 		DockerhostIP:       p.dockerhostIP,

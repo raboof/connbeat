@@ -11,6 +11,7 @@ type ContainerInfo struct {
 	Name               string
 	Image              string
 	DockerEnvironment  []string
+	DockerLabels	   map[string]string
 	Ports              map[docker.Port][]docker.PortBinding
 	DockerhostHostname string
 	DockerhostIP       net.IP
