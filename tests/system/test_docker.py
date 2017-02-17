@@ -32,8 +32,8 @@ class DockerTest(connbeat.BaseTest):
 
         output = self.read_output_json()
 
-        # for line in output:
-        #     eprint(line)
+        for line in output:
+            eprint(line)
 
         # docker-compose.yml specifies an nginx peer container should be started
         self.should_contain(output, lambda e: e['local_port'] == 80, "process listening on port 80")
