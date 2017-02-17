@@ -27,7 +27,7 @@ class DockerTest(connbeat.BaseTest):
         )
 
         proc = self.start_beat()
-        self.wait_until(lambda: self.output_lines() > 0)
+        self.wait_until(lambda: self.output_lines() > 0, max_timeout = 20)
         proc.check_kill_and_wait()
 
         output = self.read_output_json()
