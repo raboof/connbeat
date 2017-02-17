@@ -88,13 +88,14 @@ func (p *Poller) PollCurrentConnections(socketInfo chan<- *sockets.SocketInfo) e
 	}
 	for _, container := range containers {
 		if err = p.pollCurrentConnections(container, socketInfo); err != nil {
-			logp.Warn("Failed to poll connections for container %s (%s): %s", container.ID, container.Image, err)
+			logp.Warn("docker", "Failed to poll connections for container %s (%s): %s", container.ID, container.Image, err)
 		}
 	}
 	return nil
 }
 
 func (p *Poller) pollCurrentConnections(container docker.APIContainers, socketInfo chan<- *sockets.SocketInfo) error {
+	logp.Debug("docker", "Polling container %s (%s)", container.ID, container.Image)
 	err := p.pollCurrentConnectionsFor(container, "/proc/net/tcp", false, socketInfo)
 	if err != nil {
 		return err
