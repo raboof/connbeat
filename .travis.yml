@@ -12,7 +12,8 @@ addons:
 
 env:
   matrix:
-    - TARGETS="test"
+    # already covered by 'testsuite'
+    #- TARGETS="test"
     - TARGETS="check"
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
