@@ -17,7 +17,7 @@ class DockerTest(connbeat.BaseTest):
         self.assertFalse(error)
 
     def done(self):
-        if self.output_lines() > 0:
+        if self.output_lines() > 5:
             eprint(self.get_log())
             for line in self.read_output_json():
                 eprint(line)
