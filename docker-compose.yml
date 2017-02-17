@@ -8,5 +8,11 @@ services:
     volumes:
      - ${PWD}/vendor/github.com/elastic/beats:/go/src/github.com/elastic/beats/
      - ${PWD}:/go/src/github.com/raboof/connbeat
+     - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /go/src/github.com/raboof/connbeat
     command: make
+    depends_on:
+     - "nginx"
+  # A peer container to monitor
+  nginx:
+    image: nginx

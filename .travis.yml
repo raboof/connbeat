@@ -12,14 +12,15 @@ addons:
 
 env:
   matrix:
-    - TARGETS="test"
+    # already covered by 'testsuite'
+    #- TARGETS="test"
     - TARGETS="check"
     - TARGETS="testsuite"
     - TARGETS="crosscompile"
     - TARGETS="connbeat package"
     - TARGETS="docker_peers"
   global:
-    - DOCKER_COMPOSE_VERSION: 1.7.0
+    - DOCKER_COMPOSE_VERSION: 1.8.0
 
 before_install:
   # Redo the travis setup but with the elastic/libbeat path. This is needed so the package path is correct

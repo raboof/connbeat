@@ -31,8 +31,8 @@ class ConnectionTest(connbeat.BaseTest):
 
         output = self.read_output_json()
 
-        for line in output:
-            eprint(line)
+        # for line in output:
+        #     eprint(line)
 
         self.should_contain(output, lambda e: e['local_port'] == 80, "process listening on port 80")
 
