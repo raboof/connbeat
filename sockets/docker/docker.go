@@ -83,6 +83,7 @@ func new(client *docker.Client, environment []string) (*Poller, error) {
 
 func (p *Poller) PollCurrentConnections(socketInfo chan<- *sockets.SocketInfo) error {
 	containers, err := p.client.ListContainers(docker.ListContainersOptions{All: false})
+	logp.Debug("docker", "Listed %d containers", len(containers))
 	if err != nil {
 		return err
 	}
