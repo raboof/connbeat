@@ -142,6 +142,10 @@ func TestContainerInformation(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
+	dockerLabels := make(map[string]string)
+	dockerLabels["test.test.1"] = "example"
+	dockerLabels["example"] = "test@#$%&"
+
 	go beater.Pipe(fullConnections, serverConnections)
 	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                 "7786521dc8c9",
@@ -152,6 +156,7 @@ func TestContainerInformation(t *testing.T) {
 	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
 		ID:                 "785073e68b72",
 		DockerEnvironment:  nil,
+		DockerLabels:		dockerLabels,
 		DockerhostHostname: "yinka",
 		DockerhostIP:       nil}}, "43.23.2.4", 5113}
 	evt := <-client.evs
@@ -168,6 +173,13 @@ func TestContainerInformation(t *testing.T) {
 		t.Fatal(err)
 	}
 	expectElements(t, containerIps.([]interface{}), []string{"43.12.1.32"})
+
+	labels, err := evt.GetValue("container.labels")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectMap(t, labels.(common.MapStr), dockerLabels)
 }
 
 func TestNoContainerInformationLeakage(t *testing.T) {
@@ -194,6 +206,15 @@ func TestNoContainerInformationLeakage(t *testing.T) {
 
 	container, _ := evt.GetValue("container")
 	assert.Nil(t, container, "Container information should not leak into the second event")
+}
+
+func expectMap(t *testing.T, actual common.MapStr, expected map[string]string) {
+	assert.Equal(t, len(actual), len(expected), "should have the expected number of elements")
+	for expectedKey, expectedValue := range(expected) {
+		//Using bracket notation instead of getValue, to correctly handle keys that have dots.
+		actualValue := actual[expectedKey]
+		assert.Equal(t, expectedValue, actualValue, "values should be equal")
+	}
 }
 
 func expectElements(t *testing.T, actual []interface{}, expected []string) {

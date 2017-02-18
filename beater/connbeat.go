@@ -109,6 +109,14 @@ func portsMap(ports map[docker.Port][]docker.PortBinding) common.MapStr {
 	return result
 }
 
+func labelsMap(labels map[string]string) common.MapStr {
+	result := common.MapStr{}
+	for key, value := range labels {
+		result[key] = value
+	}
+	return result
+}
+
 func toMap(containerInfo *ContainerInfo) common.MapStr {
 	if containerInfo != nil {
 		return common.MapStr{
@@ -117,7 +125,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"image":     containerInfo.image,
 			"local_ips": containerInfo.localIPs.ToSlice(),
 			"env":       containerInfo.environment,
-			"labels":    containerInfo.labels,
+			"labels":    labelsMap(containerInfo.labels),
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
 				"ips":      toIPs(containerInfo.dockerHostIP),
