@@ -6,3 +6,5 @@ unpacked
 _meta/kibana/index-pattern
 
 *.pyc
+*.iml
+.idea/*
