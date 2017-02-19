@@ -28,25 +28,23 @@ func TestContainerMetadata(t *testing.T) {
 	})
 	assert.Nil(t, err, "introducing image")
 
-
 	labels := make(map[string]string)
 	labels["test.key"] = "example.value"
 	labels["another.test.key"] = "2ndExample"
 
 	_, err = client.CreateContainer(docker.CreateContainerOptions{
-		Name:   "myasdf",
+		Name: "myasdf",
 		Config: &docker.Config{
-			Image: "asdf:latest",
-			Labels: labels,
+			Image:        "asdf:latest",
+			Labels:       labels,
 			AttachStdout: true,
-			AttachStdin: true,
+			AttachStdin:  true,
 		},
 	})
 
 	assert.Nil(t, err, "creating container")
 	err = client.StartContainer("myasdf", &docker.HostConfig{})
 	assert.Nil(t, err, "starting container")
-
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	assert.Nil(t, err, "listing containers")
 	assert.Equal(t, 1, len(containers), "number of containers")

@@ -156,7 +156,7 @@ func TestContainerInformation(t *testing.T) {
 	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
 		ID:                 "785073e68b72",
 		DockerEnvironment:  nil,
-		DockerLabels:		dockerLabels,
+		DockerLabels:       dockerLabels,
 		DockerhostHostname: "yinka",
 		DockerhostIP:       nil}}, "43.23.2.4", 5113}
 	evt := <-client.evs
@@ -210,7 +210,7 @@ func TestNoContainerInformationLeakage(t *testing.T) {
 
 func expectMap(t *testing.T, actual common.MapStr, expected map[string]string) {
 	assert.Equal(t, len(actual), len(expected), "should have the expected number of elements")
-	for expectedKey, expectedValue := range(expected) {
+	for expectedKey, expectedValue := range expected {
 		//Using bracket notation instead of getValue, to correctly handle keys that have dots.
 		actualValue := actual[expectedKey]
 		assert.Equal(t, expectedValue, actualValue, "values should be equal")

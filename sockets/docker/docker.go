@@ -159,7 +159,7 @@ func (p *Poller) getContainerInfo(container docker.APIContainers) (*sockets.Cont
 		Name:               inspected.Name,
 		Image:              container.Image,
 		DockerEnvironment:  environment,
-		DockerLabels:	    labels,
+		DockerLabels:       labels,
 		Ports:              inspected.NetworkSettings.Ports,
 		DockerhostHostname: p.dockerhostHostname,
 		DockerhostIP:       p.dockerhostIP,
