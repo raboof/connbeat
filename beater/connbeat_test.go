@@ -73,7 +73,7 @@ func TestLocalIps(t *testing.T) {
 		t.FailNow()
 	}
 
-	expectElements(t, ips.([]interface{}), []string{"12.34.6.2", "43.12.1.32"})
+	expectElements(t, []string{"12.34.6.2", "43.12.1.32"}, ips.([]interface{}))
 }
 
 func TestNoContainerInfo(t *testing.T) {
@@ -142,6 +142,10 @@ func TestContainerInformation(t *testing.T) {
 	beater.events = client
 	beater.done = make(chan struct{})
 
+	dockerLabels := make(map[string]string)
+	dockerLabels["test.test.1"] = "example"
+	dockerLabels["example"] = "test@#$%&"
+
 	go beater.Pipe(fullConnections, serverConnections)
 	serverConnections <- connections.ServerConnection{"12.34.6.2", 80, &httpd, &sockets.ContainerInfo{
 		ID:                 "7786521dc8c9",
@@ -152,6 +156,7 @@ func TestContainerInformation(t *testing.T) {
 	fullConnections <- connections.FullConnection{connections.LocalConnection{"43.12.1.32", 22, &curl, &sockets.ContainerInfo{
 		ID:                 "785073e68b72",
 		DockerEnvironment:  nil,
+		DockerLabels:       dockerLabels,
 		DockerhostHostname: "yinka",
 		DockerhostIP:       nil}}, "43.23.2.4", 5113}
 	evt := <-client.evs
@@ -161,13 +166,20 @@ func TestContainerInformation(t *testing.T) {
 		t.FailNow()
 	}
 
-	expectElements(t, ips.([]interface{}), []string{})
+	expectElements(t, []string{}, ips.([]interface{}))
 
 	containerIps, err := evt.GetValue("container.local_ips")
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectElements(t, containerIps.([]interface{}), []string{"43.12.1.32"})
+	expectElements(t, []string{"43.12.1.32"}, containerIps.([]interface{}))
+
+	labels, err := evt.GetValue("container.labels")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectMap(t, dockerLabels, labels.(common.MapStr))
 }
 
 func TestNoContainerInformationLeakage(t *testing.T) {
@@ -196,14 +208,23 @@ func TestNoContainerInformationLeakage(t *testing.T) {
 	assert.Nil(t, container, "Container information should not leak into the second event")
 }
 
-func expectElements(t *testing.T, actual []interface{}, expected []string) {
+func expectMap(t *testing.T, expected map[string]string, actual common.MapStr) {
 	assert.Equal(t, len(actual), len(expected), "should have the expected number of elements")
-	for _, expectation := range expected {
-		expectElement(t, actual, expectation)
+	for expectedKey, expectedValue := range expected {
+		//Using bracket notation instead of getValue, to correctly handle keys that have dots.
+		actualValue := actual[expectedKey]
+		assert.Equal(t, expectedValue, actualValue, "values should be equal")
 	}
 }
 
-func expectElement(t *testing.T, actual []interface{}, expected string) {
+func expectElements(t *testing.T, expected []string, actual []interface{}) {
+	assert.Equal(t, len(actual), len(expected), "should have the expected number of elements")
+	for _, expectation := range expected {
+		expectElement(t, expectation, actual)
+	}
+}
+
+func expectElement(t *testing.T, expected string, actual []interface{}) {
 	for _, found := range actual {
 		if expected == found {
 			return

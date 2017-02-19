@@ -32,6 +32,7 @@ type ContainerInfo struct {
 	image              string
 	localIPs           mapset.Set
 	environment        []string
+	labels             map[string]string
 	ports              map[docker.Port][]docker.PortBinding
 	dockerHostHostname string
 	dockerHostIP       net.IP
@@ -108,6 +109,14 @@ func portsMap(ports map[docker.Port][]docker.PortBinding) common.MapStr {
 	return result
 }
 
+func labelsMap(labels map[string]string) common.MapStr {
+	result := common.MapStr{}
+	for key, value := range labels {
+		result[key] = value
+	}
+	return result
+}
+
 func toMap(containerInfo *ContainerInfo) common.MapStr {
 	if containerInfo != nil {
 		return common.MapStr{
@@ -116,6 +125,7 @@ func toMap(containerInfo *ContainerInfo) common.MapStr {
 			"image":     containerInfo.image,
 			"local_ips": containerInfo.localIPs.ToSlice(),
 			"env":       containerInfo.environment,
+			"labels":    labelsMap(containerInfo.labels),
 			"docker_host": common.MapStr{
 				"hostname": containerInfo.dockerHostHostname,
 				"ips":      toIPs(containerInfo.dockerHostIP),
@@ -181,7 +191,9 @@ func update(infos map[string]ContainerInfo, socketContainerInfo *sockets.Contain
 			socketContainerInfo.ID,
 			socketContainerInfo.Name,
 			socketContainerInfo.Image,
-			localIPs, socketContainerInfo.DockerEnvironment,
+			localIPs,
+			socketContainerInfo.DockerEnvironment,
+			socketContainerInfo.DockerLabels,
 			socketContainerInfo.Ports,
 			socketContainerInfo.DockerhostHostname,
 			socketContainerInfo.DockerhostIP,

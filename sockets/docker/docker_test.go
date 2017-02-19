@@ -28,14 +28,23 @@ func TestContainerMetadata(t *testing.T) {
 	})
 	assert.Nil(t, err, "introducing image")
 
+	labels := make(map[string]string)
+	labels["test.key"] = "example.value"
+	labels["another.test.key"] = "2ndExample"
+
 	_, err = client.CreateContainer(docker.CreateContainerOptions{
-		Name:   "myasdf",
-		Config: &docker.Config{Image: "asdf:latest", AttachStdout: true, AttachStdin: true},
+		Name: "myasdf",
+		Config: &docker.Config{
+			Image:        "asdf:latest",
+			Labels:       labels,
+			AttachStdout: true,
+			AttachStdin:  true,
+		},
 	})
+
 	assert.Nil(t, err, "creating container")
 	err = client.StartContainer("myasdf", &docker.HostConfig{})
 	assert.Nil(t, err, "starting container")
-
 	containers, err := client.ListContainers(docker.ListContainersOptions{All: false})
 	assert.Nil(t, err, "listing containers")
 	assert.Equal(t, 1, len(containers), "number of containers")
@@ -46,8 +55,9 @@ func TestContainerMetadata(t *testing.T) {
 	containerInfo, err := poller.getContainerInfo(containers[0])
 	assert.Nil(t, err, "getting containerinfo")
 
-	assert.Equal(t, containerInfo.Name, "myasdf", "should use the name used when creating the container")
-	assert.Equal(t, containerInfo.Image, "asdf:latest", "should use the image used when creating the container")
+	assert.Equal(t, "myasdf", containerInfo.Name, "should use the name used when creating the container")
+	assert.Equal(t, "asdf:latest", containerInfo.Image, "should use the image used when creating the container")
+	assert.Equal(t, labels, containerInfo.DockerLabels, "should provide the container labels")
 }
 
 func TestHostnameFromEnvironment(t *testing.T) {
