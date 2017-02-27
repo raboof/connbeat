@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-02-25T23:02:37.503740753Z
+updated: 2017-02-27T23:02:44.694421886Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 55fcd6f4db6088be90eef1e521e5e2e89d0b71a1
+  version: 406addf3f7d08cb4da92ac4e86560095567dc96b
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 32e47a6a556788444a9ed977a19fd4cbf9644afe
+  version: cc693c82cbab30d27b082ed5f8f134b385606152
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -141,7 +141,7 @@ imports:
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: cf883a87e762961a5b97fad993aa377750512b28
+  version: c50d024500f3b7ffaf902d3a7b3001edd50285ae
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -165,7 +165,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 7f4b1adc791766938c29457bed0703fb9134421a
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
