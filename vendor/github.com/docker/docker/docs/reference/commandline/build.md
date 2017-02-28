@@ -21,6 +21,7 @@ Usage:  docker build [OPTIONS] PATH | URL | -
 Build an image from a Dockerfile
 
 Options:
+      --add-host value          Add a custom host-to-IP mapping (host:ip) (default [])
       --build-arg value         Set build-time variables (default [])
       --cache-from value        Images to consider as cache sources (default [])
       --cgroup-parent string    Optional parent cgroup for the container
@@ -110,9 +111,6 @@ Build Syntax Suffix             | Commit Used           | Build Context Used
 ### Tarball contexts
 
 If you pass an URL to a remote tarball, the URL itself is sent to the daemon:
-
-Instead of specifying a context, you can pass a single Dockerfile in the `URL`
-or pipe the file in via `STDIN`. To pipe a Dockerfile from `STDIN`:
 
 ```bash
 $ docker build http://server/context.tar.gz
@@ -435,6 +433,13 @@ Linux namespaces. On Microsoft Windows, you can specify these values:
 
 Specifying the `--isolation` flag without a value is the same as setting `--isolation="default"`.
 
+### Add entries to container hosts file (--add-host)
+
+You can add other hosts into a container's `/etc/hosts` file by using one or
+more `--add-host` flags. This example adds a static address for a host named
+`docker`:
+
+    $ docker build --add-host=docker:10.180.0.1 .
 
 ### Squash an image's layers (--squash) **Experimental Only**
 
@@ -451,3 +456,4 @@ space.
 **Note**: using this option you may see significantly more space used due to
 storing two copies of the image, one for the build cache with all the cache
 layers in tact, and one for the squashed version.
+

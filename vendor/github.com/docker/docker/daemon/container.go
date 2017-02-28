@@ -55,6 +55,16 @@ func (daemon *Daemon) GetContainer(prefixOrName string) (*container.Container, e
 	return daemon.containers.Get(containerID), nil
 }
 
+// checkContainer make sure the specified container validates the specified conditions
+func (daemon *Daemon) checkContainer(container *container.Container, conditions ...func(*container.Container) error) error {
+	for _, condition := range conditions {
+		if err := condition(container); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Exists returns a true if a container of the specified ID or name exists,
 // false otherwise.
 func (daemon *Daemon) Exists(id string) bool {
@@ -254,6 +264,12 @@ func (daemon *Daemon) verifyContainerSettings(hostConfig *containertypes.HostCon
 
 	if hostConfig.AutoRemove && !hostConfig.RestartPolicy.IsNone() {
 		return nil, fmt.Errorf("can't create 'AutoRemove' container with restart policy")
+	}
+
+	for _, extraHost := range hostConfig.ExtraHosts {
+		if _, err := opts.ValidateExtraHost(extraHost); err != nil {
+			return nil, err
+		}
 	}
 
 	for port := range hostConfig.PortBindings {

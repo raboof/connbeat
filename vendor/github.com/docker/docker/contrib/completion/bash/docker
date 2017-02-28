@@ -2155,6 +2155,7 @@ _docker_image() {
 
 _docker_image_build() {
 	local options_with_args="
+		--add-host
 		--build-arg
 		--cache-from
 		--cgroup-parent
@@ -2191,6 +2192,14 @@ _docker_image_build() {
 	local all_options="$options_with_args $boolean_options"
 
 	case "$prev" in
+		--add-host)
+			case "$cur" in
+				*:)
+					__docker_complete_resolved_hostname
+					return
+					;;
+			esac
+			;;
 		--build-arg)
 			COMPREPLY=( $( compgen -e -- "$cur" ) )
 			__docker_nospace
@@ -2760,7 +2769,11 @@ _docker_network() {
 		prune
 		rm
 	"
-	__docker_subcommands "$subcommands" && return
+	local aliases="
+		list
+		remove
+	"
+	__docker_subcommands "$subcommands $aliases" && return
 
 	case "$cur" in
 		-*)
@@ -2776,15 +2789,19 @@ _docker_service() {
 	local subcommands="
 		create
 		inspect
-		ls list
-		rm remove
+		ls
+		rm
 		scale
 		ps
 		update
 	"
 	__docker_daemon_is_experimental && subcommands+="logs"
 
-	__docker_subcommands "$subcommands" && return
+	local aliases="
+		list
+		remove
+	"
+	__docker_subcommands "$subcommands $aliases" && return
 
 	case "$cur" in
 		-*)
@@ -3283,13 +3300,17 @@ _docker_node() {
 	local subcommands="
 		demote
 		inspect
-		ls list
+		ls
 		promote
-		rm remove
+		rm
 		ps
 		update
 	"
-	__docker_subcommands "$subcommands" && return
+	local aliases="
+		list
+		remove
+	"
+	__docker_subcommands "$subcommands $aliases" && return
 
 	case "$cur" in
 		-*)

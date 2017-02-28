@@ -16,6 +16,7 @@ import (
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/daemon/network"
+	"github.com/docker/docker/opts"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/runconfig"
 	"github.com/docker/go-connections/nat"
@@ -117,6 +118,9 @@ func (daemon *Daemon) buildSandboxOptions(container *container.Container) ([]lib
 
 	for _, extraHost := range container.HostConfig.ExtraHosts {
 		// allow IPv6 addresses in extra hosts; only split on first ":"
+		if _, err := opts.ValidateExtraHost(extraHost); err != nil {
+			return nil, err
+		}
 		parts := strings.SplitN(extraHost, ":", 2)
 		sboxOptions = append(sboxOptions, libnetwork.OptionExtraHost(parts[0], parts[1]))
 	}
@@ -829,16 +833,24 @@ func (daemon *Daemon) disconnectFromNetwork(container *container.Container, n li
 
 	delete(container.NetworkSettings.Networks, n.Name())
 
-	if daemon.clusterProvider != nil && n.Info().Dynamic() && !container.Managed {
-		if err := daemon.clusterProvider.DetachNetwork(n.Name(), container.ID); err != nil {
-			logrus.Warnf("error detaching from network %s: %v", n.Name(), err)
-			if err := daemon.clusterProvider.DetachNetwork(n.ID(), container.ID); err != nil {
-				logrus.Warnf("error detaching from network %s: %v", n.ID(), err)
+	daemon.tryDetachContainerFromClusterNetwork(n, container)
+
+	return nil
+}
+
+func (daemon *Daemon) tryDetachContainerFromClusterNetwork(network libnetwork.Network, container *container.Container) {
+	if daemon.clusterProvider != nil && network.Info().Dynamic() && !container.Managed {
+		if err := daemon.clusterProvider.DetachNetwork(network.Name(), container.ID); err != nil {
+			logrus.Warnf("error detaching from network %s: %v", network.Name(), err)
+			if err := daemon.clusterProvider.DetachNetwork(network.ID(), container.ID); err != nil {
+				logrus.Warnf("error detaching from network %s: %v", network.ID(), err)
 			}
 		}
 	}
-
-	return nil
+	attributes := map[string]string{
+		"container": container.ID,
+	}
+	daemon.LogNetworkEventWithAttributes(network, "disconnect", attributes)
 }
 
 func (daemon *Daemon) initializeNetworking(container *container.Container) error {
@@ -931,19 +943,7 @@ func (daemon *Daemon) releaseNetwork(container *container.Container) {
 	}
 
 	for _, nw := range networks {
-		if daemon.clusterProvider != nil && nw.Info().Dynamic() && !container.Managed {
-			if err := daemon.clusterProvider.DetachNetwork(nw.Name(), container.ID); err != nil {
-				logrus.Warnf("error detaching from network %s: %v", nw.Name(), err)
-				if err := daemon.clusterProvider.DetachNetwork(nw.ID(), container.ID); err != nil {
-					logrus.Warnf("error detaching from network %s: %v", nw.ID(), err)
-				}
-			}
-		}
-
-		attributes := map[string]string{
-			"container": container.ID,
-		}
-		daemon.LogNetworkEventWithAttributes(nw, "disconnect", attributes)
+		daemon.tryDetachContainerFromClusterNetwork(nw, container)
 	}
 	networkActions.WithValues("release").UpdateSince(start)
 }
