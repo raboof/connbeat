@@ -39,8 +39,11 @@ UpdateStatus:
  Message:	{{ .UpdateStatusMessage }}
 {{- end }}
 Placement:
-{{- if .TaskPlacementConstraints -}}
+{{- if .TaskPlacementConstraints }}
  Constraints:	{{ .TaskPlacementConstraints }}
+{{- end }}
+{{- if .TaskPlacementPreferences }}
+ Preferences:   {{ .TaskPlacementPreferences }}
 {{- end }}
 {{- if .HasUpdateConfig }}
 UpdateConfig:
@@ -211,6 +214,19 @@ func (ctx *serviceInspectContext) TaskPlacementConstraints() []string {
 	return nil
 }
 
+func (ctx *serviceInspectContext) TaskPlacementPreferences() []string {
+	if ctx.Service.Spec.TaskTemplate.Placement == nil {
+		return nil
+	}
+	var strings []string
+	for _, pref := range ctx.Service.Spec.TaskTemplate.Placement.Preferences {
+		if pref.Spread != nil {
+			strings = append(strings, "spread="+pref.Spread.SpreadDescriptor)
+		}
+	}
+	return strings
+}
+
 func (ctx *serviceInspectContext) HasUpdateConfig() bool {
 	return ctx.Service.Spec.UpdateConfig != nil
 }
@@ -372,7 +388,15 @@ func ServiceListWrite(ctx Context, services []swarm.Service, info map[string]Ser
 		}
 		return nil
 	}
-	return ctx.Write(&serviceContext{}, render)
+	serviceCtx := serviceContext{}
+	serviceCtx.header = map[string]string{
+		"ID":       serviceIDHeader,
+		"Name":     nameHeader,
+		"Mode":     modeHeader,
+		"Replicas": replicasHeader,
+		"Image":    imageHeader,
+	}
+	return ctx.Write(&serviceCtx, render)
 }
 
 type serviceContext struct {
@@ -387,27 +411,22 @@ func (c *serviceContext) MarshalJSON() ([]byte, error) {
 }
 
 func (c *serviceContext) ID() string {
-	c.AddHeader(serviceIDHeader)
 	return stringid.TruncateID(c.service.ID)
 }
 
 func (c *serviceContext) Name() string {
-	c.AddHeader(nameHeader)
 	return c.service.Spec.Name
 }
 
 func (c *serviceContext) Mode() string {
-	c.AddHeader(modeHeader)
 	return c.mode
 }
 
 func (c *serviceContext) Replicas() string {
-	c.AddHeader(replicasHeader)
 	return c.replicas
 }
 
 func (c *serviceContext) Image() string {
-	c.AddHeader(imageHeader)
 	image := c.service.Spec.TaskTemplate.ContainerSpec.Image
 	if ref, err := reference.ParseNormalizedNamed(image); err == nil {
 		// update image string for display, (strips any digest)

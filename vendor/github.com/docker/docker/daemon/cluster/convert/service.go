@@ -162,8 +162,21 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 	spec.Task.Restart = restartPolicy
 
 	if s.TaskTemplate.Placement != nil {
+		var preferences []*swarmapi.PlacementPreference
+		for _, pref := range s.TaskTemplate.Placement.Preferences {
+			if pref.Spread != nil {
+				preferences = append(preferences, &swarmapi.PlacementPreference{
+					Preference: &swarmapi.PlacementPreference_Spread{
+						Spread: &swarmapi.SpreadOver{
+							SpreadDescriptor: pref.Spread.SpreadDescriptor,
+						},
+					},
+				})
+			}
+		}
 		spec.Task.Placement = &swarmapi.Placement{
 			Constraints: s.TaskTemplate.Placement.Constraints,
+			Preferences: preferences,
 		}
 	}
 
@@ -175,7 +188,7 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 		case types.UpdateFailureActionContinue:
 			failureAction = swarmapi.UpdateConfig_CONTINUE
 		default:
-			return swarmapi.ServiceSpec{}, fmt.Errorf("unrecongized update failure action %s", s.UpdateConfig.FailureAction)
+			return swarmapi.ServiceSpec{}, fmt.Errorf("unrecognized update failure action %s", s.UpdateConfig.FailureAction)
 		}
 		spec.Update = &swarmapi.UpdateConfig{
 			Parallelism:     s.UpdateConfig.Parallelism,
@@ -351,10 +364,21 @@ func restartPolicyToGRPC(p *types.RestartPolicy) (*swarmapi.RestartPolicy, error
 }
 
 func placementFromGRPC(p *swarmapi.Placement) *types.Placement {
-	var r *types.Placement
-	if p != nil {
-		r = &types.Placement{}
-		r.Constraints = p.Constraints
+	if p == nil {
+		return nil
+	}
+	r := &types.Placement{
+		Constraints: p.Constraints,
+	}
+
+	for _, pref := range p.Preferences {
+		if spread := pref.GetSpread(); spread != nil {
+			r.Preferences = append(r.Preferences, types.PlacementPreference{
+				Spread: &types.SpreadOver{
+					SpreadDescriptor: spread.SpreadDescriptor,
+				},
+			})
+		}
 	}
 
 	return r

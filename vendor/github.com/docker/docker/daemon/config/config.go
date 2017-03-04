@@ -242,7 +242,7 @@ func Reload(configFile string, flags *pflag.FlagSet, reload func(*Config)) error
 	// This is deprecated in 1.13, and, be removed after 3 release cycles.
 	// The following will check the conflict of labels, and report a warning for deprecation.
 	//
-	// TODO: After 3 release cycles (1.16) an error will be returned, and labels will be
+	// TODO: After 3 release cycles (17.12) an error will be returned, and labels will be
 	// sanitized to consolidate duplicate key-value pairs (config.Labels = newLabels):
 	//
 	// newLabels, err := GetConflictFreeLabels(newConfig.Labels)
@@ -276,7 +276,7 @@ func MergeDaemonConfigurations(flagsConfig *Config, flags *pflag.FlagSet, config
 	}
 
 	if err := Validate(fileConfig); err != nil {
-		return nil, fmt.Errorf("file configuration validation failed (%v)", err)
+		return nil, fmt.Errorf("configuration validation from file failed (%v)", err)
 	}
 
 	// merge flags configuration on top of the file configuration
@@ -287,7 +287,7 @@ func MergeDaemonConfigurations(flagsConfig *Config, flags *pflag.FlagSet, config
 	// We need to validate again once both fileConfig and flagsConfig
 	// have been merged
 	if err := Validate(fileConfig); err != nil {
-		return nil, fmt.Errorf("file configuration validation failed (%v)", err)
+		return nil, fmt.Errorf("merged configuration validation from file and command line flags failed (%v)", err)
 	}
 
 	return fileConfig, nil
@@ -459,14 +459,12 @@ func Validate(config *Config) error {
 			return err
 		}
 	}
-
 	// validate MaxConcurrentDownloads
-	if config.IsValueSet("max-concurrent-downloads") && config.MaxConcurrentDownloads != nil && *config.MaxConcurrentDownloads < 0 {
+	if config.MaxConcurrentDownloads != nil && *config.MaxConcurrentDownloads < 0 {
 		return fmt.Errorf("invalid max concurrent downloads: %d", *config.MaxConcurrentDownloads)
 	}
-
 	// validate MaxConcurrentUploads
-	if config.IsValueSet("max-concurrent-uploads") && config.MaxConcurrentUploads != nil && *config.MaxConcurrentUploads < 0 {
+	if config.MaxConcurrentUploads != nil && *config.MaxConcurrentUploads < 0 {
 		return fmt.Errorf("invalid max concurrent uploads: %d", *config.MaxConcurrentUploads)
 	}
 
