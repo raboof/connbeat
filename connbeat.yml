@@ -41,6 +41,33 @@ connbeat:
   # expose these environment variables if passed to that
   # container.
   docker_environment: ["PATH"]
+#-------------------------- HTTP output ------------------------------
+#output.http:
+#    hosts: ["${STSURL}connbeat?api_key=${APIKEY}"]
+#
+# Optional further settings:
+#    protocol: "https"
+#    path: "foo"
+#    parameters: "xyz"
+#    proxy_url: "xyz"
+#    loadbalance: true
+#    compression_level: 9
+#    max_retries: 3
+#    timeout: 90 seconds
+#    tls:
+#        enabled: false
+#        verification_mode: "full"
+#        supported_protocols: [...]
+#        cipher_suites: [...]
+#        curve_types: [...]
+#        certificate_authorities: [...]
+#        certificate: ...
+#        key: ...
+#        key_passphrase: ...
+#
+# BASIC authentication:
+#    username: "alice"
+#    password: "secret"
 
 #================================ General =====================================
 

@@ -38,6 +38,11 @@ collect:
 
 VERSION=$(shell ./vendor/github.com/elastic/beats/dev-tools/get_version | sed -e s/-.*//)-$(shell git rev-parse --short HEAD)
 
+update: my_update_extension
+
+my_update_extension:
+	cat _meta/beat.head.yml vendor/github.com/raboof/beats-output-http/configuration_example.yml > _meta/beat.yml
+
 .PHONY: update_version
 update_version:
 	./vendor/github.com/elastic/beats/dev-tools/set_version ${VERSION}

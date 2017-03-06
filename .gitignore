@@ -4,5 +4,6 @@ connbeat.test
 logs
 unpacked
 _meta/kibana/index-pattern
+_meta/beat.yml
 
 *.pyc

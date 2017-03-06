@@ -28,6 +28,10 @@ connbeat:
   # Connections will be polled on this interval
   poll_interval: 2s
 
+  # Enable monitoring local connections. Can be disabled when you only
+  # want to monitor via docker.
+  enable_local_connections: true
+
   # Use the netlink tcp_diag kernel interface to retrieve
   # connections. More performant but less portable.
   enable_tcp_diag: true
