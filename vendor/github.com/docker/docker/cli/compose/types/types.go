@@ -119,7 +119,7 @@ type ServiceConfig struct {
 	Tty             bool `mapstructure:"tty"`
 	Ulimits         map[string]*UlimitsConfig
 	User            string
-	Volumes         []string
+	Volumes         []ServiceVolumeConfig
 	WorkingDir      string `mapstructure:"working_dir"`
 }
 
@@ -156,6 +156,7 @@ type DeployConfig struct {
 	Resources     Resources
 	RestartPolicy *RestartPolicy `mapstructure:"restart_policy"`
 	Placement     Placement
+	EndpointMode  string
 }
 
 // HealthCheckConfig the healthcheck configuration for a service
@@ -221,6 +222,26 @@ type ServicePortConfig struct {
 	Target    uint32
 	Published uint32
 	Protocol  string
+}
+
+// ServiceVolumeConfig are references to a volume used by a service
+type ServiceVolumeConfig struct {
+	Type     string
+	Source   string
+	Target   string
+	ReadOnly bool `mapstructure:"read_only"`
+	Bind     *ServiceVolumeBind
+	Volume   *ServiceVolumeVolume
+}
+
+// ServiceVolumeBind are options for a service volume of type bind
+type ServiceVolumeBind struct {
+	Propagation string
+}
+
+// ServiceVolumeVolume are options for a service volume of type volume
+type ServiceVolumeVolume struct {
+	NoCopy bool `mapstructure:"nocopy"`
 }
 
 // ServiceSecretConfig is the secret configuration for a service

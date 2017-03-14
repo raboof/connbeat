@@ -881,13 +881,13 @@ func TestFullExample(t *testing.T) {
 			},
 		},
 		User: "someone",
-		Volumes: []string{
-			"/var/lib/mysql",
-			"/opt/data:/var/lib/mysql",
-			fmt.Sprintf("%s:/code", workingDir),
-			fmt.Sprintf("%s/static:/var/www/html", workingDir),
-			fmt.Sprintf("%s/configs:/etc/configs/:ro", homeDir),
-			"datavolume:/var/lib/mysql",
+		Volumes: []types.ServiceVolumeConfig{
+			{Target: "/var/lib/mysql", Type: "volume"},
+			{Source: "/opt/data", Target: "/var/lib/mysql", Type: "bind"},
+			{Source: workingDir, Target: "/code", Type: "bind"},
+			{Source: workingDir + "/static", Target: "/var/www/html", Type: "bind"},
+			{Source: homeDir + "/configs", Target: "/etc/configs/", Type: "bind", ReadOnly: true},
+			{Source: "datavolume", Target: "/var/lib/mysql", Type: "volume"},
 		},
 		WorkingDir: "/code",
 	}
@@ -977,7 +977,7 @@ func (sbn servicesByName) Less(i, j int) bool { return sbn[i].Name < sbn[j].Name
 
 func TestLoadAttachableNetwork(t *testing.T) {
 	config, err := loadYAML(`
-version: "3.1"
+version: "3.2"
 networks:
   mynet1:
     driver: overlay
@@ -985,7 +985,9 @@ networks:
   mynet2:
     driver: bridge
 `)
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	expected := map[string]types.NetworkConfig{
 		"mynet1": {
@@ -1003,7 +1005,7 @@ networks:
 
 func TestLoadExpandedPortFormat(t *testing.T) {
 	config, err := loadYAML(`
-version: "3.1"
+version: "3.2"
 services:
   web:
     image: busybox
@@ -1019,7 +1021,9 @@ services:
         target: 22
         published: 10022
 `)
-	assert.NoError(t, err)
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	expected := []types.ServicePortConfig{
 		{
@@ -1084,4 +1088,34 @@ services:
 
 	assert.Equal(t, 1, len(config.Services))
 	assert.Equal(t, expected, config.Services[0].Ports)
+}
+
+func TestLoadExpandedMountFormat(t *testing.T) {
+	config, err := loadYAML(`
+version: "3.2"
+services:
+  web:
+    image: busybox
+    volumes:
+      - type: volume
+        source: foo
+        target: /target
+        read_only: true
+volumes:
+  foo: {}
+`)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	expected := types.ServiceVolumeConfig{
+		Type:     "volume",
+		Source:   "foo",
+		Target:   "/target",
+		ReadOnly: true,
+	}
+
+	assert.Equal(t, 1, len(config.Services))
+	assert.Equal(t, 1, len(config.Services[0].Volumes))
+	assert.Equal(t, expected, config.Services[0].Volumes[0])
 }

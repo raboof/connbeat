@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
@@ -14,6 +16,7 @@ import (
 	apitypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	types "github.com/docker/docker/api/types/swarm"
+	timetypes "github.com/docker/docker/api/types/time"
 	"github.com/docker/docker/daemon/cluster/convert"
 	"github.com/docker/docker/daemon/logger"
 	"github.com/docker/docker/pkg/ioutils"
@@ -111,13 +114,24 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string) (*apity
 			digestImage, err := c.imageWithDigestString(ctx, ctnr.Image, authConfig)
 			if err != nil {
 				logrus.Warnf("unable to pin image %s to digest: %s", ctnr.Image, err.Error())
-				resp.Warnings = append(resp.Warnings, fmt.Sprintf("unable to pin image %s to digest: %s", ctnr.Image, err.Error()))
+				// warning in the client response should be concise
+				resp.Warnings = append(resp.Warnings, digestWarning(ctnr.Image))
 			} else if ctnr.Image != digestImage {
 				logrus.Debugf("pinning image %s by digest: %s", ctnr.Image, digestImage)
 				ctnr.Image = digestImage
 			} else {
 				logrus.Debugf("creating service using supplied digest reference %s", ctnr.Image)
 			}
+
+			// Replace the context with a fresh one.
+			// If we timed out while communicating with the
+			// registry, then "ctx" will already be expired, which
+			// would cause UpdateService below to fail. Reusing
+			// "ctx" could make it impossible to create a service
+			// if the registry is slow or unresponsive.
+			var cancel func()
+			ctx, cancel = c.getRequestContext()
+			defer cancel()
 		}
 
 		r, err := state.controlClient.CreateService(ctx, &swarmapi.CreateServiceRequest{Spec: &serviceSpec})
@@ -200,13 +214,24 @@ func (c *Cluster) UpdateService(serviceIDOrName string, version uint64, spec typ
 			digestImage, err := c.imageWithDigestString(ctx, newCtnr.Image, authConfig)
 			if err != nil {
 				logrus.Warnf("unable to pin image %s to digest: %s", newCtnr.Image, err.Error())
-				resp.Warnings = append(resp.Warnings, fmt.Sprintf("unable to pin image %s to digest: %s", newCtnr.Image, err.Error()))
+				// warning in the client response should be concise
+				resp.Warnings = append(resp.Warnings, digestWarning(newCtnr.Image))
 			} else if newCtnr.Image != digestImage {
 				logrus.Debugf("pinning image %s by digest: %s", newCtnr.Image, digestImage)
 				newCtnr.Image = digestImage
 			} else {
 				logrus.Debugf("updating service using supplied digest reference %s", newCtnr.Image)
 			}
+
+			// Replace the context with a fresh one.
+			// If we timed out while communicating with the
+			// registry, then "ctx" will already be expired, which
+			// would cause UpdateService below to fail. Reusing
+			// "ctx" could make it impossible to update a service
+			// if the registry is slow or unresponsive.
+			var cancel func()
+			ctx, cancel = c.getRequestContext()
+			defer cancel()
 		}
 
 		var rollback swarmapi.UpdateServiceRequest_Rollback
@@ -279,6 +304,44 @@ func (c *Cluster) ServiceLogs(ctx context.Context, input string, config *backend
 		stdStreams = append(stdStreams, swarmapi.LogStreamStderr)
 	}
 
+	// Get tail value squared away - the number of previous log lines we look at
+	var tail int64
+	if config.Tail == "all" {
+		// tail of 0 means send all logs on the swarmkit side
+		tail = 0
+	} else {
+		t, err := strconv.Atoi(config.Tail)
+		if err != nil {
+			return errors.New("tail value must be a positive integer or \"all\"")
+		}
+		if t < 0 {
+			return errors.New("negative tail values not supported")
+		}
+		// we actually use negative tail in swarmkit to represent messages
+		// backwards starting from the beginning. also, -1 means no logs. so,
+		// basically, for api compat with docker container logs, add one and
+		// flip the sign. we error above if you try to negative tail, which
+		// isn't supported by docker (and would error deeper in the stack
+		// anyway)
+		//
+		// See the logs protobuf for more information
+		tail = int64(-(t + 1))
+	}
+
+	// get the since value - the time in the past we're looking at logs starting from
+	var sinceProto *gogotypes.Timestamp
+	if config.Since != "" {
+		s, n, err := timetypes.ParseTimestamps(config.Since, 0)
+		if err != nil {
+			return errors.Wrap(err, "could not parse since timestamp")
+		}
+		since := time.Unix(s, n)
+		sinceProto, err = gogotypes.TimestampProto(since)
+		if err != nil {
+			return errors.Wrap(err, "could not parse timestamp to proto")
+		}
+	}
+
 	stream, err := state.logsClient.SubscribeLogs(ctx, &swarmapi.SubscribeLogsRequest{
 		Selector: &swarmapi.LogSelector{
 			ServiceIDs: []string{service.ID},
@@ -286,6 +349,8 @@ func (c *Cluster) ServiceLogs(ctx context.Context, input string, config *backend
 		Options: &swarmapi.LogSubscriptionOptions{
 			Follow:  config.Follow,
 			Streams: stdStreams,
+			Tail:    tail,
+			Since:   sinceProto,
 		},
 	})
 	if err != nil {
@@ -358,7 +423,7 @@ func (c *Cluster) imageWithDigestString(ctx context.Context, image string, authC
 	namedRef, ok := ref.(reference.Named)
 	if !ok {
 		if _, ok := ref.(reference.Digested); ok {
-			return "", errors.New("image reference is an image ID")
+			return image, nil
 		}
 		return "", errors.Errorf("unknown image reference format: %s", image)
 	}
@@ -389,4 +454,11 @@ func (c *Cluster) imageWithDigestString(ctx context.Context, image string, authC
 	}
 	// reference already contains a digest, so just return it
 	return reference.FamiliarString(ref), nil
+}
+
+// digestWarning constructs a formatted warning string
+// using the image name that could not be pinned by digest. The
+// formatting is hardcoded, but could me made smarter in the future
+func digestWarning(image string) string {
+	return fmt.Sprintf("image %s could not be accessed on a registry to record\nits digest. Each node will access %s independently,\npossibly leading to different nodes running different\nversions of the image.\n", image, image)
 }
