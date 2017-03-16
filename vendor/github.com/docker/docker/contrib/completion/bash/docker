@@ -2691,7 +2691,7 @@ _docker_network_inspect() {
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--format -f --help" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--format -f --help --verbose" -- "$cur" ) )
 			;;
 		*)
 			__docker_complete_networks
@@ -2868,6 +2868,10 @@ _docker_service_ls() {
 			__docker_complete_services --cur "${cur##*=}" --id
 			return
 			;;
+		mode)
+			COMPREPLY=( $( compgen -W "global replicated" -- "${cur##*=}" ) )
+			return
+			;;
 		name)
 			__docker_complete_services --cur "${cur##*=}" --name
 			return
@@ -2876,7 +2880,7 @@ _docker_service_ls() {
 
 	case "$prev" in
 		--filter|-f)
-			COMPREPLY=( $( compgen -W "id label name" -S = -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "id label mode name" -S = -- "$cur" ) )
 			__docker_nospace
 			return
 			;;
@@ -2942,11 +2946,14 @@ _docker_service_ps() {
 			__docker_nospace
 			return
 			;;
+		--format)
+			return
+			;;
 	esac
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--filter -f --help --no-resolve --no-trunc --quiet -q" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--filter -f --format --help --no-resolve --no-trunc --quiet -q" -- "$cur" ) )
 			;;
 		*)
 			local counter=$(__docker_pos_first_nonflag '--filter|-f')
@@ -3480,11 +3487,14 @@ _docker_node_ps() {
 			__docker_nospace
 			return
 			;;
+		--format)
+			return
+			;;
 	esac
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--filter -f --help --no-resolve --no-trunc" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--filter -f --format --help --no-resolve --no-trunc --quiet -q" -- "$cur" ) )
 			;;
 		*)
 			__docker_complete_nodes --add self
@@ -3973,11 +3983,14 @@ _docker_stack_ps() {
 			__docker_nospace
 			return
 			;;
+		--format)
+			return
+			;;
 	esac
 
 	case "$cur" in
 		-*)
-			COMPREPLY=( $( compgen -W "--all -a --filter -f --help --no-resolve --no-trunc" -- "$cur" ) )
+			COMPREPLY=( $( compgen -W "--all -a --filter -f --format --help --no-resolve --no-trunc --quiet -q" -- "$cur" ) )
 			;;
 		*)
 			local counter=$(__docker_pos_first_nonflag '--filter|-f')

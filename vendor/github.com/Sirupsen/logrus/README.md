@@ -130,6 +130,7 @@ application, you can also create an instance of the `logrus` Logger:
 package main
 
 import (
+  "os"
   "github.com/Sirupsen/logrus"
 )
 
@@ -189,7 +190,7 @@ application or parts of one. For example, you may want to always log the
 every line, you can create a `logrus.Entry` to pass around instead:
 
 ```go
-requestLogger := log.WithFields(log.Fields{"request_id": request_id, user_ip: user_ip})
+requestLogger := log.WithFields(log.Fields{"request_id": request_id, "user_ip": user_ip})
 requestLogger.Info("something happened on that request") # will log request_id and user_ip
 requestLogger.Warn("something not great happened")
 ```
@@ -235,6 +236,7 @@ Note: Syslog hook also support connecting to local syslog (Ex. "/dev/log" or "/v
 | [Amqp-Hook](https://github.com/vladoatanasov/logrus_amqp) | Hook for logging to Amqp broker (Like RabbitMQ) |
 | [Bugsnag](https://github.com/Shopify/logrus-bugsnag/blob/master/bugsnag.go) | Send errors to the Bugsnag exception tracking service. |
 | [DeferPanic](https://github.com/deferpanic/dp-logrus) | Hook for logging to DeferPanic |
+| [Discordrus](https://github.com/kz/discordrus) | Hook for logging to [Discord](https://discordapp.com/) |
 | [ElasticSearch](https://github.com/sohlich/elogrus) | Hook for logging to ElasticSearch|
 | [Fluentd](https://github.com/evalphobia/logrus_fluent) | Hook for logging to fluentd |
 | [Go-Slack](https://github.com/multiplay/go-slack) | Hook for logging to [Slack](https://slack.com) |
