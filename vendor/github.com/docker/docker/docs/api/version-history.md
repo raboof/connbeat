@@ -18,6 +18,7 @@ keywords: "API, Docker, rcli, REST, documentation"
 [Docker Engine API v1.28](https://docs.docker.com/engine/api/v1.28/) documentation
 
 
+* `GET /containers/create` now takes a `DeviceCgroupRules` field in `HostConfig` allowing to set custom device cgroup rules for the created container.
 * Optional query parameter `verbose` for `GET /networks/(id or name)` will now list all services with all the tasks, including the non-local tasks on the given network.
 * `GET /containers/(id or name)/attach/ws` now returns WebSocket in binary frame format for API version >= v1.28, and returns WebSocket in text frame format for API version< v1.28, for the purpose of backward-compatibility.
 * `GET /networks` is optimised only to return list of all networks and network specific information. List of all containers attached to a specific network is removed from this API and is only available using the network specific `GET /networks/{network-id}.
@@ -26,6 +27,7 @@ keywords: "API, Docker, rcli, REST, documentation"
 * `POST /build` now accepts `extrahosts` parameter to specify a host to ip mapping to use during the build.
 * `POST /services/create` and `POST /services/(id or name)/update` now accept a `rollback` value for `FailureAction`.
 * `POST /services/create` and `POST /services/(id or name)/update` now accept an optional `RollbackConfig` object which specifies rollback options.
+* `GET /services` now supports a `mode` filter to filter services based on the service mode (either `global` or `replicated`).
 
 ## v1.27 API changes
 
