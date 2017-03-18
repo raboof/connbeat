@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-03-14T23:02:35.247550031Z
+updated: 2017-03-18T23:02:34.852356916Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: f7cfacbfe95212a373a54835aee9686f85953913
+  version: 04da4041757370fb6f85510c8977c5a18ddae380
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: ec7102ea86fea77d8048d8819793b5e018cf2498
+  version: eee954c6511c9d103349e45a9afe39c725ab8b1b
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 318513eb1ab27495afbc67f671ba1080513d8aa0
+  version: 87c7e50e0bcf800ed863c3c3b0fbcc67e3029140
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -141,7 +141,7 @@ imports:
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: 31980a53ae7887b2c8f8715d13c3eb486c27b6cf
+  version: d27094036343c79ca29023ad530fa5be3d9b06c2
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -165,7 +165,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+  version: 10f801ebc38b33738c9d17d50860f484a0988ff5
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
