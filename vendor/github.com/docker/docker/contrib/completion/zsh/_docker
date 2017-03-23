@@ -642,6 +642,7 @@ __docker_container_subcommand() {
         "($help)--read-only[Mount the container's root filesystem as read only]"
         "($help)*--security-opt=[Security options]:security option: "
         "($help)*--shm-size=[Size of '/dev/shm' (format is '<number><unit>')]:shm size: "
+        "($help)--stop-signal=[Signal to kill a container]:signal:_signals"
         "($help)--stop-timeout=[Timeout (in seconds) to stop a container]:time: "
         "($help)*--sysctl=-[sysctl options]:sysctl: "
         "($help -t --tty)"{-t,--tty}"[Allocate a pseudo-tty]"
@@ -858,7 +859,6 @@ __docker_container_subcommand() {
                 "($help)--rm[Remove intermediate containers when it exits]" \
                 "($help)--runtime=[Name of the runtime to be used for that container]:runtime:__docker_complete_runtimes" \
                 "($help)--sig-proxy[Proxy all received signals to the process (non-TTY mode only)]" \
-                "($help)--stop-signal=[Signal to kill a container]:signal:_signals" \
                 "($help)--storage-opt=[Storage driver options for the container]:storage options:->storage-opt" \
                 "($help -): :__docker_complete_images" \
                 "($help -):command: _command_names -e" \
@@ -978,6 +978,7 @@ __docker_image_subcommand() {
         (build)
             _arguments $(__docker_arguments) \
                 $opts_help \
+                "($help)*--add-host=[Add a custom host-to-IP mapping]:host\:ip mapping: " \
                 "($help)*--build-arg=[Build-time variables]:<varname>=<value>: " \
                 "($help)*--cache-from=[Images to consider as cache sources]: :__docker_complete_repositories_with_tags" \
                 "($help -c --cpu-shares)"{-c=,--cpu-shares=}"[CPU shares (relative weight)]:CPU shares:(0 10 100 200 500 800 1000)" \
@@ -1267,6 +1268,7 @@ __docker_network_subcommand() {
             _arguments $(__docker_arguments) \
                 $opts_help \
                 "($help -f --format)"{-f=,--format=}"[Format the output using the given go template]:template: " \
+                "($help)--verbose[Show detailed information]" \
                 "($help -)*:network:__docker_complete_networks" && ret=0
             ;;
         (ls)
@@ -1734,6 +1736,7 @@ __docker_secret_subcommand() {
         (ls|list)
             _arguments $(__docker_arguments) \
                 $opts_help \
+                "($help)--format=[Format the output using the given go template]:template: " \
                 "($help -q --quiet)"{-q,--quiet}"[Only display IDs]" && ret=0
             ;;
         (rm|remove)
@@ -1762,6 +1765,10 @@ __docker_service_complete_ls_filters() {
             (id)
                 __docker_complete_services_ids && ret=0
                 ;;
+            (mode)
+                opts=('global' 'replicated')
+                _describe -t mode-opts "mode options" opts && ret=0
+                ;;
             (name)
                 __docker_complete_services_names && ret=0
                 ;;
@@ -1770,7 +1777,7 @@ __docker_service_complete_ls_filters() {
                 ;;
         esac
     else
-        opts=('id' 'label' 'name')
+        opts=('id' 'label' 'mode' 'name')
         _describe -t filter-opts "filter options" opts -qS "=" && ret=0
     fi
 
@@ -1794,6 +1801,28 @@ __docker_service_complete_ps_filters() {
     else
         opts=('desired-state' 'id' 'label' 'name')
         _describe -t filter-opts "filter options" opts -qS "=" && ret=0
+    fi
+
+    return ret
+}
+
+__docker_service_complete_placement_pref() {
+    [[ $PREFIX = -* ]] && return 1
+    integer ret=1
+
+    if compset -P '*='; then
+        case "${${words[-1]%=*}#*=}" in
+            (spread)
+                opts=('engine.labels' 'node.labels')
+                _describe -t spread-opts "spread options" opts -qS "." && ret=0
+                ;;
+            *)
+                _message 'value' && ret=0
+                ;;
+        esac
+    else
+        opts=('spread')
+        _describe -t pref-opts "placement pref options" opts -qS "=" && ret=0
     fi
 
     return ret
@@ -1905,12 +1934,18 @@ __docker_service_subcommand() {
         "($help)--restart-condition=[Restart when condition is met]:mode:(any none on-failure)"
         "($help)--restart-delay=[Delay between restart attempts]:delay: "
         "($help)--restart-max-attempts=[Maximum number of restarts before giving up]:max-attempts: "
-        "($help)--restart-window=[Window used to evaluate the restart policy]:window: "
+        "($help)--restart-window=[Window used to evaluate the restart policy]:duration: "
+        "($help)--rollback-delay=[Delay between task rollbacks]:duration: "
+        "($help)--rollback-failure-action=[Action on rollback failure]:action:(continue pause)"
+        "($help)--rollback-max-failure-ratio=[Failure rate to tolerate during a rollback]:failure rate: "
+        "($help)--rollback-monitor=[Duration after each task rollback to monitor for failure]:duration: "
+        "($help)--rollback-parallelism=[Maximum number of tasks rolled back simultaneously]:number: "
         "($help)*--secret=[Specify secrets to expose to the service]:secret:__docker_complete_secrets"
         "($help)--stop-grace-period=[Time to wait before force killing a container]:grace period: "
+        "($help)--stop-signal=[Signal to stop the container]:signal:_signals"
         "($help -t --tty)"{-t,--tty}"[Allocate a pseudo-TTY]"
         "($help)--update-delay=[Delay between updates]:delay: "
-        "($help)--update-failure-action=[Action on update failure]:mode:(pause continue)"
+        "($help)--update-failure-action=[Action on update failure]:mode:(continue pause rollback)"
         "($help)--update-max-failure-ratio=[Failure rate to tolerate during an update]:fraction: "
         "($help)--update-monitor=[Duration after each task update to monitor for failure]:window: "
         "($help)--update-parallelism=[Maximum number of tasks updated simultaneously]:number: "
@@ -1931,6 +1966,7 @@ __docker_service_subcommand() {
                 "($help)*--env-file=[Read environment variables from a file]:environment file:_files" \
                 "($help)--mode=[Service Mode]:mode:(global replicated)" \
                 "($help)--name=[Service name]:name: " \
+                "($help)*--placement-pref=[Add a placement preference]:pref:__docker_service_complete_placement_pref" \
                 "($help)*--publish=[Publish a port]:port: " \
                 "($help -): :__docker_complete_images" \
                 "($help -):command: _command_names -e" \
@@ -1946,9 +1982,10 @@ __docker_service_subcommand() {
         (logs)
             _arguments $(__docker_arguments) \
                 $opts_help \
-                "($help)--details[Show extra details provided to logs]" \
                 "($help -f --follow)"{-f,--follow}"[Follow log output]" \
                 "($help)--no-resolve[Do not map IDs to Names]" \
+                "($help)--no-task-ids[Do not include task IDs]" \
+                "($help)--no-trunc[Do not truncate output]" \
                 "($help)--since=[Show logs since timestamp]:timestamp: " \
                 "($help)--tail=[Number of lines to show from the end of the logs]:lines:(1 10 20 50 all)" \
                 "($help -t --timestamps)"{-t,--timestamps}"[Show timestamps]" \
@@ -2016,6 +2053,8 @@ __docker_service_subcommand() {
                 "($help)*--group-add=[Add additional supplementary user groups to the container]:group:_groups" \
                 "($help)*--group-rm=[Remove previously added supplementary user groups from the container]:group:_groups" \
                 "($help)--image=[Service image tag]:image:__docker_complete_repositories" \
+                "($help)*--placement-pref-add=[Add a placement preference]:pref:__docker_service_complete_placement_pref" \
+                "($help)*--placement-pref-rm=[Remove a placement preference]:pref:__docker_service_complete_placement_pref" \
                 "($help)*--publish-add=[Add or update a port]:port: " \
                 "($help)*--publish-rm=[Remove a port(target-port mandatory)]:port: " \
                 "($help)--rollback[Rollback to previous specification]" \
