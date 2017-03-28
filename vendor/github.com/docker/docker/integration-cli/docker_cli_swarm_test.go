@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/docker/docker/integration-cli/checker"
 	"github.com/docker/docker/integration-cli/cli"
 	"github.com/docker/docker/integration-cli/daemon"
+	"github.com/docker/docker/pkg/testutil"
 	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/ipamapi"
@@ -58,7 +60,7 @@ func (s *DockerSwarmSuite) TestSwarmInit(c *check.C) {
 		return sw.Spec
 	}
 
-	cli.Docker(cli.Cmd("swarm", "init", "--cert-expiry", "30h", "--dispatcher-heartbeat", "11s"),
+	cli.Docker(cli.Args("swarm", "init", "--cert-expiry", "30h", "--dispatcher-heartbeat", "11s"),
 		cli.Daemon(d.Daemon)).Assert(c, icmd.Success)
 
 	spec := getSpec()
@@ -67,7 +69,7 @@ func (s *DockerSwarmSuite) TestSwarmInit(c *check.C) {
 
 	c.Assert(d.Leave(true), checker.IsNil)
 	time.Sleep(500 * time.Millisecond) // https://github.com/docker/swarmkit/issues/1421
-	cli.Docker(cli.Cmd("swarm", "init"), cli.Daemon(d.Daemon)).Assert(c, icmd.Success)
+	cli.Docker(cli.Args("swarm", "init"), cli.Daemon(d.Daemon)).Assert(c, icmd.Success)
 
 	spec = getSpec()
 	c.Assert(spec.CAConfig.NodeCertExpiry, checker.Equals, 90*24*time.Hour)
@@ -77,12 +79,12 @@ func (s *DockerSwarmSuite) TestSwarmInit(c *check.C) {
 func (s *DockerSwarmSuite) TestSwarmInitIPv6(c *check.C) {
 	testRequires(c, IPv6)
 	d1 := s.AddDaemon(c, false, false)
-	cli.Docker(cli.Cmd("swarm", "init", "--listen-add", "::1"), cli.Daemon(d1.Daemon)).Assert(c, icmd.Success)
+	cli.Docker(cli.Args("swarm", "init", "--listen-add", "::1"), cli.Daemon(d1.Daemon)).Assert(c, icmd.Success)
 
 	d2 := s.AddDaemon(c, false, false)
-	cli.Docker(cli.Cmd("swarm", "join", "::1"), cli.Daemon(d2.Daemon)).Assert(c, icmd.Success)
+	cli.Docker(cli.Args("swarm", "join", "::1"), cli.Daemon(d2.Daemon)).Assert(c, icmd.Success)
 
-	out := cli.Docker(cli.Cmd("info"), cli.Daemon(d2.Daemon)).Assert(c, icmd.Success).Combined()
+	out := cli.Docker(cli.Args("info"), cli.Daemon(d2.Daemon)).Assert(c, icmd.Success).Combined()
 	c.Assert(out, checker.Contains, "Swarm: active")
 }
 
@@ -413,14 +415,57 @@ func (s *DockerSwarmSuite) TestOverlayAttachableReleaseResourcesOnFailure(c *che
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 }
 
-func (s *DockerSwarmSuite) TestSwarmRemoveInternalNetwork(c *check.C) {
+func (s *DockerSwarmSuite) TestSwarmIngressNetwork(c *check.C) {
 	d := s.AddDaemon(c, true, true)
 
-	name := "ingress"
-	out, err := d.Cmd("network", "rm", name)
+	// Ingress network can be removed
+	out, _, err := testutil.RunCommandPipelineWithOutput(
+		exec.Command("echo", "Y"),
+		exec.Command("docker", "-H", d.Sock(), "network", "rm", "ingress"),
+	)
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+
+	// And recreated
+	out, err = d.Cmd("network", "create", "-d", "overlay", "--ingress", "new-ingress")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+
+	// But only one is allowed
+	out, err = d.Cmd("network", "create", "-d", "overlay", "--ingress", "another-ingress")
 	c.Assert(err, checker.NotNil)
-	c.Assert(strings.TrimSpace(out), checker.Contains, name)
-	c.Assert(strings.TrimSpace(out), checker.Contains, "is a pre-defined network and cannot be removed")
+	c.Assert(strings.TrimSpace(out), checker.Contains, "is already present")
+
+	// It cannot be removed if it is being used
+	out, err = d.Cmd("service", "create", "--name", "srv1", "-p", "9000:8000", "busybox", "top")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+	out, _, err = testutil.RunCommandPipelineWithOutput(
+		exec.Command("echo", "Y"),
+		exec.Command("docker", "-H", d.Sock(), "network", "rm", "new-ingress"),
+	)
+	c.Assert(err, checker.NotNil)
+	c.Assert(strings.TrimSpace(out), checker.Contains, "ingress network cannot be removed because service")
+
+	// But it can be removed once no more services depend on it
+	out, err = d.Cmd("service", "update", "--publish-rm", "9000:8000", "srv1")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+	out, _, err = testutil.RunCommandPipelineWithOutput(
+		exec.Command("echo", "Y"),
+		exec.Command("docker", "-H", d.Sock(), "network", "rm", "new-ingress"),
+	)
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+
+	// A service which needs the ingress network cannot be created if no ingress is present
+	out, err = d.Cmd("service", "create", "--name", "srv2", "-p", "500:500", "busybox", "top")
+	c.Assert(err, checker.NotNil)
+	c.Assert(strings.TrimSpace(out), checker.Contains, "no ingress network is present")
+
+	// An existing service cannot be updated to use the ingress nw if the nw is not present
+	out, err = d.Cmd("service", "update", "--publish-add", "9000:8000", "srv1")
+	c.Assert(err, checker.NotNil)
+	c.Assert(strings.TrimSpace(out), checker.Contains, "no ingress network is present")
+
+	// But services which do not need routing mesh can be created regardless
+	out, err = d.Cmd("service", "create", "--name", "srv3", "--endpoint-mode", "dnsrr", "busybox", "top")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
 }
 
 // Test case for #24108, also the case from:
