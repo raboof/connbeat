@@ -225,13 +225,19 @@ func (daemon *Daemon) clusterNetworksPrune(pruneFilters filters.Args) (*types.Ne
 	until, _ := getUntilFromPruneFilters(pruneFilters)
 
 	cluster := daemon.GetCluster()
+
+	if !cluster.IsManager() {
+		return rep, nil
+	}
+
 	networks, err := cluster.GetNetworks()
 	if err != nil {
 		return rep, err
 	}
 	networkIsInUse := regexp.MustCompile(`network ([[:alnum:]]+) is in use`)
 	for _, nw := range networks {
-		if nw.Name == "ingress" {
+		if nw.Ingress {
+			// Routing-mesh network removal has to be explicitly invoked by user
 			continue
 		}
 		if !until.IsZero() && nw.Created.After(until) {
