@@ -7,7 +7,8 @@ GOPACKAGES=$(shell go list ${BEAT_DIR}/... 2>/dev/null | grep -v /vendor/)
 PREFIX?=.
 
 # Only crosscompile for linux because other OS'es use cgo.
-GOX_OS=linux
+GOX_OS=linux darwin
+GOX_FLAGS='-arch=amd64 386'
 
 # For packaging: for now we know how to package on linux amd64
 TARGETS="linux/amd64 linux/386"
