@@ -21,7 +21,7 @@ provides actionable insights.
 
 ## Building
 
-### On linux
+### On linux and mac osx
 
 Connbeat is built with 'make'. You need at least golang 1.7.3.
 
@@ -30,9 +30,10 @@ Connbeat is built with 'make'. You need at least golang 1.7.3.
     cd $GOPATH/src/github.com/raboof/connbeat
     make
 
-### On osx
+It is possible to build connbeat on OSX. However, no integrations are implemented at this
+point. It is possible to run the unit tests.
 
-It's currently not possible to build connbeat on/for osx.
+### Building for linux on OSX
 
 To build a linux binary on OSX you can use docker:
 
@@ -137,7 +138,7 @@ For connections where the agent appears to be the client:
 
 ## Testing
 
-To run the regular go unit test, run 'make test'.
+To run the regular go unit test, run 'make unit'.
 
 To also run docker-based system tests, run 'make testsuite'
 
