@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-03-29T22:02:35.857214095Z
+updated: 2017-04-03T22:02:33.059924793Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 278b36e5ce2f3be6d2db9a9b39b1e7357aaeab7b
+  version: d61c5882cfd832764e2b8b58dbdc7e7f180371ab
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -40,7 +40,7 @@ imports:
   - pkg/term
   - pkg/term/windows
 - name: github.com/docker/go-connections
-  version: a2afab9802043837035592f1c24827fb70766de9
+  version: e15c02316c12de00874640cd76311849de2aeed5
   subpackages:
   - nat
 - name: github.com/docker/go-units
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 87c7e50e0bcf800ed863c3c3b0fbcc67e3029140
+  version: e24e809e9db395f1e3c85af1b88f2002023610f5
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -141,7 +141,7 @@ imports:
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: 653207bc29a6d2d62b5d4f55b596467cb715a128
+  version: f990e58f26ab48367284f4a4e21bb95d641cde19
   subpackages:
   - libcontainer/system
   - libcontainer/user
