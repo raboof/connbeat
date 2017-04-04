@@ -23,6 +23,8 @@ Create a new service
 Options:
       --constraint list                    Placement constraints (default [])
       --container-label list               Container labels (default [])
+  -d, --detach                             Exit immediately instead of waiting for the service to converge
+                                           (default true)
       --dns list                           Set custom DNS servers (default [])
       --dns-option list                    Set DNS options (default [])
       --dns-search list                    Set custom DNS search domains (default [])
@@ -424,7 +426,7 @@ The following options can only be used for named volumes (`type=volume`);
       Options specific to a given volume driver, which will be passed to the
       driver when creating the volume. Options are provided as a comma-separated
       list of key/value pairs, for example,
-      <tt>volume-opt=some-option=some-value,some-other-option=some-other-value</tt>.
+      <tt>volume-opt=some-option=some-value,volume-opt=some-other-option=some-other-value</tt>.
       For available options for a given driver, refer to that driver's
       documentation.
     </td>
