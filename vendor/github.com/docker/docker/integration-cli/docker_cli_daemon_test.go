@@ -198,7 +198,12 @@ func (s *DockerDaemonSuite) TestDaemonRestartWithInvalidBasesize(c *check.C) {
 
 	if newBasesizeBytes < oldBasesizeBytes {
 		err := s.d.RestartWithError("--storage-opt", fmt.Sprintf("dm.basesize=%d", newBasesizeBytes))
-		c.Assert(err, check.IsNil, check.Commentf("daemon should not have started as new base device size is less than existing base device size: %v", err))
+		c.Assert(err, check.NotNil, check.Commentf("daemon should not have started as new base device size is less than existing base device size: %v", err))
+		// 'err != nil' is expected behaviour, no new daemon started,
+		// so no need to stop daemon.
+		if err != nil {
+			return
+		}
 	}
 	s.d.Stop(c)
 }
@@ -1773,7 +1778,7 @@ func (s *DockerDaemonSuite) TestDaemonNoSpaceLeftOnDeviceError(c *check.C) {
 	dockerCmd(c, "run", "--privileged", "--rm", "-v", testDir+":/test:shared", "busybox", "sh", "-c", fmt.Sprintf("mkdir -p /test/test-mount && mount -t ext4 -no loop,rw %v /test/test-mount", loopname))
 	defer mount.Unmount(filepath.Join(testDir, "test-mount"))
 
-	s.d.Start(c, "--graph", filepath.Join(testDir, "test-mount"))
+	s.d.Start(c, "--data-root", filepath.Join(testDir, "test-mount"))
 	defer s.d.Stop(c)
 
 	// pull a repository large enough to fill the mount point

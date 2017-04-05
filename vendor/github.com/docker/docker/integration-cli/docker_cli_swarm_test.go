@@ -468,6 +468,24 @@ func (s *DockerSwarmSuite) TestSwarmIngressNetwork(c *check.C) {
 	c.Assert(err, checker.IsNil, check.Commentf(out))
 }
 
+func (s *DockerSwarmSuite) TestSwarmCreateServiceWithNoIngressNetwork(c *check.C) {
+	d := s.AddDaemon(c, true, true)
+
+	// Remove ingress network
+	out, _, err := testutil.RunCommandPipelineWithOutput(
+		exec.Command("echo", "Y"),
+		exec.Command("docker", "-H", d.Sock(), "network", "rm", "ingress"),
+	)
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+
+	// Create a overlay network and launch a service on it
+	// Make sure nothing panics because ingress network is missing
+	out, err = d.Cmd("network", "create", "-d", "overlay", "another-network")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+	out, err = d.Cmd("service", "create", "--name", "srv4", "--network", "another-network", "busybox", "top")
+	c.Assert(err, checker.IsNil, check.Commentf(out))
+}
+
 // Test case for #24108, also the case from:
 // https://github.com/docker/docker/pull/24620#issuecomment-233715656
 func (s *DockerSwarmSuite) TestSwarmTaskListFilter(c *check.C) {
@@ -1593,13 +1611,13 @@ func (s *DockerSwarmSuite) TestSwarmServicePsMultipleServiceIDs(c *check.C) {
 	d := s.AddDaemon(c, true, true)
 
 	name1 := "top1"
-	out, err := d.Cmd("service", "create", "--name", name1, "--replicas=3", "busybox", "top")
+	out, err := d.Cmd("service", "create", "--detach=true", "--name", name1, "--replicas=3", "busybox", "top")
 	c.Assert(err, checker.IsNil)
 	c.Assert(strings.TrimSpace(out), checker.Not(checker.Equals), "")
 	id1 := strings.TrimSpace(out)
 
 	name2 := "top2"
-	out, err = d.Cmd("service", "create", "--name", name2, "--replicas=3", "busybox", "top")
+	out, err = d.Cmd("service", "create", "--detach=true", "--name", name2, "--replicas=3", "busybox", "top")
 	c.Assert(err, checker.IsNil)
 	c.Assert(strings.TrimSpace(out), checker.Not(checker.Equals), "")
 	id2 := strings.TrimSpace(out)
@@ -1662,7 +1680,7 @@ func (s *DockerSwarmSuite) TestSwarmServicePsMultipleServiceIDs(c *check.C) {
 func (s *DockerSwarmSuite) TestSwarmPublishDuplicatePorts(c *check.C) {
 	d := s.AddDaemon(c, true, true)
 
-	out, err := d.Cmd("service", "create", "--publish", "5005:80", "--publish", "5006:80", "--publish", "80", "--publish", "80", "busybox", "top")
+	out, err := d.Cmd("service", "create", "--detach=true", "--publish", "5005:80", "--publish", "5006:80", "--publish", "80", "--publish", "80", "busybox", "top")
 	c.Assert(err, check.IsNil, check.Commentf(out))
 	id := strings.TrimSpace(out)
 
