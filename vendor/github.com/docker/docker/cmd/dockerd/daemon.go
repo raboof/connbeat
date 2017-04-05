@@ -50,10 +50,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	flagDaemonConfigFile = "config-file"
-)
-
 // DaemonCli represents the daemon CLI.
 type DaemonCli struct {
 	*config.Config
@@ -423,10 +419,14 @@ func loadDaemonCliConfig(opts daemonOptions) (*config.Config, error) {
 		conf.CommonTLSOptions.KeyFile = opts.common.TLSOptions.KeyFile
 	}
 
+	if flags.Changed("graph") && flags.Changed("data-root") {
+		return nil, fmt.Errorf(`cannot specify both "--graph" and "--data-root" option`)
+	}
+
 	if opts.configFile != "" {
 		c, err := config.MergeDaemonConfigurations(conf, flags, opts.configFile)
 		if err != nil {
-			if flags.Changed(flagDaemonConfigFile) || !os.IsNotExist(err) {
+			if flags.Changed("config-file") || !os.IsNotExist(err) {
 				return nil, fmt.Errorf("unable to configure the Docker daemon with file %s: %v\n", opts.configFile, err)
 			}
 		}
@@ -439,6 +439,10 @@ func loadDaemonCliConfig(opts daemonOptions) (*config.Config, error) {
 
 	if err := config.Validate(conf); err != nil {
 		return nil, err
+	}
+
+	if flags.Changed("graph") {
+		logrus.Warnf(`the "-g / --graph" flag is deprecated. Please use "--data-root" instead`)
 	}
 
 	// Labels of the docker engine used to allow multiple values associated with the same key.
@@ -511,7 +515,7 @@ func (cli *DaemonCli) initMiddlewares(s *apiserver.Server, cfg *apiserver.Config
 	vm := middleware.NewVersionMiddleware(v, api.DefaultVersion, api.MinVersion)
 	s.UseMiddleware(vm)
 
-	if cfg.EnableCors {
+	if cfg.EnableCors || cfg.CorsHeaders != "" {
 		c := middleware.NewCORSMiddleware(cfg.CorsHeaders)
 		s.UseMiddleware(c)
 	}
