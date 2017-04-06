@@ -158,16 +158,17 @@ type DeployConfig struct {
 	Resources     Resources
 	RestartPolicy *RestartPolicy `mapstructure:"restart_policy"`
 	Placement     Placement
-	EndpointMode  string
+	EndpointMode  string `mapstructure:"endpoint_mode"`
 }
 
 // HealthCheckConfig the healthcheck configuration for a service
 type HealthCheckConfig struct {
-	Test     HealthCheckTest
-	Timeout  string
-	Interval string
-	Retries  *uint64
-	Disable  bool
+	Test        HealthCheckTest
+	Timeout     string
+	Interval    string
+	Retries     *uint64
+	StartPeriod string
+	Disable     bool
 }
 
 // HealthCheckTest is the command run to test the health of a service

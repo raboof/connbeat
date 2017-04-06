@@ -26,6 +26,8 @@ Options:
       --constraint-rm list                 Remove a constraint (default [])
       --container-label-add list           Add or update a container label (default [])
       --container-label-rm list            Remove a container label by its key (default [])
+  -d, --detach                             Exit immediately instead of waiting for the service to converge
+                                           (default true)
       --dns-add list                       Add or update a custom DNS server (default [])
       --dns-option-add list                Add or update a DNS option (default [])
       --dns-option-rm list                 Remove a DNS option (default [])
@@ -42,6 +44,7 @@ Options:
       --health-interval duration           Time between running the check (ns|us|ms|s|m|h)
       --health-retries int                 Consecutive failures needed to report unhealthy
       --health-timeout duration            Maximum time to allow one check to run (ns|us|ms|s|m|h)
+      --health-start-period duration       Start period for the container to initialize before counting retries towards unstable (ns|us|ms|s|m|h) (default 0s)
       --help                               Print usage
       --host-add list                      Add or update a custom host-to-IP mapping (host:ip) (default [])
       --host-rm list                       Remove a custom host-to-IP mapping (host:ip) (default [])

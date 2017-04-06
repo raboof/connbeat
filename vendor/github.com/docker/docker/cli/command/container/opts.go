@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/container"
 	networktypes "github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -31,6 +32,7 @@ type containerOptions struct {
 	attach             opts.ListOpts
 	volumes            opts.ListOpts
 	tmpfs              opts.ListOpts
+	mounts             opts.MountOpt
 	blkioWeightDevice  opts.WeightdeviceOpt
 	deviceReadBps      opts.ThrottledeviceOpt
 	deviceWriteBps     opts.ThrottledeviceOpt
@@ -111,6 +113,7 @@ type containerOptions struct {
 	healthCmd          string
 	healthInterval     time.Duration
 	healthTimeout      time.Duration
+	healthStartPeriod  time.Duration
 	healthRetries      int
 	runtime            string
 	autoRemove         bool
@@ -223,12 +226,15 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 	flags.Var(&copts.tmpfs, "tmpfs", "Mount a tmpfs directory")
 	flags.Var(&copts.volumesFrom, "volumes-from", "Mount volumes from the specified container(s)")
 	flags.VarP(&copts.volumes, "volume", "v", "Bind mount a volume")
+	flags.Var(&copts.mounts, "mount", "Attach a filesystem mount to the container")
 
 	// Health-checking
 	flags.StringVar(&copts.healthCmd, "health-cmd", "", "Command to run to check health")
 	flags.DurationVar(&copts.healthInterval, "health-interval", 0, "Time between running the check (ns|us|ms|s|m|h) (default 0s)")
 	flags.IntVar(&copts.healthRetries, "health-retries", 0, "Consecutive failures needed to report unhealthy")
 	flags.DurationVar(&copts.healthTimeout, "health-timeout", 0, "Maximum time to allow one check to run (ns|us|ms|s|m|h) (default 0s)")
+	flags.DurationVar(&copts.healthStartPeriod, "health-start-period", 0, "Start period for the container to initialize before starting health-retries countdown (ns|us|ms|s|m|h) (default 0s)")
+	flags.SetAnnotation("health-start-period", "version", []string{"1.29"})
 	flags.BoolVar(&copts.noHealthcheck, "no-healthcheck", false, "Disable any container-specified HEALTHCHECK")
 
 	// Resource management
@@ -321,6 +327,10 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		return nil, errors.Errorf("invalid value: %d. Valid memory swappiness range is 0-100", swappiness)
 	}
 
+	mounts := copts.mounts.Value()
+	if len(mounts) > 0 && copts.volumeDriver != "" {
+		logrus.Warn("`--volume-driver` is ignored for volumes specified via `--mount`. Use `--mount type=volume,volume-driver=...` instead.")
+	}
 	var binds []string
 	volumes := copts.volumes.GetMap()
 	// add any bind targets to the list of container volumes
@@ -457,6 +467,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 	haveHealthSettings := copts.healthCmd != "" ||
 		copts.healthInterval != 0 ||
 		copts.healthTimeout != 0 ||
+		copts.healthStartPeriod != 0 ||
 		copts.healthRetries != 0
 	if copts.noHealthcheck {
 		if haveHealthSettings {
@@ -479,12 +490,16 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		if copts.healthRetries < 0 {
 			return nil, errors.Errorf("--health-retries cannot be negative")
 		}
+		if copts.healthStartPeriod < 0 {
+			return nil, fmt.Errorf("--health-start-period cannot be negative")
+		}
 
 		healthConfig = &container.HealthConfig{
-			Test:     probe,
-			Interval: copts.healthInterval,
-			Timeout:  copts.healthTimeout,
-			Retries:  copts.healthRetries,
+			Test:        probe,
+			Interval:    copts.healthInterval,
+			Timeout:     copts.healthTimeout,
+			StartPeriod: copts.healthStartPeriod,
+			Retries:     copts.healthRetries,
 		}
 	}
 
@@ -589,6 +604,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		Tmpfs:          tmpfs,
 		Sysctls:        copts.sysctls.GetAll(),
 		Runtime:        copts.runtime,
+		Mounts:         mounts,
 	}
 
 	if copts.autoRemove && !hostConfig.RestartPolicy.IsNone() {
