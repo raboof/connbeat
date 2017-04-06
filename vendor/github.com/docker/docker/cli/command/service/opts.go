@@ -282,6 +282,7 @@ type healthCheckOptions struct {
 	interval      PositiveDurationOpt
 	timeout       PositiveDurationOpt
 	retries       int
+	startPeriod   PositiveDurationOpt
 	noHealthcheck bool
 }
 
@@ -301,18 +302,22 @@ func (opts *healthCheckOptions) toHealthConfig() (*container.HealthConfig, error
 		if opts.cmd != "" {
 			test = []string{"CMD-SHELL", opts.cmd}
 		}
-		var interval, timeout time.Duration
+		var interval, timeout, startPeriod time.Duration
 		if ptr := opts.interval.Value(); ptr != nil {
 			interval = *ptr
 		}
 		if ptr := opts.timeout.Value(); ptr != nil {
 			timeout = *ptr
 		}
+		if ptr := opts.startPeriod.Value(); ptr != nil {
+			startPeriod = *ptr
+		}
 		healthConfig = &container.HealthConfig{
-			Test:     test,
-			Interval: interval,
-			Timeout:  timeout,
-			Retries:  opts.retries,
+			Test:        test,
+			Interval:    interval,
+			Timeout:     timeout,
+			Retries:     opts.retries,
+			StartPeriod: startPeriod,
 		}
 	}
 	return healthConfig, nil
@@ -333,6 +338,9 @@ func convertExtraHostsToSwarmHosts(extraHosts []string) []string {
 }
 
 type serviceOptions struct {
+	detach bool
+	quiet  bool
+
 	name            string
 	labels          opts.ListOpts
 	containerLabels opts.ListOpts
@@ -496,6 +504,9 @@ func (opts *serviceOptions) ToService() (swarm.ServiceSpec, error) {
 // addServiceFlags adds all flags that are common to both `create` and `update`.
 // Any flags that are not common are added separately in the individual command
 func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
+	flags.BoolVarP(&opts.detach, "detach", "d", true, "Exit immediately instead of waiting for the service to converge")
+	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress progress output")
+
 	flags.StringVarP(&opts.workdir, flagWorkdir, "w", "", "Working directory inside the container")
 	flags.StringVarP(&opts.user, flagUser, "u", "", "Username or UID (format: <name|uid>[:<group|gid>])")
 	flags.StringVar(&opts.hostname, flagHostname, "", "Container hostname")
@@ -549,6 +560,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
 	flags.SetAnnotation(flagHealthTimeout, "version", []string{"1.25"})
 	flags.IntVar(&opts.healthcheck.retries, flagHealthRetries, 0, "Consecutive failures needed to report unhealthy")
 	flags.SetAnnotation(flagHealthRetries, "version", []string{"1.25"})
+	flags.Var(&opts.healthcheck.startPeriod, flagHealthStartPeriod, "Start period for the container to initialize before counting retries towards unstable (ns|us|ms|s|m|h)")
+	flags.SetAnnotation(flagHealthStartPeriod, "version", []string{"1.29"})
 	flags.BoolVar(&opts.healthcheck.noHealthcheck, flagNoHealthcheck, false, "Disable any container-specified HEALTHCHECK")
 	flags.SetAnnotation(flagNoHealthcheck, "version", []string{"1.25"})
 
@@ -638,6 +651,7 @@ const (
 	flagHealthInterval          = "health-interval"
 	flagHealthRetries           = "health-retries"
 	flagHealthTimeout           = "health-timeout"
+	flagHealthStartPeriod       = "health-start-period"
 	flagNoHealthcheck           = "no-healthcheck"
 	flagSecret                  = "secret"
 	flagSecretAdd               = "secret-add"

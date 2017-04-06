@@ -97,7 +97,7 @@ func secretReferencesToGRPC(sr []*types.SecretReference) []*swarmapi.SecretRefer
 		}
 		if s.File != nil {
 			ref.Target = &swarmapi.SecretReference_File{
-				File: &swarmapi.SecretReference_FileTarget{
+				File: &swarmapi.FileTarget{
 					Name: s.File.Name,
 					UID:  s.File.UID,
 					GID:  s.File.GID,
@@ -221,19 +221,22 @@ func containerToGRPC(c types.ContainerSpec) (*swarmapi.ContainerSpec, error) {
 func healthConfigFromGRPC(h *swarmapi.HealthConfig) *container.HealthConfig {
 	interval, _ := gogotypes.DurationFromProto(h.Interval)
 	timeout, _ := gogotypes.DurationFromProto(h.Timeout)
+	startPeriod, _ := gogotypes.DurationFromProto(h.Timeout)
 	return &container.HealthConfig{
-		Test:     h.Test,
-		Interval: interval,
-		Timeout:  timeout,
-		Retries:  int(h.Retries),
+		Test:        h.Test,
+		Interval:    interval,
+		Timeout:     timeout,
+		Retries:     int(h.Retries),
+		StartPeriod: startPeriod,
 	}
 }
 
 func healthConfigToGRPC(h *container.HealthConfig) *swarmapi.HealthConfig {
 	return &swarmapi.HealthConfig{
-		Test:     h.Test,
-		Interval: gogotypes.DurationProto(h.Interval),
-		Timeout:  gogotypes.DurationProto(h.Timeout),
-		Retries:  int32(h.Retries),
+		Test:        h.Test,
+		Interval:    gogotypes.DurationProto(h.Interval),
+		Timeout:     gogotypes.DurationProto(h.Timeout),
+		Retries:     int32(h.Retries),
+		StartPeriod: gogotypes.DurationProto(h.StartPeriod),
 	}
 }

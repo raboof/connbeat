@@ -23,6 +23,8 @@ Create a new service
 Options:
       --constraint list                    Placement constraints (default [])
       --container-label list               Container labels (default [])
+  -d, --detach                             Exit immediately instead of waiting for the service to converge
+                                           (default true)
       --dns list                           Set custom DNS servers (default [])
       --dns-option list                    Set DNS options (default [])
       --dns-search list                    Set custom DNS search domains (default [])
@@ -34,6 +36,7 @@ Options:
       --health-interval duration           Time between running the check (ns|us|ms|s|m|h)
       --health-retries int                 Consecutive failures needed to report unhealthy
       --health-timeout duration            Maximum time to allow one check to run (ns|us|ms|s|m|h)
+      --health-start-period duration       Start period for the container to initialize before counting retries towards unstable (ns|us|ms|s|m|h) (default 0s)
       --help                               Print usage
       --host list                          Set one or more custom host-to-IP mappings (host:ip) (default [])
       --hostname string                    Container hostname
@@ -424,7 +427,7 @@ The following options can only be used for named volumes (`type=volume`);
       Options specific to a given volume driver, which will be passed to the
       driver when creating the volume. Options are provided as a comma-separated
       list of key/value pairs, for example,
-      <tt>volume-opt=some-option=some-value,some-other-option=some-other-value</tt>.
+      <tt>volume-opt=some-option=some-value,volume-opt=some-other-option=some-other-value</tt>.
       For available options for a given driver, refer to that driver's
       documentation.
     </td>
