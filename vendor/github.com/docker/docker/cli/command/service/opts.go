@@ -188,6 +188,7 @@ type updateOptions struct {
 	monitor         time.Duration
 	onFailure       string
 	maxFailureRatio floatValue
+	order           string
 }
 
 func (opts updateOptions) config() *swarm.UpdateConfig {
@@ -197,6 +198,7 @@ func (opts updateOptions) config() *swarm.UpdateConfig {
 		Monitor:         opts.monitor,
 		FailureAction:   opts.onFailure,
 		MaxFailureRatio: opts.maxFailureRatio.Value(),
+		Order:           opts.order,
 	}
 }
 
@@ -234,6 +236,38 @@ func (r *restartPolicyOptions) ToRestartPolicy() *swarm.RestartPolicy {
 		MaxAttempts: r.maxAttempts.Value(),
 		Window:      r.window.Value(),
 	}
+}
+
+type credentialSpecOpt struct {
+	value  *swarm.CredentialSpec
+	source string
+}
+
+func (c *credentialSpecOpt) Set(value string) error {
+	c.source = value
+	c.value = &swarm.CredentialSpec{}
+	switch {
+	case strings.HasPrefix(value, "file://"):
+		c.value.File = strings.TrimPrefix(value, "file://")
+	case strings.HasPrefix(value, "registry://"):
+		c.value.Registry = strings.TrimPrefix(value, "registry://")
+	default:
+		return errors.New("Invalid credential spec - value must be prefixed file:// or registry:// followed by a value")
+	}
+
+	return nil
+}
+
+func (c *credentialSpecOpt) Type() string {
+	return "credential-spec"
+}
+
+func (c *credentialSpecOpt) String() string {
+	return c.source
+}
+
+func (c *credentialSpecOpt) Value() *swarm.CredentialSpec {
+	return c.value
 }
 
 func convertNetworks(networks []string) []swarm.NetworkAttachmentConfig {
@@ -353,6 +387,7 @@ type serviceOptions struct {
 	workdir         string
 	user            string
 	groups          opts.ListOpts
+	credentialSpec  credentialSpecOpt
 	stopSignal      string
 	tty             bool
 	readOnly        bool
@@ -498,6 +533,12 @@ func (opts *serviceOptions) ToService() (swarm.ServiceSpec, error) {
 		EndpointSpec:   opts.endpoint.ToEndpointSpec(),
 	}
 
+	if opts.credentialSpec.Value() != nil {
+		service.TaskTemplate.ContainerSpec.Privileges = &swarm.Privileges{
+			CredentialSpec: opts.credentialSpec.Value(),
+		}
+	}
+
 	return service, nil
 }
 
@@ -509,6 +550,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
 
 	flags.StringVarP(&opts.workdir, flagWorkdir, "w", "", "Working directory inside the container")
 	flags.StringVarP(&opts.user, flagUser, "u", "", "Username or UID (format: <name|uid>[:<group|gid>])")
+	flags.Var(&opts.credentialSpec, flagCredentialSpec, "Credential spec for managed service account (Windows only)")
+	flags.SetAnnotation(flagCredentialSpec, "version", []string{"1.29"})
 	flags.StringVar(&opts.hostname, flagHostname, "", "Container hostname")
 	flags.SetAnnotation(flagHostname, "version", []string{"1.25"})
 	flags.Var(&opts.entrypoint, flagEntrypoint, "Overwrite the default ENTRYPOINT of the image")
@@ -533,6 +576,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
 	flags.StringVar(&opts.update.onFailure, flagUpdateFailureAction, "pause", `Action on update failure ("pause"|"continue"|"rollback")`)
 	flags.Var(&opts.update.maxFailureRatio, flagUpdateMaxFailureRatio, "Failure rate to tolerate during an update")
 	flags.SetAnnotation(flagUpdateMaxFailureRatio, "version", []string{"1.25"})
+	flags.StringVar(&opts.update.order, flagUpdateOrder, "stop-first", `Update order ("start-first"|"stop-first")`)
+	flags.SetAnnotation(flagUpdateOrder, "version", []string{"1.29"})
 
 	flags.Uint64Var(&opts.rollback.parallelism, flagRollbackParallelism, 1, "Maximum number of tasks rolled back simultaneously (0 to roll back all at once)")
 	flags.SetAnnotation(flagRollbackParallelism, "version", []string{"1.28"})
@@ -544,6 +589,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
 	flags.SetAnnotation(flagRollbackFailureAction, "version", []string{"1.28"})
 	flags.Var(&opts.rollback.maxFailureRatio, flagRollbackMaxFailureRatio, "Failure rate to tolerate during a rollback")
 	flags.SetAnnotation(flagRollbackMaxFailureRatio, "version", []string{"1.28"})
+	flags.StringVar(&opts.rollback.order, flagRollbackOrder, "stop-first", `Rollback order ("start-first"|"stop-first")`)
+	flags.SetAnnotation(flagRollbackOrder, "version", []string{"1.29"})
 
 	flags.StringVar(&opts.endpoint.mode, flagEndpointMode, "vip", "Endpoint mode (vip or dnsrr)")
 
@@ -576,6 +623,7 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions) {
 }
 
 const (
+	flagCredentialSpec          = "credential-spec"
 	flagPlacementPref           = "placement-pref"
 	flagPlacementPrefAdd        = "placement-pref-add"
 	flagPlacementPrefRemove     = "placement-pref-rm"
@@ -633,6 +681,7 @@ const (
 	flagRollbackFailureAction   = "rollback-failure-action"
 	flagRollbackMaxFailureRatio = "rollback-max-failure-ratio"
 	flagRollbackMonitor         = "rollback-monitor"
+	flagRollbackOrder           = "rollback-order"
 	flagRollbackParallelism     = "rollback-parallelism"
 	flagStopGracePeriod         = "stop-grace-period"
 	flagStopSignal              = "stop-signal"
@@ -641,6 +690,7 @@ const (
 	flagUpdateFailureAction     = "update-failure-action"
 	flagUpdateMaxFailureRatio   = "update-max-failure-ratio"
 	flagUpdateMonitor           = "update-monitor"
+	flagUpdateOrder             = "update-order"
 	flagUpdateParallelism       = "update-parallelism"
 	flagUser                    = "user"
 	flagWorkdir                 = "workdir"
