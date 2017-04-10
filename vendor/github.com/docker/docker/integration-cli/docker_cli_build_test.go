@@ -2024,6 +2024,87 @@ func (s *DockerSuite) TestBuildNoContext(c *check.C) {
 	}
 }
 
+func (s *DockerSuite) TestBuildDockerfileStdin(c *check.C) {
+	name := "stdindockerfile"
+	tmpDir, err := ioutil.TempDir("", "fake-context")
+	c.Assert(err, check.IsNil)
+	err = ioutil.WriteFile(filepath.Join(tmpDir, "foo"), []byte("bar"), 0600)
+	c.Assert(err, check.IsNil)
+
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "build", "-t", name, "-f", "-", tmpDir},
+		Stdin: strings.NewReader(
+			`FROM busybox
+ADD foo /foo
+CMD ["cat", "/foo"]`),
+	}).Assert(c, icmd.Success)
+
+	res := inspectField(c, name, "Config.Cmd")
+	c.Assert(strings.TrimSpace(string(res)), checker.Equals, `[cat /foo]`)
+}
+
+func (s *DockerSuite) TestBuildDockerfileStdinConflict(c *check.C) {
+	name := "stdindockerfiletarcontext"
+	icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "build", "-t", name, "-f", "-", "-"},
+	}).Assert(c, icmd.Expected{
+		ExitCode: 1,
+		Err:      "use stdin for both build context and dockerfile",
+	})
+}
+
+func (s *DockerSuite) TestBuildDockerfileStdinNoExtraFiles(c *check.C) {
+	s.testBuildDockerfileStdinNoExtraFiles(c, false, false)
+}
+
+func (s *DockerSuite) TestBuildDockerfileStdinDockerignore(c *check.C) {
+	s.testBuildDockerfileStdinNoExtraFiles(c, true, false)
+}
+
+func (s *DockerSuite) TestBuildDockerfileStdinDockerignoreIgnored(c *check.C) {
+	s.testBuildDockerfileStdinNoExtraFiles(c, true, true)
+}
+
+func (s *DockerSuite) testBuildDockerfileStdinNoExtraFiles(c *check.C, hasDockerignore, ignoreDockerignore bool) {
+	name := "stdindockerfilenoextra"
+	tmpDir, err := ioutil.TempDir("", "fake-context")
+	c.Assert(err, check.IsNil)
+	defer os.RemoveAll(tmpDir)
+
+	writeFile := func(filename, content string) {
+		err = ioutil.WriteFile(filepath.Join(tmpDir, filename), []byte(content), 0600)
+		c.Assert(err, check.IsNil)
+	}
+
+	writeFile("foo", "bar")
+
+	if hasDockerignore {
+		// Add an empty Dockerfile to verify that it is not added to the image
+		writeFile("Dockerfile", "")
+
+		ignores := "Dockerfile\n"
+		if ignoreDockerignore {
+			ignores += ".dockerignore\n"
+		}
+		writeFile(".dockerignore", ignores)
+	}
+
+	result := icmd.RunCmd(icmd.Cmd{
+		Command: []string{dockerBinary, "build", "-t", name, "-f", "-", tmpDir},
+		Stdin: strings.NewReader(
+			`FROM busybox
+COPY . /baz`),
+	})
+	result.Assert(c, icmd.Success)
+
+	result = cli.DockerCmd(c, "run", "--rm", name, "ls", "-A", "/baz")
+	if hasDockerignore && !ignoreDockerignore {
+		c.Assert(result.Stdout(), checker.Equals, ".dockerignore\nfoo\n")
+	} else {
+		c.Assert(result.Stdout(), checker.Equals, "foo\n")
+	}
+}
+
 func (s *DockerSuite) TestBuildWithVolumeOwnership(c *check.C) {
 	testRequires(c, DaemonIsLinux)
 	name := "testbuildimg"
@@ -4728,7 +4809,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgDefintionWithNoEnvInjection(c *check.
 		ARG %s
 		RUN env`, envKey)
 
-	result := buildImage(imgName, build.WithDockerfile(dockerfile))
+	result := cli.BuildCmd(c, imgName, build.WithDockerfile(dockerfile))
 	result.Assert(c, icmd.Success)
 	if strings.Count(result.Combined(), envKey) != 1 {
 		c.Fatalf("unexpected number of occurrences of the arg in output: %q expected: 1", result.Combined())
@@ -4745,27 +4826,43 @@ func (s *DockerSuite) TestBuildBuildTimeArgMultipleFrom(c *check.C) {
     ARG bar=def
     RUN env > /out`
 
-	result := buildImage(imgName, build.WithDockerfile(dockerfile))
+	result := cli.BuildCmd(c, imgName, build.WithDockerfile(dockerfile))
 	result.Assert(c, icmd.Success)
 
-	result = icmd.RunCmd(icmd.Cmd{
-		Command: []string{dockerBinary, "images", "-q", "-f", "label=multifromtest=1"},
-	})
-	result.Assert(c, icmd.Success)
+	result = cli.DockerCmd(c, "images", "-q", "-f", "label=multifromtest=1")
 	parentID := strings.TrimSpace(result.Stdout())
 
-	result = icmd.RunCmd(icmd.Cmd{
-		Command: []string{dockerBinary, "run", "--rm", parentID, "cat", "/out"},
-	})
-	result.Assert(c, icmd.Success)
+	result = cli.DockerCmd(c, "run", "--rm", parentID, "cat", "/out")
 	c.Assert(result.Stdout(), checker.Contains, "foo=abc")
 
-	result = icmd.RunCmd(icmd.Cmd{
-		Command: []string{dockerBinary, "run", "--rm", imgName, "cat", "/out"},
-	})
-	result.Assert(c, icmd.Success)
+	result = cli.DockerCmd(c, "run", "--rm", imgName, "cat", "/out")
 	c.Assert(result.Stdout(), checker.Not(checker.Contains), "foo")
 	c.Assert(result.Stdout(), checker.Contains, "bar=def")
+}
+
+func (s *DockerSuite) TestBuildBuildTimeFromArgMultipleFrom(c *check.C) {
+	imgName := "multifrombldargtest"
+	dockerfile := `ARG tag=nosuchtag
+     FROM busybox:${tag}
+     LABEL multifromtest=1
+     RUN env > /out
+     FROM busybox:${tag}
+     ARG tag
+     RUN env > /out`
+
+	result := cli.BuildCmd(c, imgName,
+		build.WithDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("tag=latest")))
+	result.Assert(c, icmd.Success)
+
+	result = cli.DockerCmd(c, "images", "-q", "-f", "label=multifromtest=1")
+	parentID := strings.TrimSpace(result.Stdout())
+
+	result = cli.DockerCmd(c, "run", "--rm", parentID, "cat", "/out")
+	c.Assert(result.Stdout(), checker.Not(checker.Contains), "tag")
+
+	result = cli.DockerCmd(c, "run", "--rm", imgName, "cat", "/out")
+	c.Assert(result.Stdout(), checker.Contains, "tag=latest")
 }
 
 func (s *DockerSuite) TestBuildBuildTimeUnusedArgMultipleFrom(c *check.C) {
@@ -4776,16 +4873,14 @@ func (s *DockerSuite) TestBuildBuildTimeUnusedArgMultipleFrom(c *check.C) {
     ARG bar
     RUN env > /out`
 
-	result := buildImage(imgName, build.WithDockerfile(dockerfile), cli.WithFlags(
-		"--build-arg", fmt.Sprintf("baz=abc")))
+	result := cli.BuildCmd(c, imgName,
+		build.WithDockerfile(dockerfile),
+		cli.WithFlags("--build-arg", fmt.Sprintf("baz=abc")))
 	result.Assert(c, icmd.Success)
 	c.Assert(result.Combined(), checker.Contains, "[Warning]")
 	c.Assert(result.Combined(), checker.Contains, "[baz] were not consumed")
 
-	result = icmd.RunCmd(icmd.Cmd{
-		Command: []string{dockerBinary, "run", "--rm", imgName, "cat", "/out"},
-	})
-	result.Assert(c, icmd.Success)
+	result = cli.DockerCmd(c, "run", "--rm", imgName, "cat", "/out")
 	c.Assert(result.Stdout(), checker.Not(checker.Contains), "bar")
 	c.Assert(result.Stdout(), checker.Not(checker.Contains), "baz")
 }
@@ -6022,6 +6117,97 @@ func (s *DockerTrustSuite) TestCopyFromTrustedBuild(c *check.C) {
 	})
 
 	dockerCmdWithResult("run", name, "cat", "bar").Assert(c, icmd.Expected{Out: "ok"})
+}
+
+func (s *DockerSuite) TestBuildCopyFromPreviousFromWindows(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	dockerfile := `
+		FROM ` + testEnv.MinimalBaseImage() + `
+		COPY foo c:\\bar`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "abc",
+	})
+	defer ctx.Close()
+
+	result := buildImage("build1", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	dockerfile = `
+		FROM build1:latest
+    	FROM ` + testEnv.MinimalBaseImage() + `
+		COPY --from=0 c:\\bar /
+		COPY foo /`
+	ctx = fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "def",
+	})
+	defer ctx.Close()
+
+	result = buildImage("build2", withExternalBuildContext(ctx))
+	result.Assert(c, icmd.Success)
+
+	out, _ := dockerCmd(c, "run", "build2", "cmd.exe", "/s", "/c", "type", "c:\\bar")
+	c.Assert(strings.TrimSpace(out), check.Equals, "abc")
+	out, _ = dockerCmd(c, "run", "build2", "cmd.exe", "/s", "/c", "type", "c:\\foo")
+	c.Assert(strings.TrimSpace(out), check.Equals, "def")
+}
+
+func (s *DockerSuite) TestBuildCopyFromForbidWindowsSystemPaths(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	dockerfile := `
+		FROM ` + testEnv.MinimalBaseImage() + `		
+		FROM ` + testEnv.MinimalBaseImage() + `
+		COPY --from=0 %s c:\\oscopy
+		`
+	exp := icmd.Expected{
+		ExitCode: 1,
+		Err:      "copy from c:\\ or c:\\windows is not allowed on windows",
+	}
+	buildImage("testforbidsystempaths1", build.WithDockerfile(fmt.Sprintf(dockerfile, "c:\\\\"))).Assert(c, exp)
+	buildImage("testforbidsystempaths2", build.WithDockerfile(fmt.Sprintf(dockerfile, "C:\\\\"))).Assert(c, exp)
+	buildImage("testforbidsystempaths3", build.WithDockerfile(fmt.Sprintf(dockerfile, "c:\\\\windows"))).Assert(c, exp)
+	buildImage("testforbidsystempaths4", build.WithDockerfile(fmt.Sprintf(dockerfile, "c:\\\\wInDows"))).Assert(c, exp)
+}
+
+func (s *DockerSuite) TestBuildCopyFromForbidWindowsRelativePaths(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	dockerfile := `
+		FROM ` + testEnv.MinimalBaseImage() + `		
+		FROM ` + testEnv.MinimalBaseImage() + `
+		COPY --from=0 %s c:\\oscopy
+		`
+	exp := icmd.Expected{
+		ExitCode: 1,
+		Err:      "copy from c:\\ or c:\\windows is not allowed on windows",
+	}
+	buildImage("testforbidsystempaths1", build.WithDockerfile(fmt.Sprintf(dockerfile, "c:"))).Assert(c, exp)
+	buildImage("testforbidsystempaths2", build.WithDockerfile(fmt.Sprintf(dockerfile, "."))).Assert(c, exp)
+	buildImage("testforbidsystempaths3", build.WithDockerfile(fmt.Sprintf(dockerfile, "..\\\\"))).Assert(c, exp)
+	buildImage("testforbidsystempaths4", build.WithDockerfile(fmt.Sprintf(dockerfile, ".\\\\windows"))).Assert(c, exp)
+	buildImage("testforbidsystempaths5", build.WithDockerfile(fmt.Sprintf(dockerfile, "\\\\windows"))).Assert(c, exp)
+}
+
+func (s *DockerSuite) TestBuildCopyFromWindowsIsCaseInsensitive(c *check.C) {
+	testRequires(c, DaemonIsWindows)
+	dockerfile := `
+		FROM ` + testEnv.MinimalBaseImage() + `
+		COPY foo /	
+		FROM ` + testEnv.MinimalBaseImage() + `
+		COPY --from=0 c:\\fOo c:\\copied
+		RUN type c:\\copied
+		`
+	ctx := fakeContext(c, dockerfile, map[string]string{
+		"Dockerfile": dockerfile,
+		"foo":        "hello world",
+	})
+	defer ctx.Close()
+	exp := icmd.Expected{
+		ExitCode: 0,
+		Out:      "hello world",
+	}
+	result := buildImage("copyfrom-windows-insensitive", withExternalBuildContext(ctx))
+	result.Assert(c, exp)
 }
 
 // TestBuildOpaqueDirectory tests that a build succeeds which
