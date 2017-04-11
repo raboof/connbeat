@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/builder"
+	"github.com/docker/docker/builder/dockerfile/command"
 	"github.com/docker/docker/builder/dockerfile/parser"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/pkg/stringid"
@@ -52,7 +53,6 @@ type Builder struct {
 	clientCtx context.Context
 	cancel    context.CancelFunc
 
-	dockerfile    *parser.Node
 	runConfig     *container.Config // runconfig for cmd, run, entrypoint etc.
 	flags         *BFlags
 	tmpContainers map[string]struct{}
@@ -102,7 +102,7 @@ func (bm *BuildManager) BuildFromContext(ctx context.Context, src io.ReadCloser,
 	if len(dockerfileName) > 0 {
 		buildOptions.Dockerfile = dockerfileName
 	}
-	b, err := NewBuilder(ctx, buildOptions, bm.backend, builder.DockerIgnoreContext{ModifiableContext: buildContext}, nil)
+	b, err := NewBuilder(ctx, buildOptions, bm.backend, builder.DockerIgnoreContext{ModifiableContext: buildContext})
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +113,7 @@ func (bm *BuildManager) BuildFromContext(ctx context.Context, src io.ReadCloser,
 // NewBuilder creates a new Dockerfile builder from an optional dockerfile and a Config.
 // If dockerfile is nil, the Dockerfile specified by Config.DockerfileName,
 // will be read from the Context passed to Build().
-func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, backend builder.Backend, buildContext builder.Context, dockerfile io.ReadCloser) (b *Builder, err error) {
+func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, backend builder.Backend, buildContext builder.Context) (b *Builder, err error) {
 	if config == nil {
 		config = new(types.ImageBuildOptions)
 	}
@@ -138,14 +138,6 @@ func NewBuilder(clientCtx context.Context, config *types.ImageBuildOptions, back
 	b.imageContexts = &imageContexts{b: b}
 
 	parser.SetEscapeToken(parser.DefaultEscapeToken, &b.directive) // Assume the default token for escape
-
-	if dockerfile != nil {
-		b.dockerfile, err = parser.Parse(dockerfile, &b.directive)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return b, nil
 }
 
@@ -192,15 +184,6 @@ func sanitizeRepoAndTags(names []string) ([]reference.Named, error) {
 	return repoAndTags, nil
 }
 
-func (b *Builder) processLabels() {
-	if len(b.options.Labels) == 0 {
-		return
-	}
-
-	node := parser.NodeFromLabels(b.options.Labels)
-	b.dockerfile.Children = append(b.dockerfile.Children, node)
-}
-
 // build runs the Dockerfile builder from a context and a docker object that allows to make calls
 // to Docker.
 //
@@ -221,11 +204,9 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 	b.Stderr = stderr
 	b.Output = out
 
-	// If Dockerfile was not parsed yet, extract it from the Context
-	if b.dockerfile == nil {
-		if err := b.readDockerfile(); err != nil {
-			return "", err
-		}
+	dockerfile, err := b.readDockerfile()
+	if err != nil {
+		return "", err
 	}
 
 	repoAndTags, err := sanitizeRepoAndTags(b.options.Tags)
@@ -233,17 +214,17 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 		return "", err
 	}
 
-	b.processLabels()
+	addNodesForLabelOption(dockerfile, b.options.Labels)
 
 	var shortImgID string
-	total := len(b.dockerfile.Children)
-	for _, n := range b.dockerfile.Children {
+	total := len(dockerfile.Children)
+	for _, n := range dockerfile.Children {
 		if err := b.checkDispatch(n, false); err != nil {
 			return "", perrors.Wrapf(err, "Dockerfile parse error line %d", n.StartLine)
 		}
 	}
 
-	for i, n := range b.dockerfile.Children {
+	for i, n := range dockerfile.Children {
 		select {
 		case <-b.clientCtx.Done():
 			logrus.Debug("Builder: build cancelled!")
@@ -251,6 +232,10 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 			return "", errors.New("Build cancelled")
 		default:
 			// Not cancelled yet, keep going...
+		}
+
+		if command.From == n.Value && b.imageContexts.isCurrentTarget(b.options.Target) {
+			break
 		}
 
 		if err := b.dispatch(i, total, n); err != nil {
@@ -265,6 +250,10 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 		if b.options.Remove {
 			b.clearTmp()
 		}
+	}
+
+	if b.options.Target != "" && !b.imageContexts.isCurrentTarget(b.options.Target) {
+		return "", perrors.Errorf("failed to reach build target %s in Dockerfile", b.options.Target)
 	}
 
 	b.warnOnUnusedBuildArgs()
@@ -297,6 +286,15 @@ func (b *Builder) build(stdout io.Writer, stderr io.Writer, out io.Writer) (stri
 	return b.image, nil
 }
 
+func addNodesForLabelOption(dockerfile *parser.Node, labels map[string]string) {
+	if len(labels) == 0 {
+		return
+	}
+
+	node := parser.NodeFromLabels(labels)
+	dockerfile.Children = append(dockerfile.Children, node)
+}
+
 // check if there are any leftover build-args that were passed but not
 // consumed during build. Print a warning, if there are any.
 func (b *Builder) warnOnUnusedBuildArgs() {
@@ -326,7 +324,7 @@ func (b *Builder) Cancel() {
 //
 // TODO: Remove?
 func BuildFromConfig(config *container.Config, changes []string) (*container.Config, error) {
-	b, err := NewBuilder(context.Background(), nil, nil, nil, nil)
+	b, err := NewBuilder(context.Background(), nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
