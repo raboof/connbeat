@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-10T22:02:41.221619492Z
+updated: 2017-04-11T22:02:44.955672171Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 7da7fc3ad071b7ce90185fa4a2e2a8f085d89e2b
+  version: 8a8c1961b58ef687e4a07002bdf1be4784ff7142
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 45e5ab73d3a8c0d1ebde277423f2e190469db6ef
+  version: d33fc2b0298bbf38f031c408c06dfcf567ea3851
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
