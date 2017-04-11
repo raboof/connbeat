@@ -58,6 +58,8 @@ Options:
       --log-opt list                       Logging driver options (default [])
       --mount-add mount                    Add or update a mount on a service
       --mount-rm list                      Remove a mount by its target path (default [])
+      --network-add list                   Add a network
+      --network-rm list                    Remove a network
       --no-healthcheck                     Disable any container-specified HEALTHCHECK
       --placement-pref-add pref            Add a placement preference
       --placement-pref-rm pref             Remove a placement preference
@@ -77,6 +79,7 @@ Options:
       --rollback-max-failure-ratio float   Failure rate to tolerate during a rollback
       --rollback-monitor duration          Duration after each task rollback to monitor for failure
                                            (ns|us|ms|s|m|h) (default 0s)
+      --rollback-order string              Rollback order ("start-first"|"stop-first") (default "stop-first")
       --rollback-parallelism uint          Maximum number of tasks rolled back simultaneously (0 to roll
                                            back all at once) (default 1)
       --secret-add secret                  Add or update a secret on a service
@@ -88,6 +91,7 @@ Options:
       --update-failure-action string       Action on update failure ("pause"|"continue"|"rollback") (default "pause")
       --update-max-failure-ratio float     Failure rate to tolerate during an update
       --update-monitor duration            Duration after each task update to monitor for failure (ns|us|ms|s|m|h) 
+      --update-order string                Update order ("start-first"|"stop-first") (default "stop-first")
       --update-parallelism uint            Maximum number of tasks updated simultaneously (0 to update all at once) (default 1)
   -u, --user string                        Username or UID (format: <name|uid>[:<group|gid>])
       --with-registry-auth                 Send registry authentication details to swarm agents

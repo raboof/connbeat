@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -44,7 +43,7 @@ func (b *Builder) commit(id string, autoCmd strslice.StrSlice, comment string) e
 	if b.disableCommit {
 		return nil
 	}
-	if b.image == "" && !b.noBaseImage {
+	if !b.hasFromImage() {
 		return errors.New("Please provide a source image with `from` prior to commit")
 	}
 	b.runConfig.Image = b.image
@@ -298,16 +297,30 @@ func (b *Builder) download(srcURL string) (fi builder.FileInfo, err error) {
 	return &builder.HashedFileInfo{FileInfo: builder.PathFileInfo{FileInfo: tmpFileSt, FilePath: tmpFileName}, FileHash: hash}, nil
 }
 
+var windowsBlacklist = map[string]bool{
+	"c:\\":        true,
+	"c:\\windows": true,
+}
+
 func (b *Builder) calcCopyInfo(cmdName, origPath string, allowLocalDecompression, allowWildcards bool, imageSource *imageMount) ([]copyInfo, error) {
 
 	// Work in daemon-specific OS filepath semantics
 	origPath = filepath.FromSlash(origPath)
-
 	// validate windows paths from other images
 	if imageSource != nil && runtime.GOOS == "windows" {
-		forbid := regexp.MustCompile("(?i)^" + string(os.PathSeparator) + "?(windows(" + string(os.PathSeparator) + ".+)?)?$")
-		if p := filepath.Clean(origPath); p == "." || forbid.MatchString(p) {
-			return nil, errors.Errorf("copy from %s is not allowed on windows", origPath)
+		p := strings.ToLower(filepath.Clean(origPath))
+		if !filepath.IsAbs(p) {
+			if filepath.VolumeName(p) != "" {
+				if p[len(p)-2:] == ":." { // case where clean returns weird c:. paths
+					p = p[:len(p)-1]
+				}
+				p += "\\"
+			} else {
+				p = filepath.Join("c:\\", p)
+			}
+		}
+		if _, blacklisted := windowsBlacklist[p]; blacklisted {
+			return nil, errors.New("copy from c:\\ or c:\\windows is not allowed on windows")
 		}
 	}
 
@@ -503,7 +516,7 @@ func (b *Builder) probeCache() (bool, error) {
 }
 
 func (b *Builder) create() (string, error) {
-	if b.image == "" && !b.noBaseImage {
+	if !b.hasFromImage() {
 		return "", errors.New("Please provide a source image with `from` prior to run")
 	}
 	b.runConfig.Image = b.image
@@ -696,37 +709,4 @@ func (b *Builder) parseDockerfile() error {
 	}
 
 	return nil
-}
-
-func (b *Builder) getBuildArg(arg string) (string, bool) {
-	defaultValue, defined := b.allowedBuildArgs[arg]
-	_, builtin := BuiltinAllowedBuildArgs[arg]
-	if defined || builtin {
-		if v, ok := b.options.BuildArgs[arg]; ok && v != nil {
-			return *v, ok
-		}
-	}
-	if defaultValue == nil {
-		return "", false
-	}
-	return *defaultValue, defined
-}
-
-func (b *Builder) getBuildArgs() map[string]string {
-	m := make(map[string]string)
-	for arg := range b.options.BuildArgs {
-		v, ok := b.getBuildArg(arg)
-		if ok {
-			m[arg] = v
-		}
-	}
-	for arg := range b.allowedBuildArgs {
-		if _, ok := m[arg]; !ok {
-			v, ok := b.getBuildArg(arg)
-			if ok {
-				m[arg] = v
-			}
-		}
-	}
-	return m
 }
