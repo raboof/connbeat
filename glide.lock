@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-10T22:02:41.221619492Z
+updated: 2017-04-13T22:02:35.673464758Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 7da7fc3ad071b7ce90185fa4a2e2a8f085d89e2b
+  version: 41f4c3cf7e270086bb2f6a6bd4622d9aeb8f741f
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -54,7 +54,7 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: 45e5ab73d3a8c0d1ebde277423f2e190469db6ef
+  version: d33fc2b0298bbf38f031c408c06dfcf567ea3851
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
@@ -141,7 +141,7 @@ imports:
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: 50401b5b4c2e01e4f1372b73a021742deeaf4e2d
+  version: 7814a0d14beff0a6f95cb701c8c944ec059aeb39
   subpackages:
   - libcontainer/system
   - libcontainer/user
