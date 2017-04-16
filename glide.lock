@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-13T22:02:35.673464758Z
+updated: 2017-04-16T22:02:32.886179229Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 41f4c3cf7e270086bb2f6a6bd4622d9aeb8f741f
+  version: a9ff628a3c7c55cf016af88f37c4fb6a6029e17a
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -141,7 +141,7 @@ imports:
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/runc
-  version: 7814a0d14beff0a6f95cb701c8c944ec059aeb39
+  version: 13a8c5d140b66e2c6372a70bd513a85584a33ffb
   subpackages:
   - libcontainer/system
   - libcontainer/user
