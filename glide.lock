@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-20T22:04:50.169047175Z
+updated: 2017-04-21T22:04:23.890814483Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: b8e9250b59de8619b94f7532c0fc182913028f1e
+  version: 0e9148b1e92dc6cf79dc57c71423297d5c11d0ca
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -132,7 +132,7 @@ imports:
 - name: github.com/Microsoft/go-winio
   version: fff283ad5116362ca252298cfc9b95828956d85d
 - name: github.com/moby/moby
-  version: b8e9250b59de8619b94f7532c0fc182913028f1e
+  version: 0e9148b1e92dc6cf79dc57c71423297d5c11d0ca
   subpackages:
   - api/types/swarm
   - opts
