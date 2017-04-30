@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-29T22:02:42.509582004Z
+updated: 2017-04-30T22:02:36.230243924Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 122f334aa9063dcf87814c33c7331fccf1d88988
+  version: 01fb249f131405200d107713ed20bd8f25de16d3
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
