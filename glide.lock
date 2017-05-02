@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-29T22:02:42.509582004Z
+updated: 2017-05-02T22:02:40.991075924Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 4219156a6254bdc7d270f06742037df8e2708a9a
+  version: fa54c94b9d70c0582012aaef18991e1fb4dd59ba
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -107,7 +107,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 122f334aa9063dcf87814c33c7331fccf1d88988
+  version: 30d142bbfdec74e09ecb4bdb89a44440ae4662ac
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
