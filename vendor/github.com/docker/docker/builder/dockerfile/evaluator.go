@@ -2,7 +2,7 @@
 //
 // It incorporates a dispatch table based on the parser.Node values (see the
 // parser package for more information) that are yielded from the parser itself.
-// Calling NewBuilder with the BuildOpts struct can be used to customize the
+// Calling newBuilder with the BuildOpts struct can be used to customize the
 // experience for execution purposes only. Parsing is controlled in the parser
 // package, and this division of responsibility should be respected.
 //
@@ -173,7 +173,14 @@ func (b *Builder) dispatch(stepN int, stepTotal int, node *parser.Node, shlex *S
 	// XXX yes, we skip any cmds that are not valid; the parser should have
 	// picked these out already.
 	if f, ok := evaluateTable[cmd]; ok {
-		return f(newDispatchRequestFromNode(node, b, strList, shlex))
+		if err := f(newDispatchRequestFromNode(node, b, strList, shlex)); err != nil {
+			return err
+		}
+		// TODO: return an object instead of setting things on builder
+		// If the step created a new image set it as the imageID for the
+		// current runConfig
+		b.runConfig.Image = b.image
+		return nil
 	}
 
 	return fmt.Errorf("Unknown instruction: %s", upperCasedCmd)
