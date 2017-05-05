@@ -71,6 +71,7 @@ Options:
       --max-concurrent-uploads int            Set the max concurrent uploads for each push (default 5)
       --metrics-addr string                   Set default address and port to serve the metrics api on
       --mtu int                               Set the containers network MTU
+      --no-new-privileges                     Set no-new-privileges by default for new containers
       --oom-score-adjust int                  Set the oom_score_adj for the daemon (default -500)
   -p, --pidfile string                        Path to use for daemon PID file (default "/var/run/docker.pid")
       --raw-logs                              Full timestamps without ANSI coloring
@@ -341,6 +342,60 @@ not use loopback in production. Ensure your Engine daemon has a
 ```bash
 $ sudo dockerd --storage-opt dm.thinpooldev=/dev/mapper/thin-pool
 ```
+
+##### `dm.directlvm_device`
+
+As an alternative to providing a thin pool as above, Docker can setup a block
+device for you.
+
+###### Example:
+
+```bash
+$ sudo dockerd --storage-opt dm.directlvm_device=/dev/xvdf
+```
+
+##### `dm.thinp_percent`
+
+Sets the percentage of passed in block device to use for storage.
+
+###### Example:
+
+```bash
+$ sudo dockerd --storage-opt dm.thinp_percent=95
+```
+
+##### `dm.thinp_metapercent`
+
+Sets the percentage of the passed in block device to use for metadata storage.
+
+###### Example:
+
+```bash
+$ sudo dockerd --storage-opt dm.thinp_metapercent=1
+```
+
+##### `dm.thinp_autoextend_threshold`
+
+Sets the value of the percentage of space used before `lvm` attempts to
+autoextend the available space [100 = disabled]
+
+###### Example:
+
+```bash
+$ sudo dockerd --storage-opt dm.thinp_autoextend_threshold=80
+```
+
+##### `dm.thinp_autoextend_percent`
+
+Sets the value percentage value to increase the thin pool by when when `lvm`
+attempts to autoextend the available space [100 = disabled]
+
+###### Example:
+
+```bash
+$ sudo dockerd --storage-opt dm.thinp_autoextend_percent=20
+```
+
 
 ##### `dm.basesize`
 
@@ -901,10 +956,10 @@ file. The plugin's implementation determines whether you can specify a name or
 path. Consult with your Docker administrator to get information about the
 plugins available to you.
 
-Once a plugin is installed, requests made to the `daemon` through the command
-line or Docker's Engine API are allowed or denied by the plugin.  If you have
-multiple plugins installed, at least one must allow the request for it to
-complete.
+Once a plugin is installed, requests made to the `daemon` through the
+command line or Docker's Engine API are allowed or denied by the plugin.
+If you have multiple plugins installed, each plugin, in order, must
+allow the request for it to complete.
 
 For information about how to create an authorization plugin, see [authorization
 plugin](../../extend/plugins_authorization.md) section in the Docker extend section of this documentation.

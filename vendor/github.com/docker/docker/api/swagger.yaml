@@ -231,6 +231,7 @@ definitions:
         type: "string"
       Source:
         description: "Mount source (e.g. a volume name, a host path)."
+        type: "string"
       Type:
         description: |
           The mount type. Available types:
@@ -5212,6 +5213,10 @@ paths:
                     items:
                       type: "string"
                   Network:
+                    type: "array"
+                    items:
+                      type: "string"
+                  Log:
                     type: "array"
                     items:
                       type: "string"

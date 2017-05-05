@@ -28,6 +28,7 @@ import (
 	"github.com/docker/docker/pkg/testutil"
 	icmd "github.com/docker/docker/pkg/testutil/cmd"
 	"github.com/go-check/check"
+	"github.com/opencontainers/go-digest"
 )
 
 func (s *DockerSuite) TestBuildJSONEmptyRun(c *check.C) {
@@ -337,19 +338,16 @@ func (s *DockerSuite) TestBuildOnBuildCmdEntrypointJSON(c *check.C) {
 	name1 := "onbuildcmd"
 	name2 := "onbuildgenerated"
 
-	buildImageSuccessfully(c, name1, build.WithDockerfile(`
+	cli.BuildCmd(c, name1, build.WithDockerfile(`
 FROM busybox
 ONBUILD CMD ["hello world"]
 ONBUILD ENTRYPOINT ["echo"]
 ONBUILD RUN ["true"]`))
 
-	buildImageSuccessfully(c, name2, build.WithDockerfile(fmt.Sprintf(`FROM %s`, name1)))
+	cli.BuildCmd(c, name2, build.WithDockerfile(fmt.Sprintf(`FROM %s`, name1)))
 
-	out, _ := dockerCmd(c, "run", name2)
-	if !regexp.MustCompile(`(?m)^hello world`).MatchString(out) {
-		c.Fatalf("did not get echo output from onbuild. Got: %q", out)
-	}
-
+	result := cli.DockerCmd(c, "run", name2)
+	result.Assert(c, icmd.Expected{Out: "hello world"})
 }
 
 // FIXME(vdemeester) why we disabled cache here ?
@@ -1788,11 +1786,17 @@ func (s *DockerSuite) TestBuildConditionalCache(c *check.C) {
 	}
 }
 
-// FIXME(vdemeester) this really seems to test the same thing as before
 func (s *DockerSuite) TestBuildAddMultipleLocalFileWithAndWithoutCache(c *check.C) {
 	name := "testbuildaddmultiplelocalfilewithcache"
-	dockerfile := `
+	baseName := name + "-base"
+
+	cli.BuildCmd(c, baseName, build.WithDockerfile(`
 		FROM busybox
+		ENTRYPOINT ["/bin/sh"]
+	`))
+
+	dockerfile := `
+		FROM testbuildaddmultiplelocalfilewithcache-base
         MAINTAINER dockerio
         ADD foo Dockerfile /usr/lib/bla/
 		RUN sh -c "[ $(cat /usr/lib/bla/foo) = "hello" ]"`
@@ -1802,15 +1806,15 @@ func (s *DockerSuite) TestBuildAddMultipleLocalFileWithAndWithoutCache(c *check.
 	defer ctx.Close()
 	cli.BuildCmd(c, name, build.WithExternalBuildContext(ctx))
 	id1 := getIDByName(c, name)
-	cli.BuildCmd(c, name, build.WithExternalBuildContext(ctx))
+	result2 := cli.BuildCmd(c, name, build.WithExternalBuildContext(ctx))
 	id2 := getIDByName(c, name)
-	cli.BuildCmd(c, name, build.WithoutCache, build.WithExternalBuildContext(ctx))
+	result3 := cli.BuildCmd(c, name, build.WithoutCache, build.WithExternalBuildContext(ctx))
 	id3 := getIDByName(c, name)
 	if id1 != id2 {
-		c.Fatal("The cache should have been used but hasn't.")
+		c.Fatalf("The cache should have been used but hasn't: %s", result2.Stdout())
 	}
 	if id1 == id3 {
-		c.Fatal("The cache should have been invalided but hasn't.")
+		c.Fatalf("The cache should have been invalided but hasn't: %s", result3.Stdout())
 	}
 }
 
@@ -4376,12 +4380,8 @@ func (s *DockerSuite) TestBuildTimeArgHistoryExclusions(c *check.C) {
 	if strings.Contains(out, "https_proxy") {
 		c.Fatalf("failed to exclude proxy settings from history!")
 	}
-	if !strings.Contains(out, fmt.Sprintf("%s=%s", envKey, envVal)) {
-		c.Fatalf("explicitly defined ARG %s is not in output", explicitProxyKey)
-	}
-	if !strings.Contains(out, fmt.Sprintf("%s=%s", envKey, envVal)) {
-		c.Fatalf("missing build arguments from output")
-	}
+	result.Assert(c, icmd.Expected{Out: fmt.Sprintf("%s=%s", envKey, envVal)})
+	result.Assert(c, icmd.Expected{Out: fmt.Sprintf("%s=%s", explicitProxyKey, explicitProxyVal)})
 
 	cacheID := buildImage(imgName + "-two")
 	c.Assert(origID, checker.Equals, cacheID)
@@ -4576,9 +4576,7 @@ func (s *DockerSuite) TestBuildBuildTimeArgExpansion(c *check.C) {
 	)
 
 	res := inspectField(c, imgName, "Config.WorkingDir")
-	if res != filepath.ToSlash(filepath.Clean(wdVal)) {
-		c.Fatalf("Config.WorkingDir value mismatch. Expected: %s, got: %s", filepath.ToSlash(filepath.Clean(wdVal)), res)
-	}
+	c.Check(res, check.Equals, filepath.ToSlash(wdVal))
 
 	var resArr []string
 	inspectFieldAndUnmarshall(c, imgName, "Config.Env", &resArr)
@@ -6400,4 +6398,50 @@ CMD echo foo
 
 	out, _ := dockerCmd(c, "inspect", "--format", "{{ json .Config.Cmd }}", "build2")
 	c.Assert(strings.TrimSpace(out), checker.Equals, `["/bin/sh","-c","echo foo"]`)
+}
+
+func (s *DockerSuite) TestBuildIidFile(c *check.C) {
+	tmpDir, err := ioutil.TempDir("", "TestBuildIidFile")
+	if err != nil {
+		c.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+	tmpIidFile := filepath.Join(tmpDir, "iid")
+
+	name := "testbuildiidfile"
+	// Use a Dockerfile with multiple stages to ensure we get the last one
+	cli.BuildCmd(c, name,
+		build.WithDockerfile(`FROM `+minimalBaseImage()+` AS stage1
+ENV FOO FOO
+FROM `+minimalBaseImage()+`
+ENV BAR BAZ`),
+		cli.WithFlags("--iidfile", tmpIidFile))
+
+	id, err := ioutil.ReadFile(tmpIidFile)
+	c.Assert(err, check.IsNil)
+	d, err := digest.Parse(string(id))
+	c.Assert(err, check.IsNil)
+	c.Assert(d.String(), checker.Equals, getIDByName(c, name))
+}
+
+func (s *DockerSuite) TestBuildIidFileCleanupOnFail(c *check.C) {
+	tmpDir, err := ioutil.TempDir("", "TestBuildIidFileCleanupOnFail")
+	if err != nil {
+		c.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+	tmpIidFile := filepath.Join(tmpDir, "iid")
+
+	err = ioutil.WriteFile(tmpIidFile, []byte("Dummy"), 0666)
+	c.Assert(err, check.IsNil)
+
+	cli.Docker(cli.Build("testbuildiidfilecleanuponfail"),
+		build.WithDockerfile(`FROM `+minimalBaseImage()+`
+	RUN /non/existing/command`),
+		cli.WithFlags("--iidfile", tmpIidFile)).Assert(c, icmd.Expected{
+		ExitCode: 1,
+	})
+	_, err = os.Stat(tmpIidFile)
+	c.Assert(err, check.NotNil)
+	c.Assert(os.IsNotExist(err), check.Equals, true)
 }
