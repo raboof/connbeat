@@ -15,12 +15,18 @@ import (
 
 // MockBackend implements the builder.Backend interface for unit testing
 type MockBackend struct {
-	getImageOnBuildFunc func(string) (builder.Image, error)
+	getImageOnBuildFunc  func(string) (builder.Image, error)
+	getImageOnBuildImage *mockImage
+	containerCreateFunc  func(config types.ContainerCreateConfig) (container.ContainerCreateCreatedBody, error)
+	commitFunc           func(string, *backend.ContainerCommitConfig) (string, error)
 }
 
 func (m *MockBackend) GetImageOnBuild(name string) (builder.Image, error) {
 	if m.getImageOnBuildFunc != nil {
 		return m.getImageOnBuildFunc(name)
+	}
+	if m.getImageOnBuildImage != nil {
+		return m.getImageOnBuildImage, nil
 	}
 	return &mockImage{id: "theid"}, nil
 }
@@ -38,6 +44,9 @@ func (m *MockBackend) ContainerAttachRaw(cID string, stdin io.ReadCloser, stdout
 }
 
 func (m *MockBackend) ContainerCreate(config types.ContainerCreateConfig) (container.ContainerCreateCreatedBody, error) {
+	if m.containerCreateFunc != nil {
+		return m.containerCreateFunc(config)
+	}
 	return container.ContainerCreateCreatedBody{}, nil
 }
 
@@ -45,7 +54,10 @@ func (m *MockBackend) ContainerRm(name string, config *types.ContainerRmConfig) 
 	return nil
 }
 
-func (m *MockBackend) Commit(string, *backend.ContainerCommitConfig) (string, error) {
+func (m *MockBackend) Commit(cID string, cfg *backend.ContainerCommitConfig) (string, error) {
+	if m.commitFunc != nil {
+		return m.commitFunc(cID, cfg)
+	}
 	return "", nil
 }
 
@@ -59,10 +71,6 @@ func (m *MockBackend) ContainerStart(containerID string, hostConfig *container.H
 
 func (m *MockBackend) ContainerWait(containerID string, timeout time.Duration) (int, error) {
 	return 0, nil
-}
-
-func (m *MockBackend) ContainerUpdateCmdOnBuild(containerID string, cmd []string) error {
-	return nil
 }
 
 func (m *MockBackend) ContainerCreateWorkdir(containerID string) error {
@@ -96,4 +104,15 @@ func (i *mockImage) ImageID() string {
 
 func (i *mockImage) RunConfig() *container.Config {
 	return i.config
+}
+
+type mockImageCache struct {
+	getCacheFunc func(parentID string, cfg *container.Config) (string, error)
+}
+
+func (mic *mockImageCache) GetCache(parentID string, cfg *container.Config) (string, error) {
+	if mic.getCacheFunc != nil {
+		return mic.getCacheFunc(parentID, cfg)
+	}
+	return "", nil
 }
