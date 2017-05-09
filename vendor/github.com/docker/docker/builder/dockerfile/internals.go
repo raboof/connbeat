@@ -21,7 +21,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/builder"
 	"github.com/docker/docker/builder/dockerfile/parser"
 	"github.com/docker/docker/builder/remotecontext"
@@ -36,18 +35,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (b *Builder) commit(comment string) error {
+func (b *Builder) commit(dispatchState *dispatchState, comment string) error {
 	if b.disableCommit {
 		return nil
 	}
-	if !b.hasFromImage() {
+	if !dispatchState.hasFromImage() {
 		return errors.New("Please provide a source image with `from` prior to commit")
 	}
-	// TODO: why is this set here?
-	b.runConfig.Image = b.image
 
-	runConfigWithCommentCmd := copyRunConfig(b.runConfig, withCmdComment(comment))
-	hit, err := b.probeCache(b.image, runConfigWithCommentCmd)
+	runConfigWithCommentCmd := copyRunConfig(dispatchState.runConfig, withCmdComment(comment))
+	hit, err := b.probeCache(dispatchState, runConfigWithCommentCmd)
 	if err != nil || hit {
 		return err
 	}
@@ -56,20 +53,23 @@ func (b *Builder) commit(comment string) error {
 		return err
 	}
 
-	return b.commitContainer(id, b.runConfig)
+	return b.commitContainer(dispatchState, id, runConfigWithCommentCmd)
 }
 
-func (b *Builder) commitContainer(id string, runConfig *container.Config) error {
+// TODO: see if any args can be dropped
+func (b *Builder) commitContainer(dispatchState *dispatchState, id string, containerConfig *container.Config) error {
 	if b.disableCommit {
 		return nil
 	}
 
 	commitCfg := &backend.ContainerCommitConfig{
 		ContainerCommitConfig: types.ContainerCommitConfig{
-			Author: b.maintainer,
+			Author: dispatchState.maintainer,
 			Pause:  true,
-			Config: runConfig,
+			// TODO: this should be done by Commit()
+			Config: copyRunConfig(dispatchState.runConfig),
 		},
+		ContainerConfig: containerConfig,
 	}
 
 	// Commit the container
@@ -78,10 +78,8 @@ func (b *Builder) commitContainer(id string, runConfig *container.Config) error 
 		return err
 	}
 
-	// TODO: this function should return imageID and runConfig instead of setting
-	// then on the builder
-	b.image = imageID
-	b.imageContexts.update(imageID, runConfig)
+	dispatchState.imageID = imageID
+	b.imageContexts.update(imageID, dispatchState.runConfig)
 	return nil
 }
 
@@ -92,15 +90,15 @@ type copyInfo struct {
 	decompress bool
 }
 
-func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalDecompression bool, cmdName string, imageSource *imageMount) error {
+// TODO: this needs to be split so that a Builder method doesn't accept req
+func (b *Builder) runContextCommand(req dispatchRequest, allowRemote bool, allowLocalDecompression bool, cmdName string, imageSource *imageMount) error {
+	args := req.args
 	if len(args) < 2 {
 		return fmt.Errorf("Invalid %s format - at least two arguments required", cmdName)
 	}
 
 	// Work in daemon-specific filepath semantics
 	dest := filepath.FromSlash(args[len(args)-1]) // last one is always the dest
-
-	b.runConfig.Image = b.image
 
 	var infos []copyInfo
 
@@ -164,18 +162,16 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 		srcHash = "multi:" + hex.EncodeToString(hasher.Sum(nil))
 	}
 
-	cmd := b.runConfig.Cmd
 	// TODO: should this have been using origPaths instead of srcHash in the comment?
-	b.runConfig.Cmd = strslice.StrSlice(append(getShell(b.runConfig), fmt.Sprintf("#(nop) %s %s in %s ", cmdName, srcHash, dest)))
-	defer func(cmd strslice.StrSlice) { b.runConfig.Cmd = cmd }(cmd)
-
-	// TODO: this should pass a copy of runConfig
-	if hit, err := b.probeCache(b.image, b.runConfig); err != nil || hit {
+	runConfigWithCommentCmd := copyRunConfig(
+		req.state.runConfig,
+		withCmdCommentString(fmt.Sprintf("%s %s in %s ", cmdName, srcHash, dest)))
+	if hit, err := b.probeCache(req.state, runConfigWithCommentCmd); err != nil || hit {
 		return err
 	}
 
 	container, err := b.docker.ContainerCreate(types.ContainerCreateConfig{
-		Config: b.runConfig,
+		Config: runConfigWithCommentCmd,
 		// Set a log config to override any default value set on the daemon
 		HostConfig: &container.HostConfig{LogConfig: defaultLogConfig},
 	})
@@ -186,7 +182,7 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 
 	// Twiddle the destination when it's a relative path - meaning, make it
 	// relative to the WORKINGDIR
-	if dest, err = normaliseDest(cmdName, b.runConfig.WorkingDir, dest); err != nil {
+	if dest, err = normaliseDest(cmdName, req.state.runConfig.WorkingDir, dest); err != nil {
 		return err
 	}
 
@@ -196,7 +192,7 @@ func (b *Builder) runContextCommand(args []string, allowRemote bool, allowLocalD
 		}
 	}
 
-	return b.commitContainer(container.ID, copyRunConfig(b.runConfig, withCmd(cmd)))
+	return b.commitContainer(req.state, container.ID, runConfigWithCommentCmd)
 }
 
 type runConfigModifier func(*container.Config)
@@ -215,15 +211,42 @@ func withCmd(cmd []string) runConfigModifier {
 	}
 }
 
+// withCmdComment sets Cmd to a nop comment string. See withCmdCommentString for
+// why there are two almost identical versions of this.
 func withCmdComment(comment string) runConfigModifier {
 	return func(runConfig *container.Config) {
 		runConfig.Cmd = append(getShell(runConfig), "#(nop) ", comment)
 	}
 }
 
+// withCmdCommentString exists to maintain compatibility with older versions.
+// A few instructions (workdir, copy, add) used a nop comment that is a single arg
+// where as all the other instructions used a two arg comment string. This
+// function implements the single arg version.
+func withCmdCommentString(comment string) runConfigModifier {
+	return func(runConfig *container.Config) {
+		runConfig.Cmd = append(getShell(runConfig), "#(nop) "+comment)
+	}
+}
+
 func withEnv(env []string) runConfigModifier {
 	return func(runConfig *container.Config) {
 		runConfig.Env = env
+	}
+}
+
+// withEntrypointOverride sets an entrypoint on runConfig if the command is
+// not empty. The entrypoint is left unmodified if command is empty.
+//
+// The dockerfile RUN instruction expect to run without an entrypoint
+// so the runConfig entrypoint needs to be modified accordingly. ContainerCreate
+// will change a []string{""} entrypoint to nil, so we probe the cache with the
+// nil entrypoint.
+func withEntrypointOverride(cmd []string, entrypoint []string) runConfigModifier {
+	return func(runConfig *container.Config) {
+		if len(cmd) > 0 {
+			runConfig.Entrypoint = entrypoint
+		}
 	}
 }
 
@@ -275,8 +298,7 @@ func (b *Builder) download(srcURL string) (remote builder.Source, p string, err 
 		return
 	}
 
-	stdoutFormatter := b.Stdout.(*streamformatter.StdoutFormatter)
-	progressOutput := stdoutFormatter.StreamFormatter.NewProgressOutput(stdoutFormatter.Writer, true)
+	progressOutput := streamformatter.NewJSONProgressOutput(b.Output, true)
 	progressReader := progress.NewProgressReader(resp.Body, progressOutput, resp.ContentLength, "", "Downloading")
 	// Download and dump result to tmp file
 	// TODO: add filehash directly
@@ -458,20 +480,20 @@ func (b *Builder) calcCopyInfo(cmdName, origPath string, allowLocalDecompression
 	return copyInfos, nil
 }
 
-func (b *Builder) processImageFrom(img builder.Image) error {
+func (b *Builder) processImageFrom(dispatchState *dispatchState, img builder.Image) error {
 	if img != nil {
-		b.image = img.ImageID()
+		dispatchState.imageID = img.ImageID()
 
 		if img.RunConfig() != nil {
-			b.runConfig = img.RunConfig()
+			dispatchState.runConfig = img.RunConfig()
 		}
 	}
 
 	// Check to see if we have a default PATH, note that windows won't
 	// have one as it's set by HCS
 	if system.DefaultPathEnv != "" {
-		if _, ok := b.runConfigEnvMapping()["PATH"]; !ok {
-			b.runConfig.Env = append(b.runConfig.Env,
+		if _, ok := dispatchState.runConfigEnvMapping()["PATH"]; !ok {
+			dispatchState.runConfig.Env = append(dispatchState.runConfig.Env,
 				"PATH="+system.DefaultPathEnv)
 		}
 	}
@@ -482,7 +504,7 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 	}
 
 	// Process ONBUILD triggers if they exist
-	if nTriggers := len(b.runConfig.OnBuild); nTriggers != 0 {
+	if nTriggers := len(dispatchState.runConfig.OnBuild); nTriggers != 0 {
 		word := "trigger"
 		if nTriggers > 1 {
 			word = "triggers"
@@ -491,21 +513,21 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 	}
 
 	// Copy the ONBUILD triggers, and remove them from the config, since the config will be committed.
-	onBuildTriggers := b.runConfig.OnBuild
-	b.runConfig.OnBuild = []string{}
+	onBuildTriggers := dispatchState.runConfig.OnBuild
+	dispatchState.runConfig.OnBuild = []string{}
 
 	// Reset stdin settings as all build actions run without stdin
-	b.runConfig.OpenStdin = false
-	b.runConfig.StdinOnce = false
+	dispatchState.runConfig.OpenStdin = false
+	dispatchState.runConfig.StdinOnce = false
 
 	// parse the ONBUILD triggers by invoking the parser
 	for _, step := range onBuildTriggers {
-		result, err := parser.Parse(strings.NewReader(step))
+		dockerfile, err := parser.Parse(strings.NewReader(step))
 		if err != nil {
 			return err
 		}
 
-		for _, n := range result.AST.Children {
+		for _, n := range dockerfile.AST.Children {
 			if err := checkDispatch(n); err != nil {
 				return err
 			}
@@ -519,7 +541,7 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 			}
 		}
 
-		if err := dispatchFromDockerfile(b, result); err != nil {
+		if _, err := dispatchFromDockerfile(b, dockerfile, dispatchState); err != nil {
 			return err
 		}
 	}
@@ -530,12 +552,12 @@ func (b *Builder) processImageFrom(img builder.Image) error {
 // If an image is found, probeCache returns `(true, nil)`.
 // If no image is found, it returns `(false, nil)`.
 // If there is any error, it returns `(false, err)`.
-func (b *Builder) probeCache(imageID string, runConfig *container.Config) (bool, error) {
+func (b *Builder) probeCache(dispatchState *dispatchState, runConfig *container.Config) (bool, error) {
 	c := b.imageCache
 	if c == nil || b.options.NoCache || b.cacheBusted {
 		return false, nil
 	}
-	cache, err := c.GetCache(imageID, runConfig)
+	cache, err := c.GetCache(dispatchState.imageID, runConfig)
 	if err != nil {
 		return false, err
 	}
@@ -547,16 +569,13 @@ func (b *Builder) probeCache(imageID string, runConfig *container.Config) (bool,
 
 	fmt.Fprint(b.Stdout, " ---> Using cache\n")
 	logrus.Debugf("[BUILDER] Use cached version: %s", runConfig.Cmd)
-	b.image = string(cache)
-	b.imageContexts.update(b.image, runConfig)
+	dispatchState.imageID = string(cache)
+	b.imageContexts.update(dispatchState.imageID, runConfig)
 
 	return true, nil
 }
 
 func (b *Builder) create(runConfig *container.Config) (string, error) {
-	if !b.hasFromImage() {
-		return "", errors.New("Please provide a source image with `from` prior to run")
-	}
 	resources := container.Resources{
 		CgroupParent: b.options.CgroupParent,
 		CPUShares:    b.options.CPUShares,
@@ -595,18 +614,12 @@ func (b *Builder) create(runConfig *container.Config) (string, error) {
 
 	b.tmpContainers[c.ID] = struct{}{}
 	fmt.Fprintf(b.Stdout, " ---> Running in %s\n", stringid.TruncateID(c.ID))
-
-	// override the entry point that may have been picked up from the base image
-	if err := b.docker.ContainerUpdateCmdOnBuild(c.ID, runConfig.Cmd); err != nil {
-		return "", err
-	}
-
 	return c.ID, nil
 }
 
 var errCancelled = errors.New("build cancelled")
 
-func (b *Builder) run(cID string) (err error) {
+func (b *Builder) run(cID string, cmd []string) (err error) {
 	attached := make(chan struct{})
 	errCh := make(chan error)
 	go func() {
@@ -660,7 +673,7 @@ func (b *Builder) run(cID string) (err error) {
 		}
 		// TODO: change error type, because jsonmessage.JSONError assumes HTTP
 		return &jsonmessage.JSONError{
-			Message: fmt.Sprintf("The command '%s' returned a non-zero code: %d", strings.Join(b.runConfig.Cmd, " "), ret),
+			Message: fmt.Sprintf("The command '%s' returned a non-zero code: %d", strings.Join(cmd, " "), ret),
 			Code:    ret,
 		}
 	}
