@@ -1511,6 +1511,11 @@ _docker_container_run_and_create() {
 		--env-file
 		--expose
 		--group-add
+		--health-cmd
+		--health-interval
+		--health-retries
+		--health-start-period
+		--health-timeout
 		--hostname -h
 		--ip
 		--ip6
@@ -1566,6 +1571,7 @@ _docker_container_run_and_create() {
 		--help
 		--init
 		--interactive -i
+		--no-healthcheck
 		--oom-kill-disable
 		--privileged
 		--publish-all -P
@@ -1576,14 +1582,9 @@ _docker_container_run_and_create() {
 	if [ "$command" = "run" -o "$subcommand" = "run" ] ; then
 		options_with_args="$options_with_args
 			--detach-keys
-			--health-cmd
-			--health-interval
-			--health-retries
-			--health-timeout
 		"
 		boolean_options="$boolean_options
 			--detach -d
-			--no-healthcheck
 			--rm
 			--sig-proxy=false
 		"
@@ -2021,15 +2022,15 @@ _docker_daemon() {
  			COMPREPLY=( $( compgen -W "false true" -- "${cur##*=}" ) )
  			return
  			;;
- 		dm.fs)
- 			COMPREPLY=( $( compgen -W "ext4 xfs" -- "${cur##*=}" ) )
- 			return
- 			;;
- 		dm.thinpooldev)
+		dm.directlvm_device|dm.thinpooldev)
 			cur=${cur##*=}
- 			_filedir
- 			return
- 			;;
+			_filedir
+			return
+			;;
+		dm.fs)
+			COMPREPLY=( $( compgen -W "ext4 xfs" -- "${cur##*=}" ) )
+			return
+			;;
  	esac
 
 	case "$prev" in
@@ -2069,6 +2070,7 @@ _docker_daemon() {
 				dm.basesize
 				dm.blkdiscard
 				dm.blocksize
+				dm.directlvm_device
 				dm.fs
 				dm.loopdatasize
 				dm.loopmetadatasize
@@ -2077,6 +2079,10 @@ _docker_daemon() {
 				dm.mountopt
 				dm.override_udev_sync_check
 				dm.thinpooldev
+				dm.thinp_autoextend_percent
+				dm.thinp_autoextend_threshold
+				dm.thinp_metapercent
+				dm.thinp_percent
 				dm.use_deferred_deletion
 				dm.use_deferred_removal
 			"
@@ -3030,6 +3036,7 @@ _docker_service_update_and_create() {
 		--health-cmd
 		--health-interval
 		--health-retries
+		--health-start-period
 		--health-timeout
 		--hostname
 		--label -l
@@ -3039,7 +3046,6 @@ _docker_service_update_and_create() {
 		--log-opt
 		--mount
 		--network
-		--no-healthcheck
 		--replicas
 		--reserve-cpu
 		--reserve-memory
@@ -3065,6 +3071,7 @@ _docker_service_update_and_create() {
 
 	local boolean_options="
 		--help
+		--no-healthcheck
 		--read-only
 		--tty -t
 		--with-registry-auth
@@ -4017,7 +4024,7 @@ _docker_stack_deploy() {
 
 	case "$cur" in
 		-*)
-			local options="--compose-file -c --help --with-registry-auth"
+			local options="--compose-file -c --help --prune --with-registry-auth"
 			__docker_daemon_is_experimental && options+=" --bundle-file"
 			COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
 			;;
