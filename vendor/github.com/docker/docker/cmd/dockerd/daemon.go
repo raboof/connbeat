@@ -3,10 +3,8 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -14,19 +12,19 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/api"
 	apiserver "github.com/docker/docker/api/server"
+	buildbackend "github.com/docker/docker/api/server/backend/build"
 	"github.com/docker/docker/api/server/middleware"
 	"github.com/docker/docker/api/server/router"
 	"github.com/docker/docker/api/server/router/build"
 	checkpointrouter "github.com/docker/docker/api/server/router/checkpoint"
 	"github.com/docker/docker/api/server/router/container"
+	distributionrouter "github.com/docker/docker/api/server/router/distribution"
 	"github.com/docker/docker/api/server/router/image"
 	"github.com/docker/docker/api/server/router/network"
 	pluginrouter "github.com/docker/docker/api/server/router/plugin"
 	swarmrouter "github.com/docker/docker/api/server/router/swarm"
 	systemrouter "github.com/docker/docker/api/server/router/system"
 	"github.com/docker/docker/api/server/router/volume"
-	"github.com/docker/docker/builder/dockerfile"
-	cliconfig "github.com/docker/docker/cli/config"
 	"github.com/docker/docker/cli/debug"
 	cliflags "github.com/docker/docker/cli/flags"
 	"github.com/docker/docker/daemon"
@@ -42,7 +40,6 @@ import (
 	"github.com/docker/docker/pkg/pidfile"
 	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/docker/pkg/signal"
-	"github.com/docker/docker/pkg/system"
 	"github.com/docker/docker/plugin"
 	"github.com/docker/docker/registry"
 	"github.com/docker/docker/runconfig"
@@ -66,52 +63,6 @@ func NewDaemonCli() *DaemonCli {
 	return &DaemonCli{}
 }
 
-func migrateKey(config *config.Config) (err error) {
-	// No migration necessary on Windows
-	if runtime.GOOS == "windows" {
-		return nil
-	}
-
-	// Migrate trust key if exists at ~/.docker/key.json and owned by current user
-	oldPath := filepath.Join(cliconfig.Dir(), cliflags.DefaultTrustKeyFile)
-	newPath := filepath.Join(getDaemonConfDir(config.Root), cliflags.DefaultTrustKeyFile)
-	if _, statErr := os.Stat(newPath); os.IsNotExist(statErr) && currentUserIsOwner(oldPath) {
-		defer func() {
-			// Ensure old path is removed if no error occurred
-			if err == nil {
-				err = os.Remove(oldPath)
-			} else {
-				logrus.Warnf("Key migration failed, key file not removed at %s", oldPath)
-				os.Remove(newPath)
-			}
-		}()
-
-		if err := system.MkdirAll(getDaemonConfDir(config.Root), os.FileMode(0644)); err != nil {
-			return fmt.Errorf("Unable to create daemon configuration directory: %s", err)
-		}
-
-		newFile, err := os.OpenFile(newPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-		if err != nil {
-			return fmt.Errorf("error creating key file %q: %s", newPath, err)
-		}
-		defer newFile.Close()
-
-		oldFile, err := os.Open(oldPath)
-		if err != nil {
-			return fmt.Errorf("error opening key file %q: %s", oldPath, err)
-		}
-		defer oldFile.Close()
-
-		if _, err := io.Copy(newFile, oldFile); err != nil {
-			return fmt.Errorf("error copying key: %s", err)
-		}
-
-		logrus.Infof("Migrated key from %s to %s", oldPath, newPath)
-	}
-
-	return nil
-}
-
 func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	stopc := make(chan bool)
 	defer close(stopc)
@@ -126,12 +77,6 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	}
 	cli.configFile = &opts.configFile
 	cli.flags = opts.flags
-
-	if opts.common.TrustKey == "" {
-		opts.common.TrustKey = filepath.Join(
-			getDaemonConfDir(cli.Config.Root),
-			cliflags.DefaultTrustKeyFile)
-	}
 
 	if cli.Config.Debug {
 		debug.Enable()
@@ -241,13 +186,6 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 		api.Accept(addr, ls...)
 	}
 
-	if err := migrateKey(cli.Config); err != nil {
-		return err
-	}
-
-	// FIXME: why is this down here instead of with the other TrustKey logic above?
-	cli.TrustKeyPath = opts.common.TrustKey
-
 	registryService := registry.NewService(cli.Config.ServiceOptions)
 	containerdRemote, err := libcontainerd.New(cli.getLibcontainerdRoot(), cli.getPlatformRemoteOptions()...)
 	if err != nil {
@@ -299,6 +237,11 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 	if err != nil {
 		logrus.Fatalf("Error creating cluster component: %v", err)
 	}
+	d.SetCluster(c)
+	err = c.Start()
+	if err != nil {
+		logrus.Fatalf("Error starting cluster component: %v", err)
+	}
 
 	// Restart all autostart containers which has a swarm endpoint
 	// and is not yet running now that we have successfully
@@ -315,7 +258,6 @@ func (cli *DaemonCli) start(opts daemonOptions) (err error) {
 
 	cli.d = d
 
-	d.SetCluster(c)
 	initRouter(api, d, c)
 
 	cli.setupConfigReloadTrap()
@@ -419,6 +361,12 @@ func loadDaemonCliConfig(opts daemonOptions) (*config.Config, error) {
 		conf.CommonTLSOptions.KeyFile = opts.common.TLSOptions.KeyFile
 	}
 
+	if conf.TrustKeyPath == "" {
+		conf.TrustKeyPath = filepath.Join(
+			getDaemonConfDir(conf.Root),
+			defaultTrustKeyFile)
+	}
+
 	if flags.Changed("graph") && flags.Changed("data-root") {
 		return nil, fmt.Errorf(`cannot specify both "--graph" and "--data-root" option`)
 	}
@@ -484,9 +432,10 @@ func initRouter(s *apiserver.Server, d *daemon.Daemon, c *cluster.Cluster) {
 		image.NewRouter(d, decoder),
 		systemrouter.NewRouter(d, c),
 		volume.NewRouter(d),
-		build.NewRouter(dockerfile.NewBuildManager(d)),
+		build.NewRouter(buildbackend.NewBackend(d, d), d),
 		swarmrouter.NewRouter(c),
 		pluginrouter.NewRouter(d.PluginManager()),
+		distributionrouter.NewRouter(d),
 	}
 
 	if d.NetworkControllerEnabled() {
