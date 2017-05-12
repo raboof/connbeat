@@ -198,6 +198,7 @@ func (daemon *Daemon) restore() error {
 			if err := backportMountSpec(c); err != nil {
 				logrus.Error("Failed to migrate old mounts to use new spec format")
 			}
+			daemon.setStateCounter(c)
 
 			if c.IsRunning() || c.IsPaused() {
 				c.RestartManager().Cancel() // manually start containers because some need to wait for swarm networking
@@ -731,13 +732,15 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	// FIXME: this method never returns an error
 	info, _ := d.SystemInfo()
 
-	engineVersion.WithValues(
+	engineInfo.WithValues(
 		dockerversion.Version,
 		dockerversion.GitCommit,
 		info.Architecture,
 		info.Driver,
 		info.KernelVersion,
 		info.OperatingSystem,
+		info.OSType,
+		info.ID,
 	).Set(1)
 	engineCpus.Set(float64(info.NCPU))
 	engineMemory.Set(float64(info.MemTotal))
