@@ -42,8 +42,9 @@ type Backend interface {
 	ContainerWaitWithContext(ctx context.Context, name string) error
 	ContainerRm(name string, config *types.ContainerRmConfig) error
 	ContainerKill(name string, sig uint64) error
-	SetContainerSecretStore(name string, store exec.SecretGetter) error
+	SetContainerDependencyStore(name string, store exec.DependencyGetter) error
 	SetContainerSecretReferences(name string, refs []*swarmtypes.SecretReference) error
+	SetContainerConfigReferences(name string, refs []*swarmtypes.ConfigReference) error
 	SystemInfo() (*types.Info, error)
 	VolumeCreate(name, driverName string, opts, labels map[string]string) (*types.Volume, error)
 	Containers(config *types.ContainerListOptions) ([]*types.Container, error)
@@ -55,7 +56,7 @@ type Backend interface {
 	UnsubscribeFromEvents(listener chan interface{})
 	UpdateAttachment(string, string, string, *network.NetworkingConfig) error
 	WaitForDetachment(context.Context, string, string, string, string) error
-	GetRepository(context.Context, reference.NamedTagged, *types.AuthConfig) (distribution.Repository, bool, error)
+	GetRepository(context.Context, reference.Named, *types.AuthConfig) (distribution.Repository, bool, error)
 	LookupImage(name string) (*types.ImageInspect, error)
 	PluginManager() *plugin.Manager
 	PluginGetter() *plugin.Store
