@@ -80,7 +80,9 @@ func serviceSpecFromGRPC(spec *swarmapi.ServiceSpec) (*types.ServiceSpec, error)
 
 	serviceNetworks := make([]types.NetworkAttachmentConfig, 0, len(spec.Networks))
 	for _, n := range spec.Networks {
-		serviceNetworks = append(serviceNetworks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
+		netConfig := types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases, DriverOpts: n.DriverAttachmentOpts}
+		serviceNetworks = append(serviceNetworks, netConfig)
+
 	}
 
 	taskTemplate := taskSpecFromGRPC(spec.Task)
@@ -136,12 +138,15 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 
 	serviceNetworks := make([]*swarmapi.NetworkAttachmentConfig, 0, len(s.Networks))
 	for _, n := range s.Networks {
-		serviceNetworks = append(serviceNetworks, &swarmapi.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
+		netConfig := &swarmapi.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases, DriverAttachmentOpts: n.DriverOpts}
+		serviceNetworks = append(serviceNetworks, netConfig)
 	}
 
 	taskNetworks := make([]*swarmapi.NetworkAttachmentConfig, 0, len(s.TaskTemplate.Networks))
 	for _, n := range s.TaskTemplate.Networks {
-		taskNetworks = append(taskNetworks, &swarmapi.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
+		netConfig := &swarmapi.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases, DriverAttachmentOpts: n.DriverOpts}
+		taskNetworks = append(taskNetworks, netConfig)
+
 	}
 
 	spec := swarmapi.ServiceSpec{
@@ -198,9 +203,17 @@ func ServiceSpecToGRPC(s types.ServiceSpec) (swarmapi.ServiceSpec, error) {
 				})
 			}
 		}
+		var platforms []*swarmapi.Platform
+		for _, plat := range s.TaskTemplate.Placement.Platforms {
+			platforms = append(platforms, &swarmapi.Platform{
+				Architecture: plat.Architecture,
+				OS:           plat.OS,
+			})
+		}
 		spec.Task.Placement = &swarmapi.Placement{
 			Constraints: s.TaskTemplate.Placement.Constraints,
 			Preferences: preferences,
+			Platforms:   platforms,
 		}
 	}
 
@@ -393,6 +406,13 @@ func placementFromGRPC(p *swarmapi.Placement) *types.Placement {
 		}
 	}
 
+	for _, plat := range p.Platforms {
+		r.Platforms = append(r.Platforms, types.Platform{
+			Architecture: plat.Architecture,
+			OS:           plat.OS,
+		})
+	}
+
 	return r
 }
 
@@ -492,7 +512,8 @@ func updateConfigToGRPC(updateConfig *types.UpdateConfig) (*swarmapi.UpdateConfi
 func taskSpecFromGRPC(taskSpec swarmapi.TaskSpec) types.TaskSpec {
 	taskNetworks := make([]types.NetworkAttachmentConfig, 0, len(taskSpec.Networks))
 	for _, n := range taskSpec.Networks {
-		taskNetworks = append(taskNetworks, types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases})
+		netConfig := types.NetworkAttachmentConfig{Target: n.Target, Aliases: n.Aliases, DriverOpts: n.DriverAttachmentOpts}
+		taskNetworks = append(taskNetworks, netConfig)
 	}
 
 	c := taskSpec.GetContainer()
