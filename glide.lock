@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-04-29T22:02:42.509582004Z
+updated: 2017-05-30T22:01:48.699942474Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 4219156a6254bdc7d270f06742037df8e2708a9a
+  version: 4f55e390c4e5230bad232c462d60f8564faea17f
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -33,6 +33,7 @@ imports:
   - pkg/jsonlog
   - pkg/jsonmessage
   - pkg/longpath
+  - pkg/mount
   - pkg/pools
   - pkg/promise
   - pkg/stdcopy
@@ -107,7 +108,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 122f334aa9063dcf87814c33c7331fccf1d88988
+  version: c933ed18bef34ec2955de03de8ef9a3bb996e3df
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -120,7 +121,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 4c1c3952b7d9d0a061a3fa7b36fd373ba0398ebc
+  version: 043ee6597c29786140136a5747b6a886364f5282
 - name: github.com/hashicorp/go-cleanhttp
   version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/joeshaw/multierror
@@ -135,13 +136,20 @@ imports:
 - name: github.com/klauspost/crc32
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
-  version: f3b1913901892ada21d52d0cffe1d4c7080d36b7
+  version: f533f7a102197536779ea3a8cb881d639e21ec5a
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
+- name: github.com/opencontainers/go-digest
+  version: eaa60544f31ccf3b0653b1a118b76d33418ff41b
+- name: github.com/opencontainers/image-spec
+  version: 4038d4391fe912af1031db5a1f511cf07c07cbc8
+  subpackages:
+  - specs-go
+  - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: efb2bc3fb0e36b2ec0d2c44b460bfc33a26a0bef
+  version: a6906d5a531abb739adcf82f95eb4c7205822562
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -165,7 +173,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 10f801ebc38b33738c9d17d50860f484a0988ff5
+  version: 5e5dc898656f695e2a086b8e12559febbfc01562
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
