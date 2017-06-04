@@ -13,6 +13,7 @@ import (
 	containertypes "github.com/docker/docker/api/types/container"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/pkg/chrootarchive"
+	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/symlink"
 	"github.com/docker/docker/pkg/system"
@@ -163,11 +164,6 @@ func (container *Container) NetworkMounts() []Mount {
 	return mounts
 }
 
-// SecretMountPath returns the path of the secret mount for the container
-func (container *Container) SecretMountPath() string {
-	return filepath.Join(container.Root, "secrets")
-}
-
 // CopyImagePathContent copies files in destination to the volume.
 func (container *Container) CopyImagePathContent(v volume.Volume, destination string) error {
 	rootfs, err := symlink.FollowSymlinkInScope(filepath.Join(container.BaseFS, destination), container.BaseFS)
@@ -225,7 +221,9 @@ func (container *Container) UnmountIpcMounts(unmount func(pth string) error) {
 			warnings = append(warnings, err.Error())
 		} else if shmPath != "" {
 			if err := unmount(shmPath); err != nil && !os.IsNotExist(err) {
-				warnings = append(warnings, fmt.Sprintf("failed to umount %s: %v", shmPath, err))
+				if mounted, mErr := mount.Mounted(shmPath); mounted || mErr != nil {
+					warnings = append(warnings, fmt.Sprintf("failed to umount %s: %v", shmPath, err))
+				}
 			}
 
 		}
@@ -253,17 +251,21 @@ func (container *Container) IpcMounts() []Mount {
 	return mounts
 }
 
-// SecretMount returns the mount for the secret path
-func (container *Container) SecretMount() *Mount {
-	if len(container.SecretReferences) > 0 {
-		return &Mount{
-			Source:      container.SecretMountPath(),
-			Destination: containerSecretMountPath,
-			Writable:    false,
+// SecretMounts returns the mounts for the secret path.
+func (container *Container) SecretMounts() []Mount {
+	var mounts []Mount
+	for _, r := range container.SecretReferences {
+		if r.File == nil {
+			continue
 		}
+		mounts = append(mounts, Mount{
+			Source:      container.SecretFilePath(*r),
+			Destination: getSecretTargetPath(r),
+			Writable:    false,
+		})
 	}
 
-	return nil
+	return mounts
 }
 
 // UnmountSecrets unmounts the local tmpfs for secrets
@@ -276,6 +278,23 @@ func (container *Container) UnmountSecrets() error {
 	}
 
 	return detachMounted(container.SecretMountPath())
+}
+
+// ConfigMounts returns the mounts for configs.
+func (container *Container) ConfigMounts() []Mount {
+	var mounts []Mount
+	for _, configRef := range container.ConfigReferences {
+		if configRef.File == nil {
+			continue
+		}
+		mounts = append(mounts, Mount{
+			Source:      container.ConfigFilePath(*configRef),
+			Destination: configRef.File.Name,
+			Writable:    false,
+		})
+	}
+
+	return mounts
 }
 
 // UpdateContainer updates configuration of a container.
