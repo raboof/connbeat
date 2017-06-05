@@ -12,11 +12,11 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/builder/dockerfile"
+	"github.com/docker/docker/builder/remotecontext"
 	"github.com/docker/docker/dockerversion"
 	"github.com/docker/docker/image"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/httputils"
 	"github.com/docker/docker/pkg/progress"
 	"github.com/docker/docker/pkg/streamformatter"
 	"github.com/pkg/errors"
@@ -28,7 +28,6 @@ import (
 // the repo and tag arguments, respectively.
 func (daemon *Daemon) ImportImage(src string, repository, tag string, msg string, inConfig io.ReadCloser, outStream io.Writer, changes []string) error {
 	var (
-		sf     = streamformatter.NewJSONStreamFormatter()
 		rc     io.ReadCloser
 		resp   *http.Response
 		newRef reference.Named
@@ -68,12 +67,12 @@ func (daemon *Daemon) ImportImage(src string, repository, tag string, msg string
 			return err
 		}
 
-		resp, err = httputils.Download(u.String())
+		resp, err = remotecontext.GetWithStatusError(u.String())
 		if err != nil {
 			return err
 		}
-		outStream.Write(sf.FormatStatus("", "Downloading from %s", u))
-		progressOutput := sf.NewProgressOutput(outStream, true)
+		outStream.Write(streamformatter.FormatStatus("", "Downloading from %s", u))
+		progressOutput := streamformatter.NewJSONProgressOutput(outStream, true)
 		rc = progress.NewProgressReader(resp.Body, progressOutput, resp.ContentLength, "", "Importing")
 	}
 
@@ -129,6 +128,6 @@ func (daemon *Daemon) ImportImage(src string, repository, tag string, msg string
 	}
 
 	daemon.LogImageEvent(id.String(), id.String(), "import")
-	outStream.Write(sf.FormatStatus("", id.String()))
+	outStream.Write(streamformatter.FormatStatus("", id.String()))
 	return nil
 }
