@@ -2,7 +2,6 @@ package remotecontext
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -10,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/builder"
 	"github.com/docker/docker/builder/dockerfile/parser"
 	"github.com/docker/docker/builder/dockerignore"
 	"github.com/docker/docker/pkg/fileutils"
-	"github.com/docker/docker/pkg/httputils"
 	"github.com/docker/docker/pkg/symlink"
 	"github.com/docker/docker/pkg/urlutil"
 	"github.com/pkg/errors"
@@ -23,14 +22,17 @@ import (
 // Detect returns a context and dockerfile from remote location or local
 // archive. progressReader is only used if remoteURL is actually a URL
 // (not empty, and not a Git endpoint).
-func Detect(ctx context.Context, remoteURL string, dockerfilePath string, r io.ReadCloser, progressReader func(in io.ReadCloser) io.ReadCloser) (remote builder.Source, dockerfile *parser.Result, err error) {
+func Detect(config backend.BuildConfig) (remote builder.Source, dockerfile *parser.Result, err error) {
+	remoteURL := config.Options.RemoteContext
+	dockerfilePath := config.Options.Dockerfile
+
 	switch {
 	case remoteURL == "":
-		remote, dockerfile, err = newArchiveRemote(r, dockerfilePath)
+		remote, dockerfile, err = newArchiveRemote(config.Source, dockerfilePath)
 	case urlutil.IsGitURL(remoteURL):
 		remote, dockerfile, err = newGitRemote(remoteURL, dockerfilePath)
 	case urlutil.IsURL(remoteURL):
-		remote, dockerfile, err = newURLRemote(remoteURL, dockerfilePath, progressReader)
+		remote, dockerfile, err = newURLRemote(remoteURL, dockerfilePath, config.ProgressWriter.ProgressReaderFunc)
 	default:
 		err = fmt.Errorf("remoteURL (%s) could not be recognized as URL", remoteURL)
 	}
@@ -38,6 +40,7 @@ func Detect(ctx context.Context, remoteURL string, dockerfilePath string, r io.R
 }
 
 func newArchiveRemote(rc io.ReadCloser, dockerfilePath string) (builder.Source, *parser.Result, error) {
+	defer rc.Close()
 	c, err := MakeTarSumContext(rc)
 	if err != nil {
 		return nil, nil, err
@@ -89,7 +92,7 @@ func newURLRemote(url string, dockerfilePath string, progressReader func(in io.R
 	var dockerfile io.ReadCloser
 	dockerfileFoundErr := errors.New("found-dockerfile")
 	c, err := MakeRemoteContext(url, map[string]func(io.ReadCloser) (io.ReadCloser, error){
-		httputils.MimeTypes.TextPlain: func(rc io.ReadCloser) (io.ReadCloser, error) {
+		mimeTypes.TextPlain: func(rc io.ReadCloser) (io.ReadCloser, error) {
 			dockerfile = rc
 			return nil, dockerfileFoundErr
 		},
@@ -122,6 +125,9 @@ func removeDockerfile(c modifiableContext, filesToRemove ...string) error {
 		return err
 	}
 	excludes, err := dockerignore.ReadAll(f)
+	if err != nil {
+		return err
+	}
 	f.Close()
 	filesToRemove = append([]string{".dockerignore"}, filesToRemove...)
 	for _, fileToRemove := range filesToRemove {
