@@ -30,7 +30,6 @@ type FullConnection struct {
 }
 
 type Connections struct {
-	exposeProcessInfo      bool
 	listeningOn            map[incomingConnectionDedup]time.Time
 	outgoingConnectionSeen map[outgoingConnectionDedup]time.Time
 	ps                     *processes.Processes
@@ -124,7 +123,7 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 					servers <- ServerConnection{
 						LocalIP:   localIP,
 						LocalPort: s.SrcPort,
-						Process:   process(c.ps, c.exposeProcessInfo && s.Container == nil, s.Inode),
+						Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
 						Container: s.Container,
 					}
 				} else {
