@@ -33,21 +33,21 @@ import (
 // are mostly naked calls to the client API, seeded with information from
 // containerConfig.
 type containerAdapter struct {
-	backend   executorpkg.Backend
-	container *containerConfig
-	secrets   exec.SecretGetter
+	backend      executorpkg.Backend
+	container    *containerConfig
+	dependencies exec.DependencyGetter
 }
 
-func newContainerAdapter(b executorpkg.Backend, task *api.Task, secrets exec.SecretGetter) (*containerAdapter, error) {
+func newContainerAdapter(b executorpkg.Backend, task *api.Task, dependencies exec.DependencyGetter) (*containerAdapter, error) {
 	ctnr, err := newContainerConfig(task)
 	if err != nil {
 		return nil, err
 	}
 
 	return &containerAdapter{
-		container: ctnr,
-		backend:   b,
-		secrets:   secrets,
+		container:    ctnr,
+		backend:      b,
+		dependencies: dependencies,
 	}, nil
 }
 
@@ -243,13 +243,18 @@ func (c *containerAdapter) create(ctx context.Context) error {
 		return errors.New("unable to get container from task spec")
 	}
 
-	// configure secrets
-	if err := c.backend.SetContainerSecretStore(cr.ID, c.secrets); err != nil {
+	if err := c.backend.SetContainerDependencyStore(cr.ID, c.dependencies); err != nil {
 		return err
 	}
 
-	refs := convert.SecretReferencesFromGRPC(container.Secrets)
-	if err := c.backend.SetContainerSecretReferences(cr.ID, refs); err != nil {
+	// configure secrets
+	secretRefs := convert.SecretReferencesFromGRPC(container.Secrets)
+	if err := c.backend.SetContainerSecretReferences(cr.ID, secretRefs); err != nil {
+		return err
+	}
+
+	configRefs := convert.ConfigReferencesFromGRPC(container.Configs)
+	if err := c.backend.SetContainerConfigReferences(cr.ID, configRefs); err != nil {
 		return err
 	}
 
@@ -400,11 +405,11 @@ func (c *containerAdapter) logs(ctx context.Context, options api.LogSubscription
 	apiOptions := &types.ContainerLogsOptions{
 		Follow: options.Follow,
 
-		// TODO(stevvooe): Parse timestamp out of message. This
-		// absolutely needs to be done before going to production with
-		// this, at it is completely redundant.
+		// Always say yes to Timestamps and Details. we make the decision
+		// of whether to return these to the user or not way higher up the
+		// stack.
 		Timestamps: true,
-		Details:    false, // no clue what to do with this, let's just deprecate it.
+		Details:    true,
 	}
 
 	if options.Since != nil {
