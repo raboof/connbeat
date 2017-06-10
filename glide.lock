@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-07T22:01:43.606066825Z
+updated: 2017-06-10T22:02:47.445575482Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 36db52a7049c0f00e75f7cfcbd5061dc7600180f
+  version: 3f6b6c2981aa231823c51ed84ee0f89d81105c5b
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -173,7 +173,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
+  version: 85b1699d505667d13f8ac4478c1debbf85d6c5de
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
