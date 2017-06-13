@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -229,7 +230,7 @@ func (s *DockerSwarmSuite) TestAPISwarmPromoteDemote(c *check.C) {
 	url := fmt.Sprintf("/nodes/%s/update?version=%d", node.ID, node.Version.Index)
 	status, out, err := d1.SockRequest("POST", url, node.Spec)
 	c.Assert(err, checker.IsNil)
-	c.Assert(status, checker.Equals, http.StatusInternalServerError, check.Commentf("output: %q", string(out)))
+	c.Assert(status, checker.Equals, http.StatusBadRequest, check.Commentf("output: %q", string(out)))
 	// The warning specific to demoting the last manager is best-effort and
 	// won't appear until the Role field of the demoted manager has been
 	// updated.
@@ -1001,4 +1002,37 @@ func (s *DockerSwarmSuite) TestSwarmRepeatedRootRotation(c *check.C) {
 		c.Assert(m.GetNode(c, w.NodeID).Description.TLSInfo, checker.DeepEquals, clusterTLSInfo)
 		currentTrustRoot = clusterTLSInfo.TrustRoot
 	}
+}
+
+func (s *DockerSwarmSuite) TestAPINetworkInspectWithScope(c *check.C) {
+	d := s.AddDaemon(c, true, true)
+
+	name := "foo"
+	networkCreateRequest := types.NetworkCreateRequest{
+		Name: name,
+	}
+
+	var n types.NetworkCreateResponse
+	networkCreateRequest.NetworkCreate.Driver = "overlay"
+
+	status, out, err := d.SockRequest("POST", "/networks/create", networkCreateRequest)
+	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
+	c.Assert(status, checker.Equals, http.StatusCreated, check.Commentf(string(out)))
+	c.Assert(json.Unmarshal(out, &n), checker.IsNil)
+
+	var r types.NetworkResource
+
+	status, body, err := d.SockRequest("GET", "/networks/"+name, nil)
+	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
+	c.Assert(status, checker.Equals, http.StatusOK, check.Commentf(string(out)))
+	c.Assert(json.Unmarshal(body, &r), checker.IsNil)
+	c.Assert(r.Scope, checker.Equals, "swarm")
+	c.Assert(r.ID, checker.Equals, n.ID)
+
+	v := url.Values{}
+	v.Set("scope", "local")
+
+	status, body, err = d.SockRequest("GET", "/networks/"+name+"?"+v.Encode(), nil)
+	c.Assert(err, checker.IsNil, check.Commentf(string(out)))
+	c.Assert(status, checker.Equals, http.StatusNotFound, check.Commentf(string(out)))
 }
