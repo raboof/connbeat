@@ -217,7 +217,7 @@ func verifyPlatformContainerSettings(daemon *Daemon, hostConfig *containertypes.
 	warnings := []string{}
 
 	hyperv := daemon.runAsHyperVContainer(hostConfig)
-	if !hyperv && system.IsWindowsClient() {
+	if !hyperv && system.IsWindowsClient() && !system.IsIoTCore() {
 		// @engine maintainers. This block should not be removed. It partially enforces licensing
 		// restrictions on Windows. Ping @jhowardmsft if there are concerns or PRs to change this.
 		return warnings, fmt.Errorf("Windows client operating systems only support Hyper-V containers")
@@ -327,6 +327,9 @@ func (daemon *Daemon) initNetworkController(config *config.Config, activeSandbox
 	// discover and add HNS networks to windows
 	// network that exist are removed and added again
 	for _, v := range hnsresponse {
+		if strings.ToLower(v.Type) == "private" {
+			continue // workaround for HNS reporting unsupported networks
+		}
 		var n libnetwork.Network
 		s := func(current libnetwork.Network) bool {
 			options := current.Info().DriverOptions()
@@ -454,11 +457,11 @@ func (daemon *Daemon) cleanupMounts() error {
 	return nil
 }
 
-func setupRemappedRoot(config *config.Config) ([]idtools.IDMap, []idtools.IDMap, error) {
-	return nil, nil, nil
+func setupRemappedRoot(config *config.Config) (*idtools.IDMappings, error) {
+	return &idtools.IDMappings{}, nil
 }
 
-func setupDaemonRoot(config *config.Config, rootDir string, rootUID, rootGID int) error {
+func setupDaemonRoot(config *config.Config, rootDir string, rootIDs idtools.IDPair) error {
 	config.Root = rootDir
 	// Create the root directory if it doesn't exists
 	if err := system.MkdirAllWithACL(config.Root, 0); err != nil && !os.IsExist(err) {
@@ -566,8 +569,9 @@ func (daemon *Daemon) stats(c *container.Container) (*types.StatsJSON, error) {
 // daemon to run in. This is only applicable on Windows
 func (daemon *Daemon) setDefaultIsolation() error {
 	daemon.defaultIsolation = containertypes.Isolation("process")
-	// On client SKUs, default to Hyper-V
-	if system.IsWindowsClient() {
+	// On client SKUs, default to Hyper-V. Note that IoT reports as a client SKU
+	// but it should not be treated as such.
+	if system.IsWindowsClient() && !system.IsIoTCore() {
 		daemon.defaultIsolation = containertypes.Isolation("hyperv")
 	}
 	for _, option := range daemon.configStore.ExecOptions {
@@ -586,7 +590,7 @@ func (daemon *Daemon) setDefaultIsolation() error {
 				daemon.defaultIsolation = containertypes.Isolation("hyperv")
 			}
 			if containertypes.Isolation(val).IsProcess() {
-				if system.IsWindowsClient() {
+				if system.IsWindowsClient() && !system.IsIoTCore() {
 					// @engine maintainers. This block should not be removed. It partially enforces licensing
 					// restrictions on Windows. Ping @jhowardmsft if there are concerns or PRs to change this.
 					return fmt.Errorf("Windows client operating systems only support Hyper-V containers")
