@@ -141,3 +141,10 @@ func NotContains(t *testing.T, unexpected, got string, messages ...interface{}) 
 func WithinDuration(t *testing.T, duration time.Duration, goalTime, gotTime time.Time, messages ...interface{}) {
 	withinDuration(t, duration, goalTime, gotTime, 1, messages...)
 }
+
+// Uses recover() to check for a panic.
+// Usually used as `defer assert.Panic(expected)`.
+func Panic( t *testing.T, expected interface{}, messages ...interface{} ) {
+	got := recover()
+	equal( t, expected, got, 1, messages... )
+}
