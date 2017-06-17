@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-07T22:01:43.606066825Z
+updated: 2017-06-17T22:01:45.453690281Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 36db52a7049c0f00e75f7cfcbd5061dc7600180f
+  version: 4f259698b07653e9e5220e097df79862f9e54b74
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -108,7 +108,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: c933ed18bef34ec2955de03de8ef9a3bb996e3df
+  version: 9e921e30db8bcc1221fa0485ad9ce5b195fb4445
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -144,12 +144,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: df6f3c57dafbbf39d98c24fa6ab509183cfa3efc
+  version: d207df434d113728dc3373cb3a905f00b482a858
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: ea35825a6350511ab93fe24e69c0723d6728616d
+  version: c995ee407bdd9b2c3f649b42527fe3e02894096e
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -173,7 +173,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
+  version: 85b1699d505667d13f8ac4478c1debbf85d6c5de
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
@@ -199,4 +199,4 @@ testImports:
 - name: github.com/kr/text
   version: 7cafcd837844e784b526369c9bce262804aebc60
 - name: github.com/stvp/assert
-  version: 488e5f84a1e0e947e909f1f4f1e851502f61972d
+  version: 4bc16443988bace8e1b42d62d3601f70d74e4638
