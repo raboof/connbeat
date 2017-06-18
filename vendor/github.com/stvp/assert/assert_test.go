@@ -101,3 +101,22 @@ func TestWithinDuration(t *testing.T) {
 	// WithinDuration(t, time.Millisecond, now, now.Add(time.Second), "This should blow up")
 	// WithinDuration(t, time.Millisecond, now, now.Add(-time.Second), "This should blow up")
 }
+
+func TestPanic(t *testing.T) {
+	// Simple string
+	func() {
+		defer Panic(t, "Swerve wildly!")
+		panic("Swerve wildly!")
+	}()
+	
+	// Non-string
+	func() {
+		defer Panic(t, 123)
+		panic(123)
+	}()
+	
+	// Everything's cool.
+	func() {
+		defer Panic(t, nil)
+	}()
+}
