@@ -84,18 +84,18 @@ func new(client *docker.Client, environment []string) (*Poller, error) {
 
 func (p *Poller) PollCurrentConnections(failedContainers mapset.Set, socketInfo chan<- *sockets.SocketInfo) (mapset.Set, error) {
 	containers, err := p.client.ListContainers(docker.ListContainersOptions{All: false})
-  currentFailedContainers := mapset.NewSet()
+	currentFailedContainers := mapset.NewSet()
 	if err != nil {
 		return currentFailedContainers, err
 	}
 	for _, container := range containers {
-    if failedContainers.Contains(container.ID) {
-      currentFailedContainers.Add(container.ID)
-      continue
-    }
+		if failedContainers.Contains(container.ID) {
+			currentFailedContainers.Add(container.ID)
+			continue
+		}
 
 		if err = p.pollCurrentConnections(container, socketInfo); err != nil {
-      currentFailedContainers.Add(container.ID)
+			currentFailedContainers.Add(container.ID)
 			logp.Warn("Failed to poll connections for container %s (%s): %s. Skipping next time to avoid resource leaks.", container.ID, container.Image, err)
 		}
 	}
