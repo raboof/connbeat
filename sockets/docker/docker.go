@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deckarep/golang-set"
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/raboof/connbeat/sockets"
@@ -81,17 +82,24 @@ func new(client *docker.Client, environment []string) (*Poller, error) {
 	}, nil
 }
 
-func (p *Poller) PollCurrentConnections(socketInfo chan<- *sockets.SocketInfo) error {
+func (p *Poller) PollCurrentConnections(failedContainers mapset.Set, socketInfo chan<- *sockets.SocketInfo) (mapset.Set, error) {
 	containers, err := p.client.ListContainers(docker.ListContainersOptions{All: false})
+	currentFailedContainers := mapset.NewSet()
 	if err != nil {
-		return err
+		return currentFailedContainers, err
 	}
 	for _, container := range containers {
+		if failedContainers.Contains(container.ID) {
+			currentFailedContainers.Add(container.ID)
+			continue
+		}
+
 		if err = p.pollCurrentConnections(container, socketInfo); err != nil {
-			logp.Warn("Failed to poll connections for container %s (%s): %s", container.ID, container.Image, err)
+			currentFailedContainers.Add(container.ID)
+			logp.Warn("Failed to poll connections for container %s (%s): %s. Skipping next time to avoid resource leaks.", container.ID, container.Image, err)
 		}
 	}
-	return nil
+	return currentFailedContainers, nil
 }
 
 func (p *Poller) pollCurrentConnections(container docker.APIContainers, socketInfo chan<- *sockets.SocketInfo) error {
@@ -115,10 +123,9 @@ func (p *Poller) pollCurrentConnectionsFor(container docker.APIContainers, file 
 	if err != nil {
 		return err
 	}
-	var stdout, stderr bytes.Buffer
+	var stdout bytes.Buffer
 	if err = p.client.StartExec(exec.ID, docker.StartExecOptions{
 		OutputStream: &stdout,
-		ErrorStream:  &stderr,
 		RawTerminal:  false,
 	}); err != nil {
 		return err

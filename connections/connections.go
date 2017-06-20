@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deckarep/golang-set"
 	"github.com/elastic/beats/libbeat/logp"
 	"github.com/raboof/connbeat/processes"
 	"github.com/raboof/connbeat/sockets"
@@ -44,10 +45,14 @@ func New(exposeCmdline, exposeEnviron bool) *Connections {
 }
 
 func getSocketInfoFromDocker(poller *docker.Poller, pollInterval time.Duration, socketInfo chan<- *sockets.SocketInfo) {
+	// We try to avoid leaks as in https://github.com/raboof/connbeat/issues/318 by not calling exec on failed container runs
+	var failedContainers mapset.Set = mapset.NewSet()
+
 	for {
 		logp.Info("Polling docker")
 		// For now we poll periodically
-		err := poller.PollCurrentConnections(socketInfo)
+		newFailedContainers, err := poller.PollCurrentConnections(failedContainers, socketInfo)
+		failedContainers = newFailedContainers
 		if err != nil {
 			logp.Err("Polling connections: %s", err)
 		}
