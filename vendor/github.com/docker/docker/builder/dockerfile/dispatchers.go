@@ -23,6 +23,7 @@ import (
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/builder"
 	"github.com/docker/docker/builder/dockerfile/parser"
+	"github.com/docker/docker/image"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/signal"
 	"github.com/docker/go-connections/nat"
@@ -195,6 +196,7 @@ func (b *Builder) getImageMount(fromFlag *Flag) (*imageMount, error) {
 		return nil, nil
 	}
 
+	var localOnly bool
 	imageRefOrID := fromFlag.Value
 	stage, err := b.buildStages.get(fromFlag.Value)
 	if err != nil {
@@ -202,8 +204,9 @@ func (b *Builder) getImageMount(fromFlag *Flag) (*imageMount, error) {
 	}
 	if stage != nil {
 		imageRefOrID = stage.ImageID()
+		localOnly = true
 	}
-	return b.imageSources.Get(imageRefOrID)
+	return b.imageSources.Get(imageRefOrID, localOnly)
 }
 
 // FROM imagename[:tag | @digest] [AS build-stage-name]
@@ -251,10 +254,8 @@ func parseBuildStageName(args []string) (string, error) {
 	return stageName, nil
 }
 
-// scratchImage is used as a token for the empty base image. It uses buildStage
-// as a convenient implementation of builder.Image, but is not actually a
-// buildStage.
-var scratchImage builder.Image = &buildStage{}
+// scratchImage is used as a token for the empty base image.
+var scratchImage builder.Image = &image.Image{}
 
 func (b *Builder) getFromImage(shlex *ShellLex, name string) (builder.Image, error) {
 	substitutionArgs := []string{}
@@ -267,8 +268,10 @@ func (b *Builder) getFromImage(shlex *ShellLex, name string) (builder.Image, err
 		return nil, err
 	}
 
-	if im, ok := b.buildStages.getByName(name); ok {
-		return im, nil
+	var localOnly bool
+	if stage, ok := b.buildStages.getByName(name); ok {
+		name = stage.ImageID()
+		localOnly = true
 	}
 
 	// Windows cannot support a container with no base image.
@@ -278,7 +281,7 @@ func (b *Builder) getFromImage(shlex *ShellLex, name string) (builder.Image, err
 		}
 		return scratchImage, nil
 	}
-	imageMount, err := b.imageSources.Get(name)
+	imageMount, err := b.imageSources.Get(name, localOnly)
 	if err != nil {
 		return nil, err
 	}
