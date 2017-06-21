@@ -90,17 +90,6 @@ RUN cd /usr/local/lvm2 \
 	&& make install_device-mapper
 # See https://git.fedorahosted.org/cgit/lvm2.git/tree/INSTALL
 
-# Configure the container for OSX cross compilation
-ENV OSX_SDK MacOSX10.11.sdk
-ENV OSX_CROSS_COMMIT a9317c18a3a457ca0a657f08cc4d0d43c6cf8953
-RUN set -x \
-	&& export OSXCROSS_PATH="/osxcross" \
-	&& git clone https://github.com/tpoechtrager/osxcross.git $OSXCROSS_PATH \
-	&& ( cd $OSXCROSS_PATH && git checkout -q $OSX_CROSS_COMMIT) \
-	&& curl -sSL https://s3.dockerproject.org/darwin/v2/${OSX_SDK}.tar.xz -o "${OSXCROSS_PATH}/tarballs/${OSX_SDK}.tar.xz" \
-	&& UNATTENDED=yes OSX_VERSION_MIN=10.6 ${OSXCROSS_PATH}/build.sh
-ENV PATH /osxcross/target/bin:$PATH
-
 # Install seccomp: the version shipped upstream is too old
 ENV SECCOMP_VERSION 2.3.2
 RUN set -x \
@@ -186,7 +175,7 @@ RUN set -x \
 	&& rm -rf "$GOPATH"
 
 # Get the "docker-py" source so we can run their integration tests
-ENV DOCKER_PY_COMMIT dc2b24dcdd4ed7c8f6874ee5dd95716761ab6c93
+ENV DOCKER_PY_COMMIT a962578e515185cf06506050b2200c0b81aa84ef
 # To run integration tests docker-pycreds is required.
 # Before running the integration tests conftest.py is
 # loaded which results in loads auth.py that
