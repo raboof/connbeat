@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/pkg/chrootarchive"
@@ -26,21 +27,6 @@ const (
 	containerSecretMountPath = "/run/secrets"
 )
 
-// Container holds the fields specific to unixen implementations.
-// See CommonContainer for standard fields common to all containers.
-type Container struct {
-	CommonContainer
-
-	// Fields below here are platform specific.
-	AppArmorProfile string
-	HostnamePath    string
-	HostsPath       string
-	ShmPath         string
-	ResolvConfPath  string
-	SeccompProfile  string
-	NoNewPrivileges bool
-}
-
 // ExitStatus provides exit reasons for a container.
 type ExitStatus struct {
 	// The exit code with which the container exited.
@@ -48,27 +34,6 @@ type ExitStatus struct {
 
 	// Whether the container encountered an OOM.
 	OOMKilled bool
-}
-
-// CreateDaemonEnvironment returns the list of all environment variables given the list of
-// environment variables related to links.
-// Sets PATH, HOSTNAME and if container.Config.Tty is set: TERM.
-// The defaults set here do not override the values in container.Config.Env
-func (container *Container) CreateDaemonEnvironment(tty bool, linkedEnv []string) []string {
-	// Setup environment
-	env := []string{
-		"PATH=" + system.DefaultPathEnv,
-		"HOSTNAME=" + container.Config.Hostname,
-	}
-	if tty {
-		env = append(env, "TERM=xterm")
-	}
-	env = append(env, linkedEnv...)
-	// because the env on the container can override certain default values
-	// we need to replace the 'env' keys where they match and append anything
-	// else.
-	env = ReplaceOrAppendEnvValues(env, container.Config.Env)
-	return env
 }
 
 // TrySetNetworkMount attempts to set the network mounts given a provided destination and
@@ -297,11 +262,8 @@ func (container *Container) ConfigMounts() []Mount {
 	return mounts
 }
 
-// UpdateContainer updates configuration of a container.
+// UpdateContainer updates configuration of a container. Callers must hold a Lock on the Container.
 func (container *Container) UpdateContainer(hostConfig *containertypes.HostConfig) error {
-	container.Lock()
-	defer container.Unlock()
-
 	// update resources of container
 	resources := hostConfig.Resources
 	cResources := &container.HostConfig.Resources
@@ -368,11 +330,6 @@ func (container *Container) UpdateContainer(hostConfig *containertypes.HostConfi
 			return fmt.Errorf("Restart policy cannot be updated because AutoRemove is enabled for the container")
 		}
 		container.HostConfig.RestartPolicy = hostConfig.RestartPolicy
-	}
-
-	if err := container.ToDisk(); err != nil {
-		logrus.Errorf("Error saving updated container: %v", err)
-		return err
 	}
 
 	return nil
@@ -497,4 +454,22 @@ func cleanResourcePath(path string) string {
 // EnableServiceDiscoveryOnDefaultNetwork Enable service discovery on default network
 func (container *Container) EnableServiceDiscoveryOnDefaultNetwork() bool {
 	return false
+}
+
+// GetMountPoints gives a platform specific transformation to types.MountPoint. Callers must hold a Container lock.
+func (container *Container) GetMountPoints() []types.MountPoint {
+	mountPoints := make([]types.MountPoint, 0, len(container.MountPoints))
+	for _, m := range container.MountPoints {
+		mountPoints = append(mountPoints, types.MountPoint{
+			Type:        m.Type,
+			Name:        m.Name,
+			Source:      m.Path(),
+			Destination: m.Destination,
+			Driver:      m.Driver,
+			Mode:        m.Mode,
+			RW:          m.RW,
+			Propagation: m.Propagation,
+		})
+	}
+	return mountPoints
 }

@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-19T22:01:55.080935467Z
+updated: 2017-06-24T22:02:50.47090581Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 16380b3ee68c0da2fda036d7980129241957220c
+  version: d311a3a681f918906249a1678eab0136ac663f6e
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -41,7 +41,7 @@ imports:
   - pkg/term
   - pkg/term/windows
 - name: github.com/docker/go-connections
-  version: e15c02316c12de00874640cd76311849de2aeed5
+  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
   subpackages:
   - nat
 - name: github.com/docker/go-units
@@ -121,7 +121,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 18fca31550181693b3a834a15b74b564b3605876
+  version: 8c683ee571b6ee7ffc9f1cafd13103c422e71cbf
 - name: github.com/hashicorp/go-cleanhttp
   version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/joeshaw/multierror
@@ -144,12 +144,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: d207df434d113728dc3373cb3a905f00b482a858
+  version: af173bcb2fb0e0b95f240b914c4791f69738b765
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: c995ee407bdd9b2c3f649b42527fe3e02894096e
+  version: d337d807fcc7356e1111a0bbfe1ff52d6fddaeae
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -173,7 +173,7 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 85b1699d505667d13f8ac4478c1debbf85d6c5de
+  version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
