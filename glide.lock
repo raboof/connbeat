@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-25T22:01:47.016031526Z
+updated: 2017-06-27T22:01:48.718431008Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: fa152c58bc15761d0200cb75fe958b89a9d4888e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: d311a3a681f918906249a1678eab0136ac663f6e
+  version: 74a5b14c80022392c17100e1cde6727842eceb6f
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -108,7 +108,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 9e921e30db8bcc1221fa0485ad9ce5b195fb4445
+  version: 4bc6a18363f79b32c26f92e2e6d8bfd30d79a770
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -144,12 +144,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: af173bcb2fb0e0b95f240b914c4791f69738b765
+  version: 1b24aca6c83b826936087d56271f34fcef46c7b2
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: d337d807fcc7356e1111a0bbfe1ff52d6fddaeae
+  version: 429a5387123625040bacfbb60d96b1cbd02293ab
   subpackages:
   - libcontainer/system
   - libcontainer/user
