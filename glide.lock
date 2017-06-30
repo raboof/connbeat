@@ -1,8 +1,8 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-28T22:01:50.451712456Z
+updated: 2017-06-29T22:02:50.201036882Z
 imports:
 - name: github.com/Azure/go-ansiterm
-  version: fa152c58bc15761d0200cb75fe958b89a9d4888e
+  version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
   subpackages:
   - winterm
 - name: github.com/davecgh/go-spew
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 8b29ba59ccdd4de45fa25137ec5d5a3845f5f5cc
+  version: 82390ebf32c3e48d80b862ffe46d4160aa65b728
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -144,12 +144,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: 1b24aca6c83b826936087d56271f34fcef46c7b2
+  version: 28462ef6944123de00cf27e812309cbf5d82da71
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 429a5387123625040bacfbb60d96b1cbd02293ab
+  version: fef3aced0e51f1af1dfcb82d777a44ea704c004a
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -173,6 +173,8 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
+  version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
+- name: github.com/sirupsen/logrus
   version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
