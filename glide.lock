@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-06-29T22:02:50.201036882Z
+updated: 2017-07-02T22:01:58.54707405Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 82390ebf32c3e48d80b862ffe46d4160aa65b728
+  version: 7117d5ef25b54c3384fbaf5cf279e0dcc6701a52
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -149,7 +149,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: fef3aced0e51f1af1dfcb82d777a44ea704c004a
+  version: 7139b61f7fdb904d0acb8db825709aa8d2d2ef36
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -173,9 +173,9 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
+  version: 7dd06bf38e1e13df288d471a57d5adbac106be9e
 - name: github.com/sirupsen/logrus
-  version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
+  version: 7dd06bf38e1e13df288d471a57d5adbac106be9e
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
