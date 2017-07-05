@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-07-03T22:01:55.106197997Z
+updated: 2017-07-05T22:01:43.675901791Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: b9f248d0ea9f7ec4e0325c7034038319c70c2dda
+  version: 82c2a08b6018586f3c8f35405c3bd6fce3c78ccd
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -121,7 +121,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 8c683ee571b6ee7ffc9f1cafd13103c422e71cbf
+  version: ac112f7d75a0714af1bd86ab17749b31f7809640
 - name: github.com/hashicorp/go-cleanhttp
   version: 3573b8b52aa7b37b9358d966a898feb387f62437
 - name: github.com/joeshaw/multierror
@@ -144,7 +144,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: 634a86b04874f256845e768b29b252053272b229
+  version: 9e2ed30b411505b510b4ab080c4035d71bd56b44
   subpackages:
   - specs-go
   - specs-go/v1
