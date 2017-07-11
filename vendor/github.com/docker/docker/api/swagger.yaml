@@ -1975,11 +1975,39 @@ definitions:
     description: "User modifiable task configuration."
     type: "object"
     properties:
+      PluginSpec:
+        type: "object"
+        description: "Invalid when specified with `ContainerSpec`."
+        properties:
+          Name:
+            description: "The name or 'alias' to use for the plugin."
+            type: "string"
+          Remote:
+            description: "The plugin image reference to use."
+            type: "string"
+          Disabled:
+            description: "Disable the plugin once scheduled."
+            type: "boolean"
+          PluginPrivilege:
+            type: "array"
+            items:
+              description: "Describes a permission accepted by the user upon installing the plugin."
+              type: "object"
+              properties:
+                Name:
+                  type: "string"
+                Description:
+                  type: "string"
+                Value:
+                  type: "array"
+                  items:
+                    type: "string"
       ContainerSpec:
         type: "object"
+        description: "Invalid when specified with `PluginSpec`."
         properties:
           Image:
-            description: "The image name to use for the container."
+            description: "The image name to use for the container"
             type: "string"
           Labels:
             description: "User-defined key/value data."
@@ -7394,6 +7422,16 @@ paths:
               AdvertiseAddr:
                 description: "Externally reachable address advertised to other nodes. This can either be an address/port combination in the form `192.168.1.1:4567`, or an interface followed by a port number, like `eth0:4567`. If the port number is omitted, the port number from the listen address is used. If `AdvertiseAddr` is not specified, it will be automatically detected when possible."
                 type: "string"
+              DataPathAddr:
+                description: |
+                  Address or interface to use for data path traffic (format: `<ip|interface>`), for example,  `192.168.1.1`,
+                  or an interface, like `eth0`. If `DataPathAddr` is unspecified, the same address as `AdvertiseAddr`
+                  is used.
+
+                  The `DataPathAddr` specifies the address that global scope network drivers will publish towards other
+                  nodes in order to reach the containers running on this node. Using this parameter it is possible to
+                  separate the container data traffic from the management traffic of the cluster.
+                type: "string"
               ForceNewCluster:
                 description: "Force creation of a new swarm."
                 type: "boolean"
@@ -7442,6 +7480,17 @@ paths:
                 type: "string"
               AdvertiseAddr:
                 description: "Externally reachable address advertised to other nodes. This can either be an address/port combination in the form `192.168.1.1:4567`, or an interface followed by a port number, like `eth0:4567`. If the port number is omitted, the port number from the listen address is used. If `AdvertiseAddr` is not specified, it will be automatically detected when possible."
+                type: "string"
+              DataPathAddr:
+                description: |
+                  Address or interface to use for data path traffic (format: `<ip|interface>`), for example,  `192.168.1.1`,
+                  or an interface, like `eth0`. If `DataPathAddr` is unspecified, the same address as `AdvertiseAddr`
+                  is used.
+
+                  The `DataPathAddr` specifies the address that global scope network drivers will publish towards other
+                  nodes in order to reach the containers running on this node. Using this parameter it is possible to
+                  separate the container data traffic from the management traffic of the cluster.
+
                 type: "string"
               RemoteAddrs:
                 description: "Addresses of manager nodes already participating in the swarm."
