@@ -13,11 +13,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// DevmapperLogger defines methods for logging with devicemapper.
-type DevmapperLogger interface {
-	DMLog(level int, file string, line int, dmError int, message string)
-}
-
 const (
 	deviceCreate TaskType = iota
 	deviceReload
@@ -264,19 +259,6 @@ func UdevWait(cookie *uint) error {
 	return nil
 }
 
-// LogInitVerbose is an interface to initialize the verbose logger for the device mapper library.
-func LogInitVerbose(level int) {
-	DmLogInitVerbose(level)
-}
-
-var dmLogger DevmapperLogger
-
-// LogInit initializes the logger for the device mapper library.
-func LogInit(logger DevmapperLogger) {
-	dmLogger = logger
-	LogWithErrnoInit()
-}
-
 // SetDevDir sets the dev folder for the device mapper library (usually /dev).
 func SetDevDir(dir string) error {
 	if res := DmSetDevDir(dir); res != 1 {
@@ -336,9 +318,13 @@ func RemoveDevice(name string) error {
 	defer UdevWait(cookie)
 
 	dmSawBusy = false // reset before the task is run
+	dmSawEnxio = false
 	if err = task.run(); err != nil {
 		if dmSawBusy {
 			return ErrBusy
+		}
+		if dmSawEnxio {
+			return ErrEnxio
 		}
 		return fmt.Errorf("devicemapper: Error running RemoveDevice %s", err)
 	}
@@ -380,7 +366,11 @@ func RemoveDeviceDeferred(name string) error {
 	// by udev, what UdevWait is just cleaning up the semaphore.
 	defer UdevWait(cookie)
 
+	dmSawEnxio = false
 	if err = task.run(); err != nil {
+		if dmSawEnxio {
+			return ErrEnxio
+		}
 		return fmt.Errorf("devicemapper: Error running RemoveDeviceDeferred %s", err)
 	}
 
