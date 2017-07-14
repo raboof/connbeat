@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-07-11T22:01:54.964991983Z
+updated: 2017-07-13T22:03:40.132996646Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 54251b53d7081f1471c0a2cb23fd4e198e71bd14
+  version: 53a75ee05072cf5e59e9fb5b9e5cc5fb91fdb5be
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -141,7 +141,7 @@ imports:
 - name: github.com/klauspost/crc32
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
-  version: f533f7a102197536779ea3a8cb881d639e21ec5a
+  version: c4dc1301f1dc0307acd38e611aa375a64dfe0642
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/Nvveen/Gotty
@@ -149,7 +149,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: 9e2ed30b411505b510b4ab080c4035d71bd56b44
+  version: b8fec85fd4e360fc136fc5f137a5ea02872d117a
   subpackages:
   - specs-go
   - specs-go/v1
@@ -178,9 +178,9 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/Sirupsen/logrus
-  version: 7f976d3a76720c4c27af2ba716b85d2e0a7e38b1
+  version: 51dc0fc64317a2861273909081f9c315786533eb
 - name: github.com/sirupsen/logrus
-  version: 7f976d3a76720c4c27af2ba716b85d2e0a7e38b1
+  version: 51dc0fc64317a2861273909081f9c315786533eb
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
