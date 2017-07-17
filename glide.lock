@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-07-13T22:03:40.132996646Z
+updated: 2017-07-16T22:03:40.751628424Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 53a75ee05072cf5e59e9fb5b9e5cc5fb91fdb5be
+  version: f7ce35f47b1b8e029d7e572ef333cabba1b08e5b
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -109,7 +109,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 4bc6a18363f79b32c26f92e2e6d8bfd30d79a770
+  version: 4df4873b288c855e4186534280c3a3a1af403e67
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -118,7 +118,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: dda3e8acadcc9affc16faf33fbb229db78399245
+  version: 6d097162a51e308ecd76eb70b4dbe07344534041
   subpackages:
   - proto
 - name: github.com/golang/snappy
@@ -154,7 +154,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: a0159fddcd197a57790b6dd5654802b7dc8f80be
+  version: 825b5c020aced5e457fa384bd4bb6927c5f8de56
   subpackages:
   - libcontainer/system
   - libcontainer/user
