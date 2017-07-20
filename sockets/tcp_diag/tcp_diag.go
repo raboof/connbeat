@@ -68,6 +68,7 @@ func pollCurrentConnectionsForFamily(family uint8, socketInfo chan<- *sockets.So
 	if err != nil {
 		return err
 	}
+	defer socket.Close()
 	return pollConnections(family, socket, socketInfo)
 }
 
