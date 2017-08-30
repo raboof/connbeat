@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/container"
 	"github.com/docker/docker/libcontainerd"
 	"github.com/docker/docker/restartmanager"
+	"github.com/sirupsen/logrus"
 )
 
 func (daemon *Daemon) setStateCounter(c *container.Container) {
@@ -36,7 +36,7 @@ func (daemon *Daemon) StateChanged(id string, e libcontainerd.StateInfo) error {
 	case libcontainerd.StateOOM:
 		// StateOOM is Linux specific and should never be hit on Windows
 		if runtime.GOOS == "windows" {
-			return errors.New("Received StateOOM from libcontainerd on Windows. This should never happen.")
+			return errors.New("received StateOOM from libcontainerd on Windows. This should never happen")
 		}
 		daemon.updateHealthMonitor(c)
 		if err := c.CheckpointTo(daemon.containersReplica); err != nil {

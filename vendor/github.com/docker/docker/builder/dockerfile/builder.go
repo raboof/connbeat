@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/container"
@@ -18,14 +17,15 @@ import (
 	"github.com/docker/docker/builder/dockerfile/parser"
 	"github.com/docker/docker/builder/fscache"
 	"github.com/docker/docker/builder/remotecontext"
-	"github.com/docker/docker/client/session"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/chrootarchive"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/streamformatter"
 	"github.com/docker/docker/pkg/stringid"
 	"github.com/docker/docker/pkg/system"
+	"github.com/moby/buildkit/session"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"golang.org/x/sync/syncmap"
 )
@@ -241,7 +241,7 @@ func (b *Builder) build(source builder.Source, dockerfile *parser.Result) (*buil
 
 	if err := checkDispatchDockerfile(dockerfile.AST); err != nil {
 		buildsFailed.WithValues(metricsDockerfileSyntaxError).Inc()
-		return nil, err
+		return nil, validationError{err}
 	}
 
 	dispatchState, err := b.dispatchDockerfileWithCancellation(dockerfile, source)
@@ -357,7 +357,7 @@ func BuildFromConfig(config *container.Config, changes []string) (*container.Con
 
 	dockerfile, err := parser.Parse(bytes.NewBufferString(strings.Join(changes, "\n")))
 	if err != nil {
-		return nil, err
+		return nil, validationError{err}
 	}
 
 	// TODO @jhowardmsft LCOW support. For now, if LCOW enabled, switch to linux.
@@ -374,7 +374,7 @@ func BuildFromConfig(config *container.Config, changes []string) (*container.Con
 	// ensure that the commands are valid
 	for _, n := range dockerfile.AST.Children {
 		if !validCommitCommands[n.Value] {
-			return nil, fmt.Errorf("%s is not a valid change command", n.Value)
+			return nil, validationError{errors.Errorf("%s is not a valid change command", n.Value)}
 		}
 	}
 
@@ -383,7 +383,7 @@ func BuildFromConfig(config *container.Config, changes []string) (*container.Con
 	b.disableCommit = true
 
 	if err := checkDispatchDockerfile(dockerfile.AST); err != nil {
-		return nil, err
+		return nil, validationError{err}
 	}
 	dispatchState := newDispatchState()
 	dispatchState.runConfig = config

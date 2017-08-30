@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-07-18T22:02:00.013621015Z
+updated: 2017-08-30T22:01:55.465227398Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: fa7db52e2603cefbf0faf4e5d525e48cfe4a3c52
+  version: e23965d620e1655f44d47edd8b5e08c2c384fd03
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -109,7 +109,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 4df4873b288c855e4186534280c3a3a1af403e67
+  version: 98edf3edfae6a6500fecc69d2bcccf1302544004
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -118,7 +118,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: 83c564581ed68caafcec877c710d7ac243232c93
+  version: 9319258ff0eab7faf2eaca190ef9dff2b9603ead
   subpackages:
   - proto
 - name: github.com/golang/snappy
@@ -126,9 +126,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: ac112f7d75a0714af1bd86ab17749b31f7809640
-- name: github.com/hashicorp/go-cleanhttp
-  version: 3573b8b52aa7b37b9358d966a898feb387f62437
+  version: bb285ea687c5c77bb6935fdb2402b121d8efcbec
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -141,7 +139,7 @@ imports:
 - name: github.com/klauspost/crc32
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
-  version: c4dc1301f1dc0307acd38e611aa375a64dfe0642
+  version: 78439966b38d69bf38227fbf57ac8a6fee70f69a
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/Nvveen/Gotty
@@ -149,12 +147,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: b8fec85fd4e360fc136fc5f137a5ea02872d117a
+  version: 97ae57f204b5956aa313d453ead9094ff9056b32
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 5b995d9570a4bcbd5c0135be5312046ccacdd23c
+  version: 1c81e2a794c6e26a4c650142ae8893c47f619764
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -177,10 +175,12 @@ imports:
 - name: github.com/Shopify/sarama
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
-- name: github.com/Sirupsen/logrus
-  version: e49c59d69b89746796d48156991108c80faf1d7d
 - name: github.com/sirupsen/logrus
-  version: e49c59d69b89746796d48156991108c80faf1d7d
+  version: 89742aefa4b206dcf400792f3bd35b542998eb3b
+- name: golang.org/x/crypto
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  subpackages:
+  - ssh/terminal
 - name: golang.org/x/net
   version: d58ca6618b994150e624f6888d871f4709db51a0
   subpackages:
