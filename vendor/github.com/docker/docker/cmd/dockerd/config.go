@@ -5,6 +5,7 @@ import (
 
 	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/opts"
+	"github.com/docker/docker/registry"
 	"github.com/spf13/pflag"
 )
 
@@ -19,7 +20,7 @@ const (
 func installCommonConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 	var maxConcurrentDownloads, maxConcurrentUploads int
 
-	conf.ServiceOptions.InstallCliFlags(flags)
+	installRegistryServiceFlags(&conf.ServiceOptions, flags)
 
 	flags.Var(opts.NewNamedListOptsRef("storage-opts", &conf.GraphOptions, nil), "storage-opt", "Storage driver options")
 	flags.Var(opts.NewNamedListOptsRef("authorization-plugins", &conf.AuthorizationPlugins, nil), "authorization-plugin", "Authorization plugins to load")
@@ -62,6 +63,9 @@ func installCommonConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 
 	flags.StringVar(&conf.MetricsAddress, "metrics-addr", "", "Set default address and port to serve the metrics api on")
 
+	flags.StringVar(&conf.NodeGenericResources, "node-generic-resources", "", "user defined resources (e.g. fpga=2;gpu={UUID1,UUID2,UUID3})")
+	flags.IntVar(&conf.NetworkControlPlaneMTU, "network-control-plane-mtu", config.DefaultNetworkMtu, "Network Control plane MTU")
+
 	// "--deprecated-key-path" is to allow configuration of the key used
 	// for the daemon ID and the deprecated image signing. It was never
 	// exposed as a command line option but is added here to allow
@@ -71,4 +75,18 @@ func installCommonConfigFlags(conf *config.Config, flags *pflag.FlagSet) {
 
 	conf.MaxConcurrentDownloads = &maxConcurrentDownloads
 	conf.MaxConcurrentUploads = &maxConcurrentUploads
+}
+
+func installRegistryServiceFlags(options *registry.ServiceOptions, flags *pflag.FlagSet) {
+	ana := opts.NewNamedListOptsRef("allow-nondistributable-artifacts", &options.AllowNondistributableArtifacts, registry.ValidateIndexName)
+	mirrors := opts.NewNamedListOptsRef("registry-mirrors", &options.Mirrors, registry.ValidateMirror)
+	insecureRegistries := opts.NewNamedListOptsRef("insecure-registries", &options.InsecureRegistries, registry.ValidateIndexName)
+
+	flags.Var(ana, "allow-nondistributable-artifacts", "Allow push of nondistributable artifacts to registry")
+	flags.Var(mirrors, "registry-mirror", "Preferred Docker registry mirror")
+	flags.Var(insecureRegistries, "insecure-registry", "Enable insecure registry communication")
+
+	if runtime.GOOS != "windows" {
+		flags.BoolVar(&options.V2Only, "disable-legacy-registry", true, "Disable contacting legacy registries")
+	}
 }

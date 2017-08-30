@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/digestset"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/system"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Store is an interface for creating and accessing images
@@ -180,13 +180,21 @@ func (is *store) Create(config []byte) (ID, error) {
 	return imageID, nil
 }
 
+type imageNotFoundError string
+
+func (e imageNotFoundError) Error() string {
+	return "No such image: " + string(e)
+}
+
+func (imageNotFoundError) NotFound() {}
+
 func (is *store) Search(term string) (ID, error) {
 	dgst, err := is.digestSet.Lookup(term)
 	if err != nil {
 		if err == digestset.ErrDigestNotFound {
-			err = fmt.Errorf("No such image: %s", term)
+			err = imageNotFoundError(term)
 		}
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return IDFromDigest(dgst), nil
 }

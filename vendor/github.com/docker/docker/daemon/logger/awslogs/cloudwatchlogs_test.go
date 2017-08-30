@@ -162,7 +162,7 @@ func TestCreateError(t *testing.T) {
 		client: mockClient,
 	}
 	mockClient.createLogStreamResult <- &createLogStreamResult{
-		errorResult: errors.New("Error!"),
+		errorResult: errors.New("Error"),
 	}
 
 	err := stream.create()
@@ -243,7 +243,7 @@ func TestPublishBatchError(t *testing.T) {
 		sequenceToken: aws.String(sequenceToken),
 	}
 	mockClient.putLogEventsResult <- &putLogEventsResult{
-		errorResult: errors.New("Error!"),
+		errorResult: errors.New("Error"),
 	}
 
 	events := []wrappedEvent{
@@ -641,7 +641,7 @@ func TestCollectBatchMultilinePatternMaxEventAge(t *testing.T) {
 	})
 
 	// Fire ticker batchPublishFrequency seconds later
-	ticks <- time.Now().Add(batchPublishFrequency * time.Second)
+	ticks <- time.Now().Add(batchPublishFrequency + time.Second)
 
 	// Verify single multiline event is flushed after maximum event buffer age (batchPublishFrequency)
 	argument := <-mockClient.putLogEventsArgument
@@ -649,6 +649,20 @@ func TestCollectBatchMultilinePatternMaxEventAge(t *testing.T) {
 	assert.Equal(t, 1, len(argument.LogEvents), "Expected single multiline event")
 	assert.Equal(t, logline+"\n"+logline+"\n", *argument.LogEvents[0].Message, "Received incorrect multiline message")
 
+	// Log an event 1 second later
+	stream.Log(&logger.Message{
+		Line:      []byte(logline),
+		Timestamp: time.Now().Add(time.Second),
+	})
+
+	// Fire ticker another batchPublishFrequency seconds later
+	ticks <- time.Now().Add(2*batchPublishFrequency + time.Second)
+
+	// Verify the event buffer is truly flushed - we should only receive a single event
+	argument = <-mockClient.putLogEventsArgument
+	assert.NotNil(t, argument, "Expected non-nil PutLogEventsInput")
+	assert.Equal(t, 1, len(argument.LogEvents), "Expected single multiline event")
+	assert.Equal(t, logline+"\n", *argument.LogEvents[0].Message, "Received incorrect multiline message")
 	stream.Close()
 }
 

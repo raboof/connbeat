@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -20,6 +19,7 @@ import (
 	"github.com/docker/docker/volume"
 	"github.com/docker/libnetwork"
 	digest "github.com/opencontainers/go-digest"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -186,7 +186,7 @@ func (daemon *Daemon) ImagesPrune(ctx context.Context, pruneFilters filters.Args
 		if pruneFilters.ExactMatch("dangling", "false") || pruneFilters.ExactMatch("dangling", "0") {
 			danglingOnly = false
 		} else if !pruneFilters.ExactMatch("dangling", "true") && !pruneFilters.ExactMatch("dangling", "1") {
-			return nil, fmt.Errorf("Invalid filter 'dangling=%s'", pruneFilters.Get("dangling"))
+			return nil, invalidFilter{"dangling", pruneFilters.Get("dangling")}
 		}
 	}
 
@@ -221,7 +221,7 @@ func (daemon *Daemon) ImagesPrune(ctx context.Context, pruneFilters filters.Args
 			return nil, ctx.Err()
 		default:
 			dgst := digest.Digest(id)
-			if len(daemon.stores[platform].referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
+			if len(daemon.referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
 				continue
 			}
 			if !until.IsZero() && img.Created.After(until) {
@@ -252,7 +252,7 @@ deleteImagesLoop:
 		}
 
 		deletedImages := []types.ImageDeleteResponseItem{}
-		refs := daemon.stores[platform].referenceStore.References(dgst)
+		refs := daemon.referenceStore.References(dgst)
 		if len(refs) > 0 {
 			shouldDelete := !danglingOnly
 			if !shouldDelete {

@@ -10,9 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
-	apierrors "github.com/docker/docker/api/errors"
 	apitypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/backend"
 	types "github.com/docker/docker/api/types/swarm"
@@ -22,6 +20,7 @@ import (
 	swarmapi "github.com/docker/swarmkit/api"
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -129,7 +128,7 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string, queryRe
 
 		serviceSpec, err := convert.ServiceSpecToGRPC(s)
 		if err != nil {
-			return apierrors.NewBadRequestError(err)
+			return convertError{err}
 		}
 
 		resp = &apitypes.ServiceCreateResponse{}
@@ -139,9 +138,16 @@ func (c *Cluster) CreateService(s types.ServiceSpec, encodedAuth string, queryRe
 		case *swarmapi.TaskSpec_Generic:
 			switch serviceSpec.Task.GetGeneric().Kind {
 			case string(types.RuntimePlugin):
+				info, _ := c.config.Backend.SystemInfo()
+				if !info.ExperimentalBuild {
+					return fmt.Errorf("runtime type %q only supported in experimental", types.RuntimePlugin)
+				}
 				if s.TaskTemplate.PluginSpec == nil {
 					return errors.New("plugin spec must be set")
 				}
+
+			default:
+				return fmt.Errorf("unsupported runtime type: %q", serviceSpec.Task.GetGeneric().Kind)
 			}
 
 			r, err := state.controlClient.CreateService(ctx, &swarmapi.CreateServiceRequest{Spec: &serviceSpec})
@@ -226,7 +232,7 @@ func (c *Cluster) UpdateService(serviceIDOrName string, version uint64, spec typ
 
 		serviceSpec, err := convert.ServiceSpecToGRPC(spec)
 		if err != nil {
-			return apierrors.NewBadRequestError(err)
+			return convertError{err}
 		}
 
 		currentService, err := getService(ctx, state.controlClient, serviceIDOrName, false)
@@ -458,22 +464,33 @@ func (c *Cluster) ServiceLogs(ctx context.Context, selector *backend.LogSelector
 			for _, msg := range subscribeMsg.Messages {
 				// make a new message
 				m := new(backend.LogMessage)
-				m.Attrs = make(backend.LogAttributes)
+				m.Attrs = make([]backend.LogAttr, 0, len(msg.Attrs)+3)
 				// add the timestamp, adding the error if it fails
 				m.Timestamp, err = gogotypes.TimestampFromProto(msg.Timestamp)
 				if err != nil {
 					m.Err = err
 				}
+
+				nodeKey := contextPrefix + ".node.id"
+				serviceKey := contextPrefix + ".service.id"
+				taskKey := contextPrefix + ".task.id"
+
 				// copy over all of the details
 				for _, d := range msg.Attrs {
-					m.Attrs[d.Key] = d.Value
+					switch d.Key {
+					case nodeKey, serviceKey, taskKey:
+						// we have the final say over context details (in case there
+						// is a conflict (if the user added a detail with a context's
+						// key for some reason))
+					default:
+						m.Attrs = append(m.Attrs, backend.LogAttr{Key: d.Key, Value: d.Value})
+					}
 				}
-				// we have the final say over context details (in case there
-				// is a conflict (if the user added a detail with a context's
-				// key for some reason))
-				m.Attrs[contextPrefix+".node.id"] = msg.Context.NodeID
-				m.Attrs[contextPrefix+".service.id"] = msg.Context.ServiceID
-				m.Attrs[contextPrefix+".task.id"] = msg.Context.TaskID
+				m.Attrs = append(m.Attrs,
+					backend.LogAttr{Key: nodeKey, Value: msg.Context.NodeID},
+					backend.LogAttr{Key: serviceKey, Value: msg.Context.ServiceID},
+					backend.LogAttr{Key: taskKey, Value: msg.Context.TaskID},
+				)
 
 				switch msg.Stream {
 				case swarmapi.LogStreamStdout:
