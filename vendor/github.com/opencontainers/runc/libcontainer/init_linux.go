@@ -12,14 +12,14 @@ import (
 	"syscall" // only for Errno
 	"unsafe"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/opencontainers/runc/libcontainer/utils"
-	"github.com/vishvananda/netlink"
 
+	"github.com/sirupsen/logrus"
+	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )
 
@@ -31,7 +31,8 @@ const (
 )
 
 type pid struct {
-	Pid int `json:"pid"`
+	Pid           int `json:"pid"`
+	PidFirstChild int `json:"pid_first"`
 }
 
 // network is an internal struct used to setup container networks.
@@ -67,7 +68,7 @@ type initer interface {
 	Init() error
 }
 
-func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, stateDirFD int) (initer, error) {
+func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, fifoFd int) (initer, error) {
 	var config *initConfig
 	if err := json.NewDecoder(pipe).Decode(&config); err != nil {
 		return nil, err
@@ -88,7 +89,7 @@ func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, stateDi
 			consoleSocket: consoleSocket,
 			parentPid:     unix.Getppid(),
 			config:        config,
-			stateDirFD:    stateDirFD,
+			fifoFd:        fifoFd,
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown init type %q", t)

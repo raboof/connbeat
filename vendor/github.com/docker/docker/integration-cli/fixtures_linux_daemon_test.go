@@ -24,16 +24,6 @@ type logT interface {
 	Logf(string, ...interface{})
 }
 
-func ensureFrozenImagesLinux(t testingT) {
-	images := []string{"busybox:latest", "hello-world:frozen", "debian:jessie"}
-	err := load.FrozenImagesLinux(dockerBinary, images...)
-	if err != nil {
-		t.Logf(dockerCmdWithError("images"))
-		t.Fatalf("%+v", err)
-	}
-	defer testEnv.ProtectImage(t, images...)
-}
-
 var ensureSyscallTestOnce sync.Once
 
 func ensureSyscallTest(c *check.C) {
@@ -89,7 +79,7 @@ func ensureSyscallTest(c *check.C) {
 }
 
 func ensureSyscallTestBuild(c *check.C) {
-	err := load.FrozenImagesLinux(dockerBinary, "buildpack-deps:jessie")
+	err := load.FrozenImagesLinux(testEnv.APIClient(), "buildpack-deps:jessie")
 	c.Assert(err, checker.IsNil)
 
 	var buildArgs []string
@@ -136,7 +126,7 @@ func ensureNNPTest(c *check.C) {
 }
 
 func ensureNNPTestBuild(c *check.C) {
-	err := load.FrozenImagesLinux(dockerBinary, "buildpack-deps:jessie")
+	err := load.FrozenImagesLinux(testEnv.APIClient(), "buildpack-deps:jessie")
 	c.Assert(err, checker.IsNil)
 
 	var buildArgs []string
