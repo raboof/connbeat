@@ -6,13 +6,13 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/layer"
 	"github.com/docker/docker/pkg/directory"
 	"github.com/docker/docker/volume"
 	"github.com/opencontainers/go-digest"
+	"github.com/sirupsen/logrus"
 )
 
 func (daemon *Daemon) getLayerRefs(platform string) map[layer.ChainID]int {
@@ -20,7 +20,7 @@ func (daemon *Daemon) getLayerRefs(platform string) map[layer.ChainID]int {
 	layerRefs := map[layer.ChainID]int{}
 	for id, img := range tmpImages {
 		dgst := digest.Digest(id)
-		if len(daemon.stores[platform].referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
+		if len(daemon.referenceStore.References(dgst)) == 0 && len(daemon.stores[platform].imageStore.Children(id)) != 0 {
 			continue
 		}
 

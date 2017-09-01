@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/api/errdefs"
 	enginetypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm/runtime"
 	"github.com/docker/docker/plugin"
@@ -14,6 +14,7 @@ import (
 	"github.com/docker/swarmkit/api"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -198,8 +199,7 @@ func (p *Controller) Wait(ctx context.Context) error {
 }
 
 func isNotFound(err error) bool {
-	_, ok := errors.Cause(err).(plugin.ErrNotFound)
-	return ok
+	return errdefs.IsNotFound(err)
 }
 
 // Shutdown is the shutdown phase from swarmkit

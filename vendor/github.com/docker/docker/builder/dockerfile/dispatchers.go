@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/strslice"
@@ -29,6 +28,7 @@ import (
 	"github.com/docker/docker/pkg/system"
 	"github.com/docker/go-connections/nat"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // ENV foo bar
@@ -146,6 +146,7 @@ func add(req dispatchRequest) error {
 		return errAtLeastTwoArguments("ADD")
 	}
 
+	flChown := req.flags.AddString("chown", "")
 	if err := req.flags.Parse(); err != nil {
 		return err
 	}
@@ -157,6 +158,7 @@ func add(req dispatchRequest) error {
 	if err != nil {
 		return err
 	}
+	copyInstruction.chownStr = flChown.Value
 	copyInstruction.allowLocalDecompression = true
 
 	return req.builder.performCopy(req.state, copyInstruction)
@@ -172,6 +174,7 @@ func dispatchCopy(req dispatchRequest) error {
 	}
 
 	flFrom := req.flags.AddString("from", "")
+	flChown := req.flags.AddString("chown", "")
 	if err := req.flags.Parse(); err != nil {
 		return err
 	}
@@ -187,6 +190,7 @@ func dispatchCopy(req dispatchRequest) error {
 	if err != nil {
 		return err
 	}
+	copyInstruction.chownStr = flChown.Value
 
 	return req.builder.performCopy(req.state, copyInstruction)
 }
@@ -387,7 +391,7 @@ func workdir(req dispatchRequest) error {
 	runConfig := req.state.runConfig
 	// This is from the Dockerfile and will not necessarily be in platform
 	// specific semantics, hence ensure it is converted.
-	runConfig.WorkingDir, err = normaliseWorkdir(runConfig.WorkingDir, req.args[0])
+	runConfig.WorkingDir, err = normalizeWorkdir(req.builder.platform, runConfig.WorkingDir, req.args[0])
 	if err != nil {
 		return err
 	}
@@ -784,7 +788,7 @@ func stopSignal(req dispatchRequest) error {
 	sig := req.args[0]
 	_, err := signal.ParseSignal(sig)
 	if err != nil {
-		return err
+		return validationError{err}
 	}
 
 	req.state.runConfig.StopSignal = sig

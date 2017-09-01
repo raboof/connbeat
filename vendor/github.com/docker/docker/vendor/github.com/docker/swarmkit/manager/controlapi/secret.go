@@ -4,12 +4,12 @@ import (
 	"crypto/subtle"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/swarmkit/api"
 	"github.com/docker/swarmkit/api/validation"
 	"github.com/docker/swarmkit/identity"
 	"github.com/docker/swarmkit/log"
 	"github.com/docker/swarmkit/manager/state/store"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -156,6 +156,12 @@ func (s *Server) ListSecrets(ctx context.Context, request *api.ListSecretsReques
 func (s *Server) CreateSecret(ctx context.Context, request *api.CreateSecretRequest) (*api.CreateSecretResponse, error) {
 	if err := validateSecretSpec(request.Spec); err != nil {
 		return nil, err
+	}
+
+	if request.Spec.Driver != nil { // Check that the requested driver is valid
+		if _, err := s.dr.NewSecretDriver(request.Spec.Driver); err != nil {
+			return nil, err
+		}
 	}
 
 	secret := secretFromSecretSpec(request.Spec) // the store will handle name conflicts
