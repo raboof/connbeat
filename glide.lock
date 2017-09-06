@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-08-31T22:01:51.514285144Z
+updated: 2017-09-06T22:03:23.627334017Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 184cea5ff710abde25547749e5608b24a255ba09
+  version: 945d80cd6ad5fc9d30a947ab8872721272ac7bff
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -126,7 +126,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: bb285ea687c5c77bb6935fdb2402b121d8efcbec
+  version: 24fca303ac6da784b9e8269f724ddeb0b2eea5e7
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -147,12 +147,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: 7653c236dd968a4f18c94d588591d98dea106323
+  version: bd853405272a3c074a79dfe5cac06c752d4822cb
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 84a082bfef6f932de921437815355186db37aeb1
+  version: 5274430fee9bc930598cfd9c9dbd33213f79f96e
   subpackages:
   - libcontainer/system
   - libcontainer/user
