@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-09-10T22:01:55.763694568Z
+updated: 2017-09-12T22:01:55.752093958Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -12,7 +12,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 13fec0607394f7c6da0148f8d513b6fcbf7cce61
+  version: 969b76d85f93e214cbc44f25a3f44b67cb0dc078
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -147,12 +147,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: bd853405272a3c074a79dfe5cac06c752d4822cb
+  version: fd476dda865b8fb8689ed79ffd16458fc9be14f3
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 13fa5d2953d2fabbf14c2f6fd05eac70d71c45c7
+  version: 593914b8bd5448a93f7c3e4902a03408b6d5c0ce
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -178,7 +178,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: golang.org/x/crypto
-  version: 9ba3862cf6a5452ae579de98f9364dd2e544844c
+  version: faadfbdc035307d901e69eea569f5dda451a3ee3
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net

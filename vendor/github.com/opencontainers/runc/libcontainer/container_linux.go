@@ -44,6 +44,8 @@ type linuxContainer struct {
 	initProcess          parentProcess
 	initProcessStartTime uint64
 	criuPath             string
+	newuidmapPath        string
+	newgidmapPath        string
 	m                    sync.Mutex
 	criuVersion          int
 	state                containerState
@@ -1479,7 +1481,7 @@ func (c *linuxContainer) criuNotifications(resp *criurpc.CriuResp, process *Proc
 		defer master.Close()
 
 		// While we can access console.master, using the API is a good idea.
-		if err := utils.SendFd(process.ConsoleSocket, master); err != nil {
+		if err := utils.SendFd(process.ConsoleSocket, master.Name(), master.Fd()); err != nil {
 			return err
 		}
 	}
@@ -1707,6 +1709,12 @@ func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.Na
 	if !joinExistingUser {
 		// write uid mappings
 		if len(c.config.UidMappings) > 0 {
+			if c.config.Rootless && c.newuidmapPath != "" {
+				r.AddData(&Bytemsg{
+					Type:  UidmapPathAttr,
+					Value: []byte(c.newuidmapPath),
+				})
+			}
 			b, err := encodeIDMapping(c.config.UidMappings)
 			if err != nil {
 				return nil, err
@@ -1727,6 +1735,12 @@ func (c *linuxContainer) bootstrapData(cloneFlags uintptr, nsMaps map[configs.Na
 				Type:  GidmapAttr,
 				Value: b,
 			})
+			if c.config.Rootless && c.newgidmapPath != "" {
+				r.AddData(&Bytemsg{
+					Type:  GidmapPathAttr,
+					Value: []byte(c.newgidmapPath),
+				})
+			}
 			// The following only applies if we are root.
 			if !c.config.Rootless {
 				// check if we have CAP_SETGID to setgroup properly
