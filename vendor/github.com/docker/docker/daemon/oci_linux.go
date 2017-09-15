@@ -29,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// nolint: gosimple
 var (
 	deviceCgroupRuleRegex = regexp.MustCompile("^([acb]) ([0-9]+|\\*):([0-9]+|\\*) ([rwm]{1,3})$")
 )
@@ -497,6 +498,7 @@ func setMounts(daemon *Daemon, s *specs.Spec, c *container.Container, mounts []c
 
 	// Filter out mounts from spec
 	noIpc := c.HostConfig.IpcMode.IsNone()
+	// Filter out mounts that are overridden by user supplied mounts
 	var defaultMounts []specs.Mount
 	_, mountDev := userMounts["/dev"]
 	for _, m := range s.Mounts {
@@ -523,7 +525,8 @@ func setMounts(daemon *Daemon, s *specs.Spec, c *container.Container, mounts []c
 
 		if m.Source == "tmpfs" {
 			data := m.Data
-			options := []string{"noexec", "nosuid", "nodev", string(volume.DefaultPropagationMode)}
+			parser := volume.NewParser("linux")
+			options := []string{"noexec", "nosuid", "nodev", string(parser.DefaultPropagationMode())}
 			if data != "" {
 				options = append(options, strings.Split(data, ",")...)
 			}
