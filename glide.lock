@@ -1,10 +1,14 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-09-14T22:03:31.060074927Z
+updated: 2017-09-16T22:03:28.30001641Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
   subpackages:
   - winterm
+- name: github.com/containerd/continuity
+  version: 35d55c5e8dd23b32037d56cf97174aff3efdfa83
+  subpackages:
+  - pathdriver
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
@@ -12,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 0300fa7f806f978451c09ebbff402ddd34e928d9
+  version: c5c0702a4d523071b3e41a13c233b6ec9e261b06
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -178,7 +182,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: golang.org/x/crypto
-  version: faadfbdc035307d901e69eea569f5dda451a3ee3
+  version: 7d9177d70076375b9a59c8fde23d52d9c4a7ecd5
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
