@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-09-19T22:01:56.637745938Z
+updated: 2017-09-22T22:02:17.643224814Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 7cbbbb95097f065757d38bcccdb1bbef81d10ddb
+  version: c982ee805d895a4fc2bf01f2d1d8afa06b408dd0
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -40,7 +40,6 @@ imports:
   - pkg/longpath
   - pkg/mount
   - pkg/pools
-  - pkg/promise
   - pkg/stdcopy
   - pkg/system
   - pkg/term
@@ -113,7 +112,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 98edf3edfae6a6500fecc69d2bcccf1302544004
+  version: d6c9513c3abe61f13e41c22bc013346eb96e1fe5
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -130,7 +129,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 24fca303ac6da784b9e8269f724ddeb0b2eea5e7
+  version: 3f19343c7d9ce75569b952758bd236af94956061
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -156,7 +155,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 593914b8bd5448a93f7c3e4902a03408b6d5c0ce
+  version: e385f67a0e45fa1d8ef8154e2aea5128ea1d331b
   subpackages:
   - libcontainer/system
   - libcontainer/user
