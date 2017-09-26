@@ -1,12 +1,12 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-09-22T22:02:17.643224814Z
+updated: 2017-09-25T22:01:58.22538847Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
   subpackages:
   - winterm
 - name: github.com/containerd/continuity
-  version: 35d55c5e8dd23b32037d56cf97174aff3efdfa83
+  version: 617902de2ab5e18974efd88a58eeef67ac82d127
   subpackages:
   - pathdriver
 - name: github.com/davecgh/go-spew
@@ -155,7 +155,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: e385f67a0e45fa1d8ef8154e2aea5128ea1d331b
+  version: 2ae0fa71872fe2f27a0ccc6e424bb55a92d8693f
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -181,7 +181,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: golang.org/x/crypto
-  version: 7d9177d70076375b9a59c8fde23d52d9c4a7ecd5
+  version: 847319b7fc94cab682988f93da778204da164588
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
