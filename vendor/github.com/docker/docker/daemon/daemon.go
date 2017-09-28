@@ -125,7 +125,7 @@ type Daemon struct {
 	hosts            map[string]bool // hosts stores the addresses the daemon is listening on
 	startupDone      chan struct{}
 
-	lbAttachmentStore network.LBAttachmentStore
+	attachmentStore network.AttachmentStore
 }
 
 // StoreHosts stores the addresses the daemon is listening on
@@ -140,10 +140,7 @@ func (daemon *Daemon) StoreHosts(hosts []string) {
 
 // HasExperimental returns whether the experimental features of the daemon are enabled or not
 func (daemon *Daemon) HasExperimental() bool {
-	if daemon.configStore != nil && daemon.configStore.Experimental {
-		return true
-	}
-	return false
+	return daemon.configStore != nil && daemon.configStore.Experimental
 }
 
 func (daemon *Daemon) restore() error {
@@ -494,7 +491,7 @@ func (daemon *Daemon) DaemonLeavesCluster() {
 		logrus.Warnf("failed to initiate ingress network removal: %v", err)
 	}
 
-	daemon.lbAttachmentStore.ClearLBAttachments()
+	daemon.attachmentStore.ClearAttachments()
 }
 
 // setClusterProvider sets a component for querying the current cluster state.
@@ -1044,7 +1041,7 @@ func prepareTempDir(rootDir string, rootIDs idtools.IDPair) (string, error) {
 					logrus.Warnf("failed to delete old tmp directory: %s", newName)
 				}
 			}()
-		} else {
+		} else if !os.IsNotExist(err) {
 			logrus.Warnf("failed to rename %s for background deletion: %s. Deleting synchronously", tmpDir, err)
 			if err := os.RemoveAll(tmpDir); err != nil {
 				logrus.Warnf("failed to delete old tmp directory: %s", tmpDir)
@@ -1254,7 +1251,7 @@ func fixMemorySwappiness(resources *containertypes.Resources) {
 	}
 }
 
-// GetLBAttachmentStore returns current load balancer store associated with the daemon
-func (daemon *Daemon) GetLBAttachmentStore() *network.LBAttachmentStore {
-	return &daemon.lbAttachmentStore
+// GetAttachmentStore returns current attachment store associated with the daemon
+func (daemon *Daemon) GetAttachmentStore() *network.AttachmentStore {
+	return &daemon.attachmentStore
 }
