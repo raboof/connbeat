@@ -370,7 +370,7 @@ func (daemon *Daemon) createNetwork(create types.NetworkCreateRequest, id string
 	daemon.LogNetworkEvent(n, "create")
 
 	if agent && !n.Info().Ingress() && n.Type() == "overlay" {
-		nodeIP, exists := daemon.GetLBAttachmentStore().GetLBIPForNetwork(id)
+		nodeIP, exists := daemon.GetAttachmentStore().GetIPForNetwork(id)
 		if !exists {
 			return nil, fmt.Errorf("Failed to find a load balancer IP to use for network: %v", id)
 		}
@@ -525,18 +525,24 @@ func (daemon *Daemon) deleteLoadBalancerSandbox(n libnetwork.Network) {
 	if len(endpoints) == 1 {
 		sandboxName := n.Name() + "-sbox"
 
-		if err := endpoints[0].Info().Sandbox().DisableService(); err != nil {
-			logrus.Errorf("Failed to disable service on sandbox %s: %v", sandboxName, err)
-			//Ignore error and attempt to delete the load balancer endpoint
+		info := endpoints[0].Info()
+		if info != nil {
+			sb := info.Sandbox()
+			if sb != nil {
+				if err := sb.DisableService(); err != nil {
+					logrus.Warnf("Failed to disable service on sandbox %s: %v", sandboxName, err)
+					//Ignore error and attempt to delete the load balancer endpoint
+				}
+			}
 		}
 
 		if err := endpoints[0].Delete(true); err != nil {
-			logrus.Errorf("Failed to delete endpoint %s (%s) in %s: %v", endpoints[0].Name(), endpoints[0].ID(), sandboxName, err)
+			logrus.Warnf("Failed to delete endpoint %s (%s) in %s: %v", endpoints[0].Name(), endpoints[0].ID(), sandboxName, err)
 			//Ignore error and attempt to delete the sandbox.
 		}
 
 		if err := controller.SandboxDestroy(sandboxName); err != nil {
-			logrus.Errorf("Failed to delete %s sandbox: %v", sandboxName, err)
+			logrus.Warnf("Failed to delete %s sandbox: %v", sandboxName, err)
 			//Ignore error and attempt to delete the network.
 		}
 	}
