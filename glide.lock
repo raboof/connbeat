@@ -1,8 +1,8 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-09-25T22:01:58.22538847Z
+updated: 2017-09-30T22:01:59.117585318Z
 imports:
 - name: github.com/Azure/go-ansiterm
-  version: 19f72df4d05d31cbe1c56bfc8045c96babff6c7e
+  version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
   - winterm
 - name: github.com/containerd/continuity
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: c982ee805d895a4fc2bf01f2d1d8afa06b408dd0
+  version: 9c9f4d6f70a14e00902cae19dd586a6faa6476f6
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -35,7 +35,6 @@ imports:
   - pkg/homedir
   - pkg/idtools
   - pkg/ioutils
-  - pkg/jsonlog
   - pkg/jsonmessage
   - pkg/longpath
   - pkg/mount
@@ -112,7 +111,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: d6c9513c3abe61f13e41c22bc013346eb96e1fe5
+  version: 199e3d903f173ca5869445d99a5aebe85872a7a4
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -121,7 +120,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: 2adc21fd136931e0388e278825291678e1d98309
+  version: f7f1376d9d231a646d4e62fe1075623ced6db327
   subpackages:
   - proto
 - name: github.com/golang/snappy
@@ -150,12 +149,12 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/opencontainers/image-spec
-  version: ebd93fd0782379ca3d821f0fa74f0651a9347a3e
+  version: 7c889fafd04a893f5c5f50b7ab9963d5d64e5242
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 2ae0fa71872fe2f27a0ccc6e424bb55a92d8693f
+  version: 0351df1c5a66838d0c392b4ac4cf9450de844e2d
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -181,7 +180,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: golang.org/x/crypto
-  version: 847319b7fc94cab682988f93da778204da164588
+  version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
