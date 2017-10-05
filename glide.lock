@@ -1,12 +1,12 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-03T22:03:40.776372307Z
+updated: 2017-10-05T22:03:32.131812786Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
   - winterm
 - name: github.com/containerd/continuity
-  version: 617902de2ab5e18974efd88a58eeef67ac82d127
+  version: 1bed1ecb1dc42d8f4d2ac8c23e5cac64749e82c9
   subpackages:
   - pathdriver
 - name: github.com/davecgh/go-spew
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: d65ab869e8712d08fb94a5337b83df5d247bf25b
+  version: 2bc9bff86707737ff5df5f23b613d16281f9d223
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -111,7 +111,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: 199e3d903f173ca5869445d99a5aebe85872a7a4
+  version: da3951ba2e9e02bc0e7642150b3e265aed7e1df3
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -154,7 +154,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 0351df1c5a66838d0c392b4ac4cf9450de844e2d
+  version: f53ad9cec928821a25c2a74eb8bd95558f8cf152
   subpackages:
   - libcontainer/system
   - libcontainer/user
