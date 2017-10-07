@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-06T22:02:12.206083991Z
+updated: 2017-10-07T22:03:26.253994517Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: b8571fd81c7d2223c9ecbf799c693e3ef1daaea9
+  version: a3efe9722f34af5cf4443fe3a5c4e4e3e0457b54
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -120,7 +120,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: f7f1376d9d231a646d4e62fe1075623ced6db327
+  version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
   - proto
 - name: github.com/golang/snappy
