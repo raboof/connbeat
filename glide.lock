@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-06T22:02:12.206083991Z
+updated: 2017-10-08T22:02:03.174881038Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: b8571fd81c7d2223c9ecbf799c693e3ef1daaea9
+  version: 97575ecda9bce64b12ead7b588da7acebb01fa22
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -120,7 +120,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: f7f1376d9d231a646d4e62fe1075623ced6db327
+  version: acc574dde084a4795351754d549a747d06d0c4d4
   subpackages:
   - proto
 - name: github.com/golang/snappy
@@ -128,7 +128,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 3f19343c7d9ce75569b952758bd236af94956061
+  version: bdd5a5a1b0b489d297b73eb62b5f6328df198bfc
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
