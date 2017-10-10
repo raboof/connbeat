@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-08T22:02:03.174881038Z
+updated: 2017-10-09T22:03:34.753005652Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 97575ecda9bce64b12ead7b588da7acebb01fa22
+  version: 513f0e6c26cfac31d41a1eb249758907950cb7be
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -111,7 +111,7 @@ imports:
 - name: github.com/eleme/netlink
   version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
-  version: da3951ba2e9e02bc0e7642150b3e265aed7e1df3
+  version: d2a6d0596004cc01062a2a068540b817f911e6dc
   subpackages:
   - testing
 - name: github.com/garyburd/redigo
@@ -120,7 +120,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: acc574dde084a4795351754d549a747d06d0c4d4
+  version: 0c5dcd73e6fd1ac6c452a68ec7f8d463d111be66
   subpackages:
   - proto
 - name: github.com/golang/snappy
