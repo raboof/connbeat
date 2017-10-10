@@ -1,5 +1,5 @@
 hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-09T22:03:34.753005652Z
+updated: 2017-10-10T22:02:12.335265603Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
@@ -16,7 +16,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: fc8930a5e645572ee00bf66358ed3414f3c13b90
 - name: github.com/docker/docker
-  version: 513f0e6c26cfac31d41a1eb249758907950cb7be
+  version: 8b24d2a96024d7aa35a26744ea7c7df577accc4b
   subpackages:
   - api/types
   - api/types/blkiodev
@@ -128,7 +128,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: bdd5a5a1b0b489d297b73eb62b5f6328df198bfc
+  version: 9bd9ff2d1d2a0660d35050674f2c3112547997af
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -154,7 +154,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: f53ad9cec928821a25c2a74eb8bd95558f8cf152
+  version: beb8716fcb400d5f555c5d96a0534572d40f0248
   subpackages:
   - libcontainer/system
   - libcontainer/user
