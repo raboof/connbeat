@@ -1,5 +1,7 @@
 # Connbeat
 
+[![Join the chat at https://gitter.im/connbeat/Lobby](https://badges.gitter.im/connbeat/Lobby.svg)](https://gitter.im/connbeat/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/raboof/connbeat.svg?branch=master)](https://travis-ci.org/raboof/connbeat)
 
 Connbeat, short for 'Connectionbeat', is an open source agent that monitors TCP connection metadata and
