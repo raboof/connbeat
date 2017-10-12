@@ -115,57 +115,67 @@ func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *pro
 	}
 }
 
-func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- FullConnection, servers chan ServerConnection) {
+func (c *Connections) handleSocketInfoChannel(exposeProcessInfo bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- FullConnection, servers chan ServerConnection) {
 	lastCleanupTime := time.Now()
 	for {
-		now := time.Now()
 		select {
 		case s := <-socketInfo:
-			localIP := s.SrcIP.String()
-			localDedupId := incomingConnectionDedup{localIP, s.SrcPort}
-			if when, seen := c.listeningOn[localDedupId]; !seen || now.Sub(when) > aggregation {
-				c.listeningOn[localDedupId] = now
-				if s.DstPort == 0 {
-					servers <- ServerConnection{
+			now := time.Now()
+			c.filterAndPublish(exposeProcessInfo, aggregation, now, s, connections, servers)
+			lastCleanupTime = c.cleanup(aggregation, lastCleanupTime, now)
+		}
+	}
+}
+
+func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.Duration, now time.Time, s *sockets.SocketInfo,
+	connections chan<- FullConnection, servers chan ServerConnection) {
+
+	localIP := s.SrcIP.String()
+	localDedupId := incomingConnectionDedup{localIP, s.SrcPort}
+	if when, seen := c.listeningOn[localDedupId]; !seen || now.Sub(when) > aggregation {
+		c.listeningOn[localDedupId] = now
+		if s.DstPort == 0 {
+			servers <- ServerConnection{
+				LocalIP:   localIP,
+				LocalPort: s.SrcPort,
+				Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
+				Container: s.Container,
+			}
+		} else {
+			dstIP := s.DstIP.String()
+			dedupId := outgoingConnectionDedup{localIP, s.SrcPort, dstIP, s.DstPort}
+			if when, seen := c.outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
+				c.outgoingConnectionSeen[dedupId] = now
+				connections <- FullConnection{
+					LocalConnection{
 						LocalIP:   localIP,
 						LocalPort: s.SrcPort,
 						Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
 						Container: s.Container,
-					}
-				} else {
-					dstIP := s.DstIP.String()
-					dedupId := outgoingConnectionDedup{localIP, s.SrcPort, dstIP, s.DstPort}
-					if when, seen := c.outgoingConnectionSeen[dedupId]; !seen || now.Sub(when) > aggregation {
-						c.outgoingConnectionSeen[dedupId] = now
-						connections <- FullConnection{
-							LocalConnection{
-								LocalIP:   localIP,
-								LocalPort: s.SrcPort,
-								Process:   process(c.ps, exposeProcessInfo && s.Container == nil, s.Inode),
-								Container: s.Container,
-							},
-							dstIP,
-							s.DstPort,
-						}
-					}
+					},
+					dstIP,
+					s.DstPort,
 				}
-			}
-			if now.Sub(lastCleanupTime) > 2*aggregation {
-				//Cleanup
-				for connection, when := range c.outgoingConnectionSeen {
-					if now.Sub(when) > 2*aggregation {
-						delete(c.outgoingConnectionSeen, connection)
-					}
-				}
-				for localDedupId, when := range c.listeningOn {
-					if now.Sub(when) > 2*aggregation {
-						delete(c.listeningOn, localDedupId)
-					}
-				}
-				lastCleanupTime = now
 			}
 		}
 	}
+}
+
+func (c *Connections) cleanup(aggregation time.Duration, lastCleanupTime time.Time, now time.Time) time.Time {
+	if now.Sub(lastCleanupTime) > 2*aggregation {
+		for connection, when := range c.outgoingConnectionSeen {
+			if now.Sub(when) > 2*aggregation {
+				delete(c.outgoingConnectionSeen, connection)
+			}
+		}
+		for localDedupId, when := range c.listeningOn {
+			if now.Sub(when) > 2*aggregation {
+				delete(c.listeningOn, localDedupId)
+			}
+		}
+		lastCleanupTime = now
+	}
+	return lastCleanupTime
 }
 
 func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
@@ -187,7 +197,7 @@ func Listen(exposeProcessInfo, exposeCmdline, exposeEnviron,
 
 	connections := make(chan FullConnection, 20)
 	servers := make(chan ServerConnection, 20)
-	go New(exposeCmdline, exposeEnviron).filterAndPublish(exposeProcessInfo, aggregation, socketInfo, connections, servers)
+	go New(exposeCmdline, exposeEnviron).handleSocketInfoChannel(exposeProcessInfo, aggregation, socketInfo, connections, servers)
 
 	return connections, servers, nil
 }
