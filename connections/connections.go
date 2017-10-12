@@ -116,6 +116,7 @@ func process(ps *processes.Processes, exposeProcessInfo bool, inode uint64) *pro
 }
 
 func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.Duration, socketInfo <-chan *sockets.SocketInfo, connections chan<- FullConnection, servers chan ServerConnection) {
+	lastCleanupTime := time.Now()
 	for {
 		now := time.Now()
 		select {
@@ -148,6 +149,20 @@ func (c *Connections) filterAndPublish(exposeProcessInfo bool, aggregation time.
 						}
 					}
 				}
+			}
+			if now.Sub(lastCleanupTime) > 2*aggregation {
+				//Cleanup
+				for connection, when := range c.outgoingConnectionSeen {
+					if now.Sub(when) > 2*aggregation {
+						delete(c.outgoingConnectionSeen, connection)
+					}
+				}
+				for localDedupId, when := range c.listeningOn {
+					if now.Sub(when) > 2*aggregation {
+						delete(c.listeningOn, localDedupId)
+					}
+				}
+				lastCleanupTime = now
 			}
 		}
 	}
