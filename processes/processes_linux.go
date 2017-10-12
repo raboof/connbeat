@@ -22,6 +22,8 @@ func (ps *Processes) Refresh() error {
 	if err != nil {
 		return err
 	}
+	ps.byInode = make(map[uint64]*UnixProcess)
+
 	for _, p := range procs {
 		err := p.Refresh(ps.exposeCmdline, ps.exposeEnviron)
 		if err != nil {
