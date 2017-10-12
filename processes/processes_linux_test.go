@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func TestCmdline(t *testing.T) {
-	procs, err := processes(true, false)
+	procs, err := processes(true, false, "/proc")
 	assert.Nil(t, err)
 	for _, process := range procs {
 		if strings.Contains(process.Cmdline, "processes.test") {
@@ -25,7 +26,7 @@ func TestCmdline(t *testing.T) {
 }
 
 func TestNoCmdline(t *testing.T) {
-	procs, err := processes(false, true)
+	procs, err := processes(false, true, "/proc")
 	assert.Nil(t, err)
 	for _, process := range procs {
 		if process.Cmdline != "" {
@@ -97,12 +98,66 @@ func TestFindSocketsOfPid(t *testing.T) {
 		return
 	}
 
-	inodes, err := findSocketsOfPid(pathPrefix, 766)
+	fakeProcDir := filepath.Join(pathPrefix, "/proc")
+	inodes, err := findSocketsOfPid(fakeProcDir, 766)
 	if err != nil {
 		t.Fatalf("FindSocketsOfPid: %s", err)
 	}
 
 	assertUint64ArraysAreEqual(t, []uint64{7619, 7620}, inodes)
+}
+
+func TestRefreshCleanupProcessMap(t *testing.T) {
+	logp.LogInit(logp.LOG_DEBUG, "", false, true, []string{})
+
+	proc := []testProcFile{
+		{path: "/proc/766/fd/10", isLink: true, contents: "/var/log/nginx/packetbeat.error.log"},
+		{path: "/proc/766/fd/15", isLink: true, contents: "socket:[7620]"},
+	}
+
+	// Create fake proc file system
+	pathPrefix, err := ioutil.TempDir("/tmp", "")
+	if err != nil {
+		t.Error("TempDir failed:", err)
+		return
+	}
+	defer os.RemoveAll(pathPrefix)
+
+	err = createFakeDirectoryStructure(pathPrefix, proc)
+	if err != nil {
+		t.Error("CreateFakeDirectoryStructure failed:", err)
+		return
+	}
+
+	// Making new Processes and changing the /proc root to point to fake proc fs
+	fakeProcDir := filepath.Join(pathPrefix, "/proc")
+	var ps *Processes = New(false, false)
+	ps.procFSDirectory = fakeProcDir
+
+	err = ps.Refresh()
+	if err != nil {
+		t.Fatalf("Refresh failed: %s", err)
+	}
+	if len(ps.byInode) != 1 {
+		t.Errorf("Expected length of ps.byInode is %d but got %d", 1, len(ps.byInode))
+	}
+
+	inodes, err := findSocketsOfPid(fakeProcDir, 766)
+	if err != nil {
+		t.Fatalf("findSocketsOfPid failed: %s", err)
+	}
+	assertUint64ArraysAreEqual(t, []uint64{7620}, inodes)
+
+	// Removing the process from the file system and refreshing the processes
+	processDir := filepath.Join(pathPrefix, "/proc", strconv.Itoa(766))
+	os.RemoveAll(processDir)
+	err = ps.Refresh()
+	if err != nil {
+		t.Fatalf("Refresh failed: %s", err)
+	}
+	if len(ps.byInode) != 0 {
+		t.Errorf("Expected length of ps.byInode is %d but got %d", 0, len(ps.byInode))
+	}
 }
 
 func assertUint64ArraysAreEqual(t *testing.T, expected []uint64, result []uint64) bool {
