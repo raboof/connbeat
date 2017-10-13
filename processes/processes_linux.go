@@ -18,12 +18,14 @@ import (
 )
 
 func (ps *Processes) Refresh() error {
-	procs, err := processes(ps.exposeCmdline, ps.exposeEnviron)
+	procs, err := processes(ps.exposeCmdline, ps.exposeEnviron, ps.procFSDirectory)
 	if err != nil {
 		return err
 	}
+	ps.byInode = make(map[uint64]*UnixProcess)
+
 	for _, p := range procs {
-		err := p.Refresh(ps.exposeCmdline, ps.exposeEnviron)
+		err := p.Refresh(ps.exposeCmdline, ps.exposeEnviron, ps.procFSDirectory)
 		if err != nil {
 			return err
 		}
@@ -35,14 +37,15 @@ func (ps *Processes) Refresh() error {
 	return nil
 }
 
-func findSocketsOfPid(prefix string, pid int) (inodes []uint64, err error) {
+func findSocketsOfPid(procFSDirectory string, pid int) (inodes []uint64, err error) {
 
-	dirname := filepath.Join(prefix, "/proc", strconv.Itoa(pid), "fd")
+	dirname := filepath.Join(procFSDirectory, strconv.Itoa(pid), "fd")
 	procfs, err := os.Open(dirname)
 	if err != nil {
 		return []uint64{}, fmt.Errorf("Open: %s", err)
 	}
 	defer procfs.Close()
+
 	names, err := procfs.Readdirnames(0)
 	if err != nil {
 		return []uint64{}, fmt.Errorf("Readdirnames: %s", err)
@@ -70,30 +73,29 @@ func findSocketsOfPid(prefix string, pid int) (inodes []uint64, err error) {
 }
 
 // Refresh reloads all the data associated with this process.
-func (p *UnixProcess) Refresh(exposeCmdline, exposeEnviron bool) error {
-	prefix := ""
+func (p *UnixProcess) Refresh(exposeCmdline, exposeEnviron bool, procFSDirectory string) error {
 
-	inodes, err := findSocketsOfPid(prefix, p.pid)
+	inodes, err := findSocketsOfPid(procFSDirectory, p.pid)
 	p.inodes = inodes
 
 	if exposeCmdline {
-		p.Cmdline, err = readFile(prefix, p.pid, "cmdline")
+		p.Cmdline, err = readFile(procFSDirectory, p.pid, "cmdline")
 	}
 	if exposeEnviron {
-		p.Environ, err = readFile(prefix, p.pid, "environ")
+		p.Environ, err = readFile(procFSDirectory, p.pid, "environ")
 	}
 
 	return err
 }
 
-func readFile(prefix string, pid int, filename string) (string, error) {
-	path := fmt.Sprintf("%s/proc/%d/%s", prefix, pid, filename)
+func readFile(procFSDirectory string, pid int, filename string) (string, error) {
+	path := fmt.Sprintf("%s/%d/%s", procFSDirectory, pid, filename)
 	bytes, err := ioutil.ReadFile(path)
 	return string(bytes), err
 }
 
-func processes(exposeCmdline, exposeEnviron bool) ([]*UnixProcess, error) {
-	d, err := os.Open("/proc")
+func processes(exposeCmdline, exposeEnviron bool, procFSDirectory string) ([]*UnixProcess, error) {
+	d, err := os.Open(procFSDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +130,7 @@ func processes(exposeCmdline, exposeEnviron bool) ([]*UnixProcess, error) {
 				continue
 			}
 
-			p, err := newUnixProcess(int(pid), exposeCmdline, exposeEnviron)
+			p, err := newUnixProcess(int(pid), exposeCmdline, exposeEnviron, procFSDirectory)
 			if err != nil {
 				continue
 			}
@@ -140,9 +142,9 @@ func processes(exposeCmdline, exposeEnviron bool) ([]*UnixProcess, error) {
 	return results, nil
 }
 
-func newUnixProcess(pid int, exposeCmdline, exposeEnviron bool) (*UnixProcess, error) {
+func newUnixProcess(pid int, exposeCmdline, exposeEnviron bool, procFSDirectory string) (*UnixProcess, error) {
 	p := &UnixProcess{pid: pid}
-	return p, p.Refresh(exposeCmdline, exposeEnviron)
+	return p, p.Refresh(exposeCmdline, exposeEnviron, procFSDirectory)
 }
 
 func (ps *Processes) FindProcessByInode(inode uint64) *UnixProcess {

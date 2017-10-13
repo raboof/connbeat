@@ -4,16 +4,18 @@
 package processes
 
 type Processes struct {
-	byInode       map[uint64]*UnixProcess
-	exposeCmdline bool
-	exposeEnviron bool
+	byInode         map[uint64]*UnixProcess
+	exposeCmdline   bool
+	exposeEnviron   bool
+	procFSDirectory string
 }
 
 func New(exposeCmdline, exposeEnviron bool) *Processes {
 	return &Processes{
-		byInode:       make(map[uint64]*UnixProcess),
-		exposeCmdline: exposeCmdline,
-		exposeEnviron: exposeEnviron,
+		byInode:         make(map[uint64]*UnixProcess),
+		exposeCmdline:   exposeCmdline,
+		exposeEnviron:   exposeEnviron,
+		procFSDirectory: "/proc",
 	}
 }
 

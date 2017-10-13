@@ -73,7 +73,7 @@ func TestDeduplicateListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+	go New(true, true).handleSocketInfoChannel(true, 5*time.Second, input, connections, servers)
 
 	ip := randIP()
 
@@ -98,7 +98,7 @@ func TestFilterIncomingConnectionsPerIP(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+	go New(true, true).handleSocketInfoChannel(true, 5*time.Second, input, connections, servers)
 
 	remoteIP := randIP()
 
@@ -126,7 +126,7 @@ func TestFilterConnectionsAssociatedWithListeningSockets(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+	go New(true, true).handleSocketInfoChannel(true, 5*time.Second, input, connections, servers)
 
 	localIP := randIP()
 
@@ -151,7 +151,7 @@ func TestDedupIdenticalClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+	go New(true, true).handleSocketInfoChannel(true, 5*time.Second, input, connections, servers)
 
 	remoteIP := randIP()
 	conn := outgoingConnection(remoteIP, 80)
@@ -176,7 +176,7 @@ func TestReportDistinctClientConnectionsToTheSameServer(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(true, true).filterAndPublish(true, 5*time.Second, input, connections, servers)
+	go New(true, true).handleSocketInfoChannel(true, 5*time.Second, input, connections, servers)
 
 	remoteIP := randIP()
 	input <- outgoingConnection(remoteIP, 80)
@@ -191,7 +191,7 @@ func TestRepublishOldClientConnections(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 
-	go New(false, true).filterAndPublish(false, 0*time.Second, input, connections, servers)
+	go New(false, true).handleSocketInfoChannel(false, 0*time.Second, input, connections, servers)
 
 	remoteIp := randIP()
 	input <- outgoingConnection(remoteIp, 80)
@@ -206,11 +206,60 @@ func Test174(t *testing.T) {
 	input := make(chan *sockets.SocketInfo, 0)
 	connections, servers := make(chan FullConnection, 100), make(chan ServerConnection, 100)
 
-	go New(false, true).filterAndPublish(false, 10*time.Second, input, connections, servers)
+	go New(false, true).handleSocketInfoChannel(false, 10*time.Second, input, connections, servers)
 
 	insert174data(t, input)
 
 	expectConnectionOnPort(t, connections, 35074)
+}
+
+func TestConnectionCleanupOnlyRemovesWhenOlderThan2AggregationIntervals(t *testing.T) {
+
+	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
+	var allConnections *Connections = New(false, true)
+	var aggregationInterval = 1 * time.Second
+
+	now := time.Now()
+	lastCleanupTime := now
+
+	// sending client connection
+	go func() {
+		allConnections.filterAndPublish(false, aggregationInterval, now, outgoingConnection(randIP(), 80), connections, servers)
+		lastCleanupTime = allConnections.cleanup(aggregationInterval, lastCleanupTime, now)
+	}()
+	conn, ok := <-connections
+
+	assert.Equal(t, ok, true, "a client connection should be reported")
+	assert.Equal(t, conn.RemotePort, uint16(80), "a client connection should be reported")
+	assert.Equal(t, len(allConnections.outgoingConnectionSeen), 1, "connections are expected to remain in the outgoingConnectionSeen until cleanup")
+	assert.Equal(t, len(allConnections.listeningOn), 1, "listeningOn connections are expected to remain in the listeningOn until cleanup")
+
+	// sending server connection and cleaning up client connection due to cleanup interval
+	now = now.Add(3 * time.Second)
+	go func() {
+		allConnections.filterAndPublish(false, aggregationInterval, now, listeningConnection(81), connections, servers)
+		lastCleanupTime = allConnections.cleanup(aggregationInterval, lastCleanupTime, now)
+	}()
+	servConn, ok := <-servers
+
+	assert.Equal(t, ok, true, "a server connection should be reported")
+	assert.Equal(t, servConn.LocalPort, uint16(81), "a server connection should be reported")
+	assert.Equal(t, len(allConnections.outgoingConnectionSeen), 0, "connections are expected to be cleaned up")
+	assert.Equal(t, len(allConnections.listeningOn), 1, "listeningOn connections are expected to remain in the listeningOn until cleanup")
+
+	// sending client connection again and cleaning up server connection due to cleanup interval
+	now = now.Add(3 * time.Second)
+	go func() {
+		allConnections.filterAndPublish(false, aggregationInterval, now, outgoingConnection(randIP(), 82), connections, servers)
+		lastCleanupTime = allConnections.cleanup(aggregationInterval, lastCleanupTime, now)
+	}()
+	conn, ok = <-connections
+
+	assert.Equal(t, ok, true, "second client connection should be reported")
+	assert.Equal(t, conn.RemotePort, uint16(82), "second client connection should be reported")
+	assert.Equal(t, len(allConnections.outgoingConnectionSeen), 1, "connections are expected to remain in the outgoingConnectionSeen until cleanup")
+	assert.Equal(t, len(allConnections.listeningOn), 1, "listeningOn connections are expected to be cleaned up")
+
 }
 
 func expectConnectionOnPort(t *testing.T, connections <-chan FullConnection, port uint16) {
