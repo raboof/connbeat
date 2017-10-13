@@ -213,7 +213,7 @@ func Test174(t *testing.T) {
 	expectConnectionOnPort(t, connections, 35074)
 }
 
-func TestConnectionCleanupThatLastSeenMoreThan2AggregationIntervals(t *testing.T) {
+func TestConnectionCleanupOnlyRemovesWhenOlderThan2AggregationIntervals(t *testing.T) {
 
 	connections, servers := make(chan FullConnection, 0), make(chan ServerConnection, 0)
 	var allConnections *Connections = New(false, true)
