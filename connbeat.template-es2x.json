@@ -96,9 +96,23 @@
           "type": "long"
         },
         "local_process": {
-          "ignore_above": 1024,
-          "index": "not_analyzed",
-          "type": "string"
+          "properties": {
+            "binary": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "cmdline": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "environ": {
+              "ignore_above": 1024,
+              "index": "not_analyzed",
+              "type": "string"
+            }
+          }
         },
         "meta": {
           "properties": {
