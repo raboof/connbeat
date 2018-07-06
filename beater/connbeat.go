@@ -75,11 +75,17 @@ func processAsMap(process *processes.UnixProcess) common.MapStr {
 	binary := strings.Trim(process.Binary, "\u0000 ")
 	cmdline := strings.Trim(strings.Replace(process.Cmdline, "\u0000", " ", -1), "\u0000 ")
 	environ := strings.Split(strings.Trim(process.Environ, "\u0000 "), "\u0000")
-	return common.MapStr{
+	proc := common.MapStr{
 		"binary":  binary,
 		"cmdline": cmdline,
 		"environ": environ,
 	}
+	pid := process.Pid()
+	if pid != 0 {
+		proc["pid"] = pid
+	}
+
+	return proc
 }
 
 func toIPs(ip net.IP) []net.IP {
