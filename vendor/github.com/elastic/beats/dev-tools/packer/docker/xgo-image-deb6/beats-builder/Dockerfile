@@ -12,7 +12,7 @@ RUN \
 	rm libpcap0.8-dev*.deb
 RUN \
 	apt-get -o Acquire::Check-Valid-Until=false update && \
-	apt-get install -y libpcap0.8-dev
+	apt-get install -y --allow-unauthenticated libpcap0.8-dev
 
 # add patch for gopacket
 ADD gopacket_pcap.patch /gopacket_pcap.patch
