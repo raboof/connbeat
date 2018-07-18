@@ -21,13 +21,6 @@ func (v *ConfigValidator) rootless(config *configs.Config) error {
 	if err := rootlessMount(config); err != nil {
 		return err
 	}
-	// Currently, cgroups cannot effectively be used in rootless containers.
-	// The new cgroup namespace doesn't really help us either because it doesn't
-	// have nice interactions with the user namespace (we're working with upstream
-	// to fix this).
-	if err := rootlessCgroup(config); err != nil {
-		return err
-	}
 
 	// XXX: We currently can't verify the user config at all, because
 	//      configs.Config doesn't store the user-related configs. So this
@@ -50,13 +43,12 @@ func rootlessMappings(config *configs.Config) error {
 		if !config.Namespaces.Contains(configs.NEWUSER) {
 			return fmt.Errorf("rootless containers require user namespaces")
 		}
-	}
-
-	if len(config.UidMappings) == 0 {
-		return fmt.Errorf("rootless containers requires at least one UID mapping")
-	}
-	if len(config.GidMappings) == 0 {
-		return fmt.Errorf("rootless containers requires at least one UID mapping")
+		if len(config.UidMappings) == 0 {
+			return fmt.Errorf("rootless containers requires at least one UID mapping")
+		}
+		if len(config.GidMappings) == 0 {
+			return fmt.Errorf("rootless containers requires at least one GID mapping")
+		}
 	}
 
 	return nil

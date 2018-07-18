@@ -63,10 +63,23 @@ func main() {
 	app.Version = strings.Join(v, "\n")
 
 	root := "/run/runc"
-	if os.Geteuid() != 0 {
+	rootless, err := isRootless(nil)
+	if err != nil {
+		fatal(err)
+	}
+	if rootless {
 		runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
 		if runtimeDir != "" {
 			root = runtimeDir + "/runc"
+			// According to the XDG specification, we need to set anything in
+			// XDG_RUNTIME_DIR to have a sticky bit if we don't want it to get
+			// auto-pruned.
+			if err := os.MkdirAll(root, 0700); err != nil {
+				fatal(err)
+			}
+			if err := os.Chmod(root, 0700|os.ModeSticky); err != nil {
+				fatal(err)
+			}
 		}
 	}
 
@@ -98,6 +111,11 @@ func main() {
 		cli.BoolFlag{
 			Name:  "systemd-cgroup",
 			Usage: "enable systemd cgroup support, expects cgroupsPath to be of form \"slice:prefix:name\" for e.g. \"system.slice:runc:434234\"",
+		},
+		cli.StringFlag{
+			Name:  "rootless",
+			Value: "auto",
+			Usage: "enable rootless mode ('true', 'false', or 'auto')",
 		},
 	}
 	app.Commands = []cli.Command{

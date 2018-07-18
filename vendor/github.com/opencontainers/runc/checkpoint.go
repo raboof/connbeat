@@ -44,7 +44,11 @@ checkpointed.`,
 			return err
 		}
 		// XXX: Currently this is untested with rootless containers.
-		if isRootless() {
+		rootless, err := isRootless(context)
+		if err != nil {
+			return err
+		}
+		if rootless {
 			return fmt.Errorf("runc checkpoint requires root")
 		}
 
@@ -56,8 +60,8 @@ checkpointed.`,
 		if err != nil {
 			return err
 		}
-		if status == libcontainer.Created {
-			fatalf("Container cannot be checkpointed in created state")
+		if status == libcontainer.Created || status == libcontainer.Stopped {
+			fatalf("Container cannot be checkpointed in %s state", status.String())
 		}
 		defer destroy(container)
 		options := criuOptions(context)
@@ -121,7 +125,8 @@ var namespaceMapping = map[specs.LinuxNamespaceType]int{
 }
 
 func setEmptyNsMask(context *cli.Context, options *libcontainer.CriuOpts) error {
-	var nsmask int
+	/* Runc doesn't manage network devices and their configuration */
+	nsmask := unix.CLONE_NEWNET
 
 	for _, ns := range context.StringSlice("empty-ns") {
 		f, exists := namespaceMapping[specs.LinuxNamespaceType(ns)]

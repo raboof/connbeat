@@ -7,8 +7,8 @@ include::../../libbeat/docs/version.asciidoc[]
 :metricbeat: http://www.elastic.co/guide/en/beats/metricbeat/{doc-branch}
 :filebeat: http://www.elastic.co/guide/en/beats/filebeat/{doc-branch}
 :winlogbeat: http://www.elastic.co/guide/en/beats/winlogbeat/{doc-branch}
-:elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/{doc-branch}
 :logstashdoc: https://www.elastic.co/guide/en/logstash/{doc-branch}
+:elasticsearch: https://www.elastic.co/guide/en/elasticsearch/reference/{doc-branch}
 :securitydoc: https://www.elastic.co/guide/en/x-pack/5.2
 :kibanadoc: https://www.elastic.co/guide/en/kibana/{doc-branch}
 :plugindoc: https://www.elastic.co/guide/en/elasticsearch/plugins/{doc-branch}
@@ -16,6 +16,7 @@ include::../../libbeat/docs/version.asciidoc[]
 :beatname_lc: packetbeat
 :beatname_uc: Packetbeat
 :security: X-Pack Security
+:dockerimage: docker.elastic.co/beats/{beatname_lc}:{version}
 
 include::./overview.asciidoc[]
 
@@ -28,9 +29,15 @@ include::../../libbeat/docs/shared-directory-layout.asciidoc[]
 
 include::../../libbeat/docs/repositories.asciidoc[]
 
+include::./running-on-docker.asciidoc[]
+
 include::./upgrading.asciidoc[]
 
 include::./configuring-howto.asciidoc[]
+
+include::../../libbeat/docs/shared-env-vars.asciidoc[]
+
+include::./capturing.asciidoc[]
 
 include::./packetbeat-filtering.asciidoc[]
 
@@ -40,14 +47,16 @@ include::./packetbeat-geoip.asciidoc[]
 
 include::./configuring-logstash.asciidoc[]
 
-include::../../libbeat/docs/shared-env-vars.asciidoc[]
+include::./flows.asciidoc[]
 
-include::./capturing.asciidoc[]
+:standalone:
+include::../../libbeat/docs/shared-env-vars.asciidoc[]
 
 include::./thrift.asciidoc[]
 
 include::./maintaining-topology.asciidoc[]
 
+:standalone:
 :allplatforms:
 include::../../libbeat/docs/yaml.asciidoc[]
 
