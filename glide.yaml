@@ -1,9 +1,9 @@
 package: github.com/raboof/connbeat
 import:
 - package: github.com/deckarep/golang-set
-  version: ^1.5.0
+  version: ^1.5.0 
 - package: github.com/elastic/beats
-  version: 5.2
+  version: 5.6.9
   subpackages:
   - libbeat/beat
   - libbeat/common
@@ -12,7 +12,7 @@ import:
   - packetbeat/procs
 - package: github.com/raboof/beats-output-http
 - package: github.com/docker/docker
-  version: master
+  version: 2a7388a6c47a58c402acfe0059fbe27a7a090c23
 - package: github.com/fsouza/go-dockerclient
 testImport:
 - package: github.com/stvp/assert

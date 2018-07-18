@@ -12,7 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/elastic/beats/libbeat/logp"
-	"github.com/eleme/netlink"
+	"github.com/raboof/netlink"
 	"github.com/raboof/connbeat/sockets"
 )
 
@@ -50,8 +50,8 @@ func pollConnections(family uint8, socket *netlink.NetlinkSocket, socketInfo cha
 		} else {
 			inetDiagMsg := netlink.ParseInetDiagMsg(msg.Data)
 			socketInfo <- &sockets.SocketInfo{
-				SrcIP:   inetDiagMsg.Id.SrcIP(),
-				DstIP:   inetDiagMsg.Id.DstIP(),
+				SrcIP:   inetDiagMsg.Id.SrcIPv4(),
+				DstIP:   inetDiagMsg.Id.DstIPv4(),
 				SrcPort: port(inetDiagMsg.Id.IDiagSPort),
 				DstPort: port(inetDiagMsg.Id.IDiagDPort),
 

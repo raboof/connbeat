@@ -27,7 +27,7 @@ err()
 # Read the project's Go version and return it in the GO_VERSION variable.
 # On failure it will exit.
 get_go_version() {
-  GO_VERSION=$(awk '/^:go-version:/{print $NF}' "${_sdir}/../libbeat/docs/version.asciidoc")
+  GO_VERSION=$(cat "${_sdir}/../.go-version")
   if [ -z "$GO_VERSION" ]; then
     err "Failed to detect the project's Go version"
     exit 1
@@ -77,4 +77,22 @@ setup_go_path() {
   export PATH="${GOPATH}/bin:${PATH}"
 
   debug "GOPATH=${GOPATH}"
+}
+
+jenkins_setup() {
+  : "${HOME:?Need to set HOME to a non-empty value.}"
+  : "${WORKSPACE:?Need to set WORKSPACE to a non-empty value.}"
+
+  # Setup Go.
+  export GOPATH=${WORKSPACE}
+  export PATH=${GOPATH}/bin:${PATH}
+  if [ -f ".go-version" ]; then
+    eval "$(gvm $(cat .go-version))"
+  else
+    eval "$(gvm 1.7.5)"
+  fi
+
+  # Workaround for Python virtualenv path being too long.
+  export TEMP_PYTHON_ENV=$(mktemp -d)
+  export PYTHON_ENV="${TEMP_PYTHON_ENV}/python-env"
 }

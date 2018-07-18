@@ -1,9 +1,11 @@
-FROM tudorg/xgo-1.7.4
+FROM tudorg/xgo-1.7.6
 
 MAINTAINER Tudor Golubenco <tudor@elastic.co>
 
 # Get libpcap binaries for linux
 RUN \
+	apt-get clean && \
+	rm -r /var/lib/apt/lists/* && \
 	dpkg --add-architecture i386 && \
 	apt-get update && \
 	apt-get install -y libpcap0.8-dev
@@ -23,6 +25,12 @@ RUN \
 	./fetch.sh $WPDPACK_URL f5c80885bd48f07f41833d0f65bf85da1ef1727a && \
 	unzip `basename $WPDPACK_URL` -d /libpcap/win && \
 	rm `basename $WPDPACK_URL`
+
+# Load gotpl
+ADD yaml.v2 /go/src/gopkg.in/yaml.v2
+ADD gotpl /go/src/github.com/tsg/gotpl
+RUN cd /go/src/github.com/tsg/gotpl && \
+  go install
 
 # Add patch for gopacket.
 ADD gopacket_pcap.patch /gopacket_pcap.patch

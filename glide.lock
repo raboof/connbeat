@@ -1,12 +1,12 @@
-hash: 73b04161a93068f99db289296d0e5dd4079457364a27398c9b58e617882e5de8
-updated: 2017-10-12T22:03:37.424268279Z
+hash: 402f49709b60a75eab4808da7b93965144e5712a90cadbdcf18b480b387fcf29
+updated: 2018-07-18T10:29:32.519904032Z
 imports:
 - name: github.com/Azure/go-ansiterm
   version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
   - winterm
 - name: github.com/containerd/continuity
-  version: 1bed1ecb1dc42d8f4d2ac8c23e5cac64749e82c9
+  version: 0377f7d767206f3a9e8881d0f02267b0d89c7a62
   subpackages:
   - pathdriver
 - name: github.com/davecgh/go-spew
@@ -14,7 +14,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deckarep/golang-set
-  version: fc8930a5e645572ee00bf66358ed3414f3c13b90
+  version: 1d4478f51bed434f1dadf96dcd9b43aabac66795
 - name: github.com/docker/docker
   version: 2a7388a6c47a58c402acfe0059fbe27a7a090c23
   subpackages:
@@ -44,11 +44,11 @@ imports:
   - pkg/term
   - pkg/term/windows
 - name: github.com/docker/go-connections
-  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
+  version: 7395e3f8aa162843a74ed6d48e79627d9792ac55
   subpackages:
   - nat
 - name: github.com/docker/go-units
-  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
 - name: github.com/eapache/go-resiliency
   version: b86b1ec0dd4209a588dc1285cdd471e73525c0b3
   subpackages:
@@ -58,18 +58,25 @@ imports:
 - name: github.com/eapache/queue
   version: ded5959c0d4e360646dc9e9908cff48666781367
 - name: github.com/elastic/beats
-  version: d33fc2b0298bbf38f031c408c06dfcf567ea3851
+  version: 12bcd55d7f8f678bb1e513679e2da71810f91d63
   subpackages:
   - libbeat/beat
   - libbeat/cfgfile
   - libbeat/common
   - libbeat/common/dtfmt
+  - libbeat/common/file
   - libbeat/common/fmtstr
   - libbeat/common/jsontransform
+  - libbeat/common/match
   - libbeat/common/op
   - libbeat/common/streambuf
+  - libbeat/dashboards/dashboards
   - libbeat/logp
+  - libbeat/monitoring
+  - libbeat/monitoring/adapter
   - libbeat/outputs
+  - libbeat/outputs/codecs/format
+  - libbeat/outputs/codecs/json
   - libbeat/outputs/console
   - libbeat/outputs/elasticsearch
   - libbeat/outputs/fileout
@@ -83,11 +90,13 @@ imports:
   - libbeat/outputs/redis
   - libbeat/outputs/transport
   - libbeat/paths
+  - libbeat/plugin
   - libbeat/processors
   - libbeat/processors/actions
   - libbeat/processors/add_cloud_metadata
   - libbeat/publisher
   - libbeat/service
+  - libbeat/setup/kibana
   - metricbeat/schema
   - metricbeat/schema/mapstriface
   - packetbeat/procs
@@ -101,15 +110,13 @@ imports:
   - server/internal
   - server/v2
 - name: github.com/elastic/go-ucfg
-  version: b42667b880b6190864107f2cc6d95c070a0ca580
+  version: ec8488a52542c0c51e42e8ea204dcaff400bc644
   subpackages:
   - cfgutil
   - flag
   - internal/parse
   - json
   - yaml
-- name: github.com/eleme/netlink
-  version: fd62544701fed20795ad4f1db6d09f6d81654a1e
 - name: github.com/fsouza/go-dockerclient
   version: d2a6d0596004cc01062a2a068540b817f911e6dc
   subpackages:
@@ -120,7 +127,7 @@ imports:
   - internal
   - redis
 - name: github.com/gogo/protobuf
-  version: 0c5dcd73e6fd1ac6c452a68ec7f8d463d111be66
+  version: 636bf0302bc95575d69441b25a2603156ffdddf1
   subpackages:
   - proto
 - name: github.com/golang/snappy
@@ -128,7 +135,7 @@ imports:
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: 9bd9ff2d1d2a0660d35050674f2c3112547997af
+  version: cb4698366aa625048f3b815af6a0dea8aef9280a
 - name: github.com/joeshaw/multierror
   version: 69b34d4ec901851247ae7e77d33909caf9df99ed
 - name: github.com/klauspost/compress
@@ -141,20 +148,22 @@ imports:
 - name: github.com/klauspost/crc32
   version: 19b0b332c9e4516a6370a0456e6182c3b5036720
 - name: github.com/Microsoft/go-winio
-  version: 78439966b38d69bf38227fbf57ac8a6fee70f69a
+  version: 67921128fb397dd80339870d2193d6b1e6856fd4
+- name: github.com/mitchellh/hashstructure
+  version: b098c52ef6beab8cd82bc4a32422cf54b890e8fa
 - name: github.com/nranchev/go-libGeoIP
   version: c78e8bd2dd3599feb21fd30886043979e82fe948
 - name: github.com/Nvveen/Gotty
   version: cd527374f1e5bff4938207604a14f2e38a9cf512
 - name: github.com/opencontainers/go-digest
-  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+  version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
-  version: 7c889fafd04a893f5c5f50b7ab9963d5d64e5242
+  version: d60099175f88c47cd379c4738d158884749ed235
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 7c7d38bfe8b1a70dca1582bcd8ca91fc26cb9904
+  version: bc1467269fce13e9780345cfa25f9ca530601aba
   subpackages:
   - libcontainer/system
   - libcontainer/user
@@ -168,6 +177,8 @@ imports:
   version: 01fa4104b9c248c8945d14d9f128454d5b28d595
 - name: github.com/raboof/beats-output-http
   version: cb470721af7ee1e826178f34fa8ab2b6fe6697b5
+- name: github.com/raboof/netlink
+  version: a0d9c85e38f44c4eac8460ea8ed273f7884c5d25
 - name: github.com/rcrowley/go-metrics
   version: ab2277b1c5d15c3cba104e9cbddbdfc622df5ad8
   subpackages:
@@ -178,9 +189,9 @@ imports:
   version: f0996189c86dc27338468f2a9b10077c6d572b34
   repo: https://github.com/urso/sarama
 - name: github.com/sirupsen/logrus
-  version: 89742aefa4b206dcf400792f3bd35b542998eb3b
+  version: 92052687f8ec598ff0da626d2909478cfd1e3a3c
 - name: golang.org/x/crypto
-  version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
+  version: a49355c7e3f8fe157a85be2f77e6e269a0f89602
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -204,8 +215,8 @@ imports:
   version: a83829b6f1293c91addabc89d0571c246397bbf4
 testImports:
 - name: github.com/kr/pretty
-  version: cfb55aafdaf3ec08f0db22699ab822c50091b1c4
+  version: 73f6ac0b30a98e433b289500d779f50c1a6f0712
 - name: github.com/kr/text
-  version: 7cafcd837844e784b526369c9bce262804aebc60
+  version: e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f
 - name: github.com/stvp/assert
   version: 4bc16443988bace8e1b42d62d3601f70d74e4638

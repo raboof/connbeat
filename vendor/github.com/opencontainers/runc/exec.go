@@ -50,6 +50,10 @@ following will output a list of processes running in the container:
 			Name:  "user, u",
 			Usage: "UID (format: <uid>[:<gid>])",
 		},
+		cli.Int64SliceFlag{
+			Name:  "additional-gids, g",
+			Usage: "additional gids",
+		},
 		cli.StringFlag{
 			Name:  "process, p",
 			Usage: "path to the process.json",
@@ -136,6 +140,7 @@ func execProcess(context *cli.Context) (int, error) {
 		detach:          detach,
 		pidFile:         context.String("pid-file"),
 		action:          CT_ACT_RUN,
+		init:            false,
 	}
 	return r.run(p)
 }
@@ -207,6 +212,12 @@ func getProcess(context *cli.Context, bundle string) (*specs.Process, error) {
 			return nil, fmt.Errorf("parsing %s as int for uid failed: %v", u[0], err)
 		}
 		p.User.UID = uint32(uid)
+	}
+	for _, gid := range context.Int64Slice("additional-gids") {
+		if gid < 0 {
+			return nil, fmt.Errorf("additional-gids must be a positive number %d", gid)
+		}
+		p.User.AdditionalGids = append(p.User.AdditionalGids, uint32(gid))
 	}
 	return p, nil
 }
