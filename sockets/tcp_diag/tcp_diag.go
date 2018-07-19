@@ -12,8 +12,8 @@ import (
 	"unsafe"
 
 	"github.com/elastic/beats/libbeat/logp"
-	"github.com/raboof/netlink"
 	"github.com/raboof/connbeat/sockets"
+	"github.com/raboof/netlink"
 )
 
 func port(bytes [2]byte) uint16 {

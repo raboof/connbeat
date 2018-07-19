@@ -3,7 +3,6 @@ BEAT_PATH=github.com/raboof/connbeat
 SYSTEM_TESTS=true
 TEST_ENVIRONMENT?=true
 ES_BEATS?=./vendor/github.com/elastic/beats
-BEAT_GOPATH=/vagrant/gocode
 GOPACKAGES=$(shell go list ${BEAT_PATH}/... 2>/dev/null | grep -v /vendor/)
 PREFIX?=.
 

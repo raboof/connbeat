@@ -30,7 +30,7 @@ BUILD_DIR?=$(shell pwd)/build
 COVERAGE_DIR=${BUILD_DIR}/coverage
 COVERAGE_TOOL=${BEAT_GOPATH}/bin/gotestcover
 COVERAGE_TOOL_REPO=github.com/elastic/beats/vendor/github.com/pierrre/gotestcover
-TESTIFY_TOOL_REPO=github.com/elastic/beats/vendor/github.com/stretchr/testify
+TESTIFY_TOOL_REPO=github.com/elastic/beats/vendor/github.com/stretchr/testify/assert
 PROCESSES?= 4
 TIMEOUT?= 90
 NOSETESTS_OPTIONS?=--process-timeout=$(TIMEOUT) --with-timer ## @testing the options to pass when calling nosetests
