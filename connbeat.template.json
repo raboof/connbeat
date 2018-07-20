@@ -80,8 +80,20 @@
           "type": "long"
         },
         "local_process": {
-          "ignore_above": 1024,
-          "type": "keyword"
+          "properties": {
+            "binary": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "cmdline": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "environ": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
         },
         "meta": {
           "properties": {
