@@ -35,6 +35,7 @@ import (
 
 type threadUnsafeSet map[interface{}]struct{}
 
+// An OrderedPair represents a 2-tuple of values.
 type OrderedPair struct {
 	First  interface{}
 	Second interface{}
@@ -44,6 +45,7 @@ func newThreadUnsafeSet() threadUnsafeSet {
 	return make(threadUnsafeSet)
 }
 
+// Equal says whether two 2-tuples contain the same values in the same order.
 func (pair *OrderedPair) Equal(other OrderedPair) bool {
 	if pair.First == other.First &&
 		pair.Second == other.Second {
@@ -78,8 +80,16 @@ func (set *threadUnsafeSet) IsSubset(other Set) bool {
 	return true
 }
 
+func (set *threadUnsafeSet) IsProperSubset(other Set) bool {
+	return set.IsSubset(other) && !set.Equal(other)
+}
+
 func (set *threadUnsafeSet) IsSuperset(other Set) bool {
 	return other.IsSubset(set)
+}
+
+func (set *threadUnsafeSet) IsProperSuperset(other Set) bool {
+	return set.IsSuperset(other) && !set.Equal(other)
 }
 
 func (set *threadUnsafeSet) Union(other Set) Set {
@@ -149,6 +159,14 @@ func (set *threadUnsafeSet) Cardinality() int {
 	return len(*set)
 }
 
+func (set *threadUnsafeSet) Each(cb func(interface{}) bool) {
+	for elem := range *set {
+		if cb(elem) {
+			break
+		}
+	}
+}
+
 func (set *threadUnsafeSet) Iter() <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
@@ -210,6 +228,7 @@ func (set *threadUnsafeSet) String() string {
 	return fmt.Sprintf("Set{%s}", strings.Join(items, ", "))
 }
 
+// String outputs a 2-tuple in the form "(A, B)".
 func (pair OrderedPair) String() string {
 	return fmt.Sprintf("(%v, %v)", pair.First, pair.Second)
 }

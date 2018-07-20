@@ -327,6 +327,27 @@ func Test_SetIsSubset(t *testing.T) {
 	}
 }
 
+func Test_SetIsProperSubset(t *testing.T) {
+	a := makeSet([]int{1, 2, 3, 5, 7})
+	b := makeSet([]int{7, 5, 3, 2, 1})
+
+	if !a.IsSubset(b) {
+		t.Error("set a should be a subset of set b")
+	}
+	if a.IsProperSubset(b) {
+		t.Error("set a should not be a proper subset of set b (they're equal)")
+	}
+
+	b.Add(72)
+
+	if !a.IsSubset(b) {
+		t.Error("set a should be a subset of set b")
+	}
+	if !a.IsProperSubset(b) {
+		t.Error("set a should be a proper subset of set b")
+	}
+}
+
 func Test_UnsafeSetIsSubset(t *testing.T) {
 	a := makeUnsafeSet([]int{1, 2, 3, 5, 7})
 
@@ -346,7 +367,33 @@ func Test_UnsafeSetIsSubset(t *testing.T) {
 	}
 }
 
-func Test_SetIsSuperSet(t *testing.T) {
+func Test_UnsafeSetIsProperSubset(t *testing.T) {
+	a := makeUnsafeSet([]int{1, 2, 3, 5, 7})
+	b := NewThreadUnsafeSet()
+	b.Add(7)
+	b.Add(1)
+	b.Add(5)
+	b.Add(3)
+	b.Add(2)
+
+	if !a.IsSubset(b) {
+		t.Error("set a should be a subset of set b")
+	}
+	if a.IsProperSubset(b) {
+		t.Error("set a should not be a proper subset of set b (they're equal)")
+	}
+
+	b.Add(72)
+
+	if !a.IsSubset(b) {
+		t.Error("set a should be a subset of set b")
+	}
+	if !a.IsProperSubset(b) {
+		t.Error("set a should be a proper subset of set b because set b has 72")
+	}
+}
+
+func Test_SetIsSuperset(t *testing.T) {
 	a := NewSet()
 	a.Add(9)
 	a.Add(5)
@@ -366,11 +413,48 @@ func Test_SetIsSuperSet(t *testing.T) {
 	b.Add(42)
 
 	if a.IsSuperset(b) {
-		t.Error("set a should not be a superset of set b because set a has a 42")
+		t.Error("set a should not be a superset of set b because set b has a 42")
 	}
 }
 
-func Test_UnsafeSetIsSuperSet(t *testing.T) {
+func Test_SetIsProperSuperset(t *testing.T) {
+	a := NewSet()
+	a.Add(5)
+	a.Add(2)
+	a.Add(11)
+
+	b := NewSet()
+	b.Add(2)
+	b.Add(5)
+	b.Add(11)
+
+	if !a.IsSuperset(b) {
+		t.Error("set a should be a superset of set b")
+	}
+	if a.IsProperSuperset(b) {
+		t.Error("set a should not be a proper superset of set b (they're equal)")
+	}
+
+	a.Add(9)
+
+	if !a.IsSuperset(b) {
+		t.Error("set a should be a superset of set b")
+	}
+	if !a.IsProperSuperset(b) {
+		t.Error("set a not be a proper superset of set b because set a has a 9")
+	}
+
+	b.Add(42)
+
+	if a.IsSuperset(b) {
+		t.Error("set a should not be a superset of set b because set b has a 42")
+	}
+	if a.IsProperSuperset(b) {
+		t.Error("set a should not be a proper superset of set b because set b has a 42")
+	}
+}
+
+func Test_UnsafeSetIsSuperset(t *testing.T) {
 	a := NewThreadUnsafeSet()
 	a.Add(9)
 	a.Add(5)
@@ -391,6 +475,43 @@ func Test_UnsafeSetIsSuperSet(t *testing.T) {
 
 	if a.IsSuperset(b) {
 		t.Error("set a should not be a superset of set b because set a has a 42")
+	}
+}
+
+func Test_UnsafeSetIsProperSuperset(t *testing.T) {
+	a := NewThreadUnsafeSet()
+	a.Add(5)
+	a.Add(2)
+	a.Add(11)
+
+	b := NewThreadUnsafeSet()
+	b.Add(2)
+	b.Add(5)
+	b.Add(11)
+
+	if !a.IsSuperset(b) {
+		t.Error("set a should be a superset of set b")
+	}
+	if a.IsProperSuperset(b) {
+		t.Error("set a should not be a proper superset of set b (they're equal)")
+	}
+
+	a.Add(9)
+
+	if !a.IsSuperset(b) {
+		t.Error("set a should be a superset of set b")
+	}
+	if !a.IsProperSuperset(b) {
+		t.Error("set a not be a proper superset of set b because set a has a 9")
+	}
+
+	b.Add(42)
+
+	if a.IsSuperset(b) {
+		t.Error("set a should not be a superset of set b because set b has a 42")
+	}
+	if a.IsProperSuperset(b) {
+		t.Error("set a should not be a proper superset of set b because set b has a 42")
 	}
 }
 
@@ -426,7 +547,7 @@ func Test_SetUnion(t *testing.T) {
 
 	g := f.Union(e)
 	if g.Cardinality() != 8 {
-		t.Error("set g should still ahve 8 elements in it after being unioned with set f that has duplicates")
+		t.Error("set g should still have 8 elements in it after being unioned with set f that has duplicates")
 	}
 }
 
@@ -462,7 +583,7 @@ func Test_UnsafeSetUnion(t *testing.T) {
 
 	g := f.Union(e)
 	if g.Cardinality() != 8 {
-		t.Error("set g should still ahve 8 elements in it after being unioned with set f that has duplicates")
+		t.Error("set g should still have 8 elements in it after being unioned with set f that has duplicates")
 	}
 }
 
@@ -728,6 +849,37 @@ func Test_UnsafeSetClone(t *testing.T) {
 	}
 }
 
+func Test_Each(t *testing.T) {
+	a := NewSet()
+
+	a.Add("Z")
+	a.Add("Y")
+	a.Add("X")
+	a.Add("W")
+
+	b := NewSet()
+	a.Each(func(elem interface{}) bool {
+		b.Add(elem)
+		return false
+	})
+
+	if !a.Equal(b) {
+		t.Error("The sets are not equal after iterating (Each) through the first set")
+	}
+
+	var count int
+	a.Each(func(elem interface{}) bool {
+		if count == 2 {
+			return true
+		}
+		count++
+		return false
+	})
+	if count != 2 {
+		t.Error("Iteration should stop on the way")
+	}
+}
+
 func Test_Iter(t *testing.T) {
 	a := NewSet()
 
@@ -810,7 +962,7 @@ func Test_IteratorStop(t *testing.T) {
 
 	it := a.Iterator()
 	it.Stop()
-	for _ = range it.C {
+	for range it.C {
 		t.Error("The iterating (Iterator) did not stop after Stop() has been called")
 	}
 }
@@ -843,8 +995,6 @@ func Test_EmptySetProperties(t *testing.T) {
 	b.Add(3)
 	b.Add(4)
 
-	c := NewSet()
-
 	if !empty.IsSubset(a) || !empty.IsSubset(b) {
 		t.Error("The empty set is supposed to be a subset of all sets")
 	}
@@ -857,7 +1007,7 @@ func Test_EmptySetProperties(t *testing.T) {
 		t.Error("The empty set is supposed to be a subset and a superset of itself")
 	}
 
-	c = a.Union(empty)
+	c := a.Union(empty)
 	if !c.Equal(a) {
 		t.Error("The union of any set with the empty set is supposed to be equal to itself")
 	}
@@ -912,7 +1062,7 @@ func Test_CartesianProduct(t *testing.T) {
 	d = empty.CartesianProduct(b)
 
 	if c.Cardinality() != 0 || d.Cardinality() != 0 {
-		t.Error("Cartesian product of any set and the emtpy set Ax0 || 0xA must be the empty set")
+		t.Error("Cartesian product of any set and the empty set Ax0 || 0xA must be the empty set")
 	}
 }
 

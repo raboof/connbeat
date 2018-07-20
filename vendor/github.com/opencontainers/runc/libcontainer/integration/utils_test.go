@@ -19,6 +19,10 @@ import (
 	"github.com/opencontainers/runc/libcontainer/configs"
 )
 
+func ptrInt(v int) *int {
+	return &v
+}
+
 func newStdBuffers() *stdBuffers {
 	return &stdBuffers{
 		Stdin:  bytes.NewBuffer(nil),
@@ -109,7 +113,7 @@ func remove(dir string) {
 // copyBusybox copies the rootfs for a busybox container created for the test image
 // into the new directory for the specific test
 func copyBusybox(dest string) error {
-	out, err := exec.Command("sh", "-c", fmt.Sprintf("cp -R /busybox/* %s/", dest)).CombinedOutput()
+	out, err := exec.Command("sh", "-c", fmt.Sprintf("cp -a /busybox/* %s/", dest)).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("copy error %q: %q", err, out)
 	}
@@ -148,6 +152,7 @@ func runContainer(config *configs.Config, console string, args ...string) (buffe
 		Stdin:  buffers.Stdin,
 		Stdout: buffers.Stdout,
 		Stderr: buffers.Stderr,
+		Init:   true,
 	}
 
 	err = container.Run(process)

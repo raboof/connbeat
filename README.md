@@ -151,6 +151,10 @@ intended for general consumption.
 
 'make package' should be sufficient to produce a deb, rpm and a binary .tar.gz
 
+## Elastic Beat Upgrade 
+
+Currently `elastic\beats` package is set to 5.6.9 and there is a manual change in the `vendor/github/com/elastic/beats/libbeat/script/Makefile` for parameter `TESTIFY_TOOL_REPO`. The value is set from `github.com/elastic/beats/vendor/github.com/stretchr/testify` to `github.com/elastic/beats/vendor/github.com/stretchr/testify/assert` because it tries to download master and the repo doesn't contain the actual code. and also this paramter can't be overriden in this version 5.6.9. So please check this parameter if it can be overriden or not and then change that in your `Makefile` when you update the `elastic/beats` library. Mostly in the latest library you don't need to change this parameter becuase it is fixed. 
+
 ## Contributing
 
 Contributions are welcome! Feel free to [submit issues](https://github.com/raboof/connbeat/issues) to discuss problems and propose solutions, or send a [pull request](https://github.com/raboof/connbeat/pulls).

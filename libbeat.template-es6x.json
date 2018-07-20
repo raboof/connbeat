@@ -1,0 +1,142 @@
+{
+  "mappings": {
+    "_default_": {
+      "_meta": {
+        "version": "5.6.9"
+      },
+      "date_detection": false,
+      "dynamic_templates": [
+        {
+          "strings_as_keyword": {
+            "mapping": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "match_mapping_type": "string"
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "beat": {
+          "properties": {
+            "hostname": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "name": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "version": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
+        "container": {
+          "properties": {
+            "docker_host": {
+              "properties": {
+                "hostname": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "ips": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            },
+            "env": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "id": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "image": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "local_ips": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "name": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            },
+            "ports": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
+        "local_port": {
+          "type": "long"
+        },
+        "local_process": {
+          "ignore_above": 1024,
+          "type": "keyword"
+        },
+        "meta": {
+          "properties": {
+            "cloud": {
+              "properties": {
+                "availability_zone": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "instance_id": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "machine_type": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "project_id": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "provider": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                },
+                "region": {
+                  "ignore_above": 1024,
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        },
+        "remote_ip": {
+          "ignore_above": 1024,
+          "type": "keyword"
+        },
+        "remote_port": {
+          "type": "long"
+        },
+        "tags": {
+          "ignore_above": 1024,
+          "type": "keyword"
+        },
+        "type": {
+          "ignore_above": 1024,
+          "type": "keyword"
+        }
+      }
+    }
+  },
+  "order": 0,
+  "settings": {
+    "index.mapping.total_fields.limit": 10000,
+    "index.refresh_interval": "5s"
+  },
+  "template": "libbeat-*"
+}

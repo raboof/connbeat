@@ -30,6 +30,7 @@ import (
 	"math/rand"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -137,9 +138,11 @@ func Test_ContainsConcurrent(t *testing.T) {
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.Contains(interfaces...)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -150,17 +153,17 @@ func Test_DifferenceConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.Difference(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -171,17 +174,17 @@ func Test_EqualConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.Equal(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -192,17 +195,17 @@ func Test_IntersectConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.Intersect(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -213,17 +216,38 @@ func Test_IsSubsetConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.IsSubset(ss)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func Test_IsProperSubsetConcurrent(t *testing.T) {
+	runtime.GOMAXPROCS(2)
+
+	s, ss := NewSet(), NewSet()
+	ints := rand.Perm(N)
+	for _, v := range ints {
+		s.Add(v)
+		ss.Add(v)
+	}
+
+	var wg sync.WaitGroup
+	for range ints {
+		wg.Add(1)
+		go func() {
+			s.IsProperSubset(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
@@ -234,20 +258,70 @@ func Test_IsSupersetConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.IsSuperset(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()
+}
+
+func Test_IsProperSupersetConcurrent(t *testing.T) {
+	runtime.GOMAXPROCS(2)
+
+	s, ss := NewSet(), NewSet()
+	ints := rand.Perm(N)
+	for _, v := range ints {
+		s.Add(v)
+		ss.Add(v)
+	}
+
+	var wg sync.WaitGroup
+	for range ints {
+		wg.Add(1)
+		go func() {
+			s.IsProperSuperset(ss)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+func Test_EachConcurrent(t *testing.T) {
+	runtime.GOMAXPROCS(2)
+	concurrent := 10
+
+	s := NewSet()
+	ints := rand.Perm(N)
+	for _, v := range ints {
+		s.Add(v)
+	}
+
+	var count int64
+	wg := new(sync.WaitGroup)
+	wg.Add(concurrent)
+	for n := 0; n < concurrent; n++ {
+		go func() {
+			defer wg.Done()
+			s.Each(func(elem interface{}) bool {
+				atomic.AddInt64(&count, 1)
+				return false
+			})
+		}()
+	}
+	wg.Wait()
+
+	if count != int64(N*concurrent) {
+		t.Errorf("%v != %v", count, int64(N*concurrent))
+	}
 }
 
 func Test_IterConcurrent(t *testing.T) {
@@ -260,7 +334,7 @@ func Test_IterConcurrent(t *testing.T) {
 	}
 
 	cs := make([]<-chan interface{}, 0)
-	for _ = range ints {
+	for range ints {
 		cs = append(cs, s.Iter())
 	}
 
@@ -279,7 +353,7 @@ func Test_IterConcurrent(t *testing.T) {
 		close(c)
 	}()
 
-	for _ = range c {
+	for range c {
 	}
 }
 
@@ -318,9 +392,9 @@ func Test_StringConcurrent(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(len(ints))
-	for _ = range ints {
+	for range ints {
 		go func() {
-			s.String()
+			_ = s.String()
 			wg.Done()
 		}()
 	}
@@ -332,17 +406,17 @@ func Test_SymmetricDifferenceConcurrent(t *testing.T) {
 
 	s, ss := NewSet(), NewSet()
 	ints := rand.Perm(N)
-	interfaces := make([]interface{}, 0)
 	for _, v := range ints {
 		s.Add(v)
 		ss.Add(v)
-		interfaces = append(interfaces, v)
 	}
 
 	var wg sync.WaitGroup
-	for _ = range ints {
+	for range ints {
+		wg.Add(1)
 		go func() {
 			s.SymmetricDifference(ss)
+			wg.Done()
 		}()
 	}
 	wg.Wait()

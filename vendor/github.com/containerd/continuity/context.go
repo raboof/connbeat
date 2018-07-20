@@ -473,10 +473,6 @@ func (c *context) Apply(resource Resource) error {
 			}
 		}
 
-		// NOTE(stevvooe): Chmod on symlink is not supported on linux. We
-		// may want to maintain support for other platforms that have it.
-		chmod = false
-
 	case Device:
 		if fi == nil {
 			if err := c.driver.Mknod(fp, resource.Mode(), int(r.Major()), int(r.Minor())); err != nil {
@@ -572,8 +568,16 @@ func (c *context) Apply(resource Resource) error {
 // the context. Otherwise identical to filepath.Walk, the path argument is
 // corrected to be contained within the context.
 func (c *context) Walk(fn filepath.WalkFunc) error {
-	return c.pathDriver.Walk(c.root, func(p string, fi os.FileInfo, err error) error {
-		contained, err := c.contain(p)
+	root := c.root
+	fi, err := c.driver.Lstat(c.root)
+	if err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		root, err = c.driver.Readlink(c.root)
+		if err != nil {
+			return err
+		}
+	}
+	return c.pathDriver.Walk(root, func(p string, fi os.FileInfo, err error) error {
+		contained, err := c.containWithRoot(p, root)
 		return fn(contained, fi, err)
 	})
 }
@@ -592,7 +596,15 @@ func (c *context) fullpath(p string) (string, error) {
 // contain cleans and santizes the filesystem path p to be an absolute path,
 // effectively relative to the context root.
 func (c *context) contain(p string) (string, error) {
-	sanitized, err := c.pathDriver.Rel(c.root, p)
+	return c.containWithRoot(p, c.root)
+}
+
+// containWithRoot cleans and santizes the filesystem path p to be an absolute path,
+// effectively relative to the passed root. Extra care should be used when calling this
+// instead of contain. This is needed for Walk, as if context root is a symlink,
+// it must be evaluated prior to the Walk
+func (c *context) containWithRoot(p string, root string) (string, error) {
+	sanitized, err := c.pathDriver.Rel(root, p)
 	if err != nil {
 		return "", err
 	}

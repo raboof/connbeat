@@ -1,9 +1,9 @@
-BEATNAME=connbeat
-BEAT_DIR=github.com/raboof/connbeat
+BEAT_NAME=connbeat
+BEAT_PATH=github.com/raboof/connbeat
 SYSTEM_TESTS=true
 TEST_ENVIRONMENT?=true
 ES_BEATS?=./vendor/github.com/elastic/beats
-GOPACKAGES=$(shell go list ${BEAT_DIR}/... 2>/dev/null | grep -v /vendor/)
+GOPACKAGES=$(shell go list ${BEAT_PATH}/... 2>/dev/null | grep -v /vendor/)
 PREFIX?=.
 
 # Only crosscompile for linux because other OS'es use cgo.

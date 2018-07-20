@@ -1,7 +1,7 @@
 - key: couchbase
   title: "Couchbase"
   description: >
-    experimental[]
+    beta[]
 
     Metrics collected from Couchbase servers.
   short_config: false
